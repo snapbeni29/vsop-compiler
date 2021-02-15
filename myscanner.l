@@ -1,65 +1,96 @@
 /* Declarations */
 
 %{
-#include "myscanner.h"
-#include <stdio.h>
+#include "myscanner.hh"
+#include <iostream>
 
-int  installID(void);
-int  installNum(void);
+using namespace std;
 
 int yylval = 0;
+
+// Keywords data structure
+map<string, int> keywords = {
+	{"and", AND},
+	{"bool", BOOL},
+	{"class", CLASS},
+	{"do", DO},
+	{"else", ELSE},
+	{"extends", EXTENDS},
+	{"false", FALSE},
+	{"if", IF},
+	{"in", IN},
+	{"int32", INT32},
+	{"isnull", ISNULL},
+	{"let", LET},
+	{"new", NEW},
+	{"not", NOT},
+	{"self", SELF},
+	{"string", STRING},
+	{"then", THEN},
+	{"true", TRUE},
+	{"unit", UNIT},
+	{"while", WHILE}
+};
+
+// Operators data structure
+map<string, int> operators = {
+	{"{", LBRACE},
+	{"}", RBRACE},
+	{"(", LPAR},
+	{")", RPAR},
+	{":", COLON},
+	{";", SEMICOLON}
+	{",", COMMA},
+	{"+", PLUS},
+	{"-", MINUS},
+	{"*", TIMES},
+	{"/", DIV},
+	{"^", POW},
+	{".", DOT},
+	{"=", EQUAL},
+	{"<", LOWER},
+	{"<=", LOWER-EQUAL},
+	{"<-", ASSIGN}
+}
+
 %}
 
 /* Definitions */
 %option noyywrap
 
-delim 						[ \t\n]
-ws 							{delim}+
+delim 						[ \t\n\r]
+whitespace 					{delim}+
 
-lowercase_letter			[a-z]
-uppercase_letter			[A-Z]
-letter 						{lowercase_letter}|{uppercase_letter}
+lowercase-letter			[a-z]
+uppercase-letter			[A-Z]
+letter 						{lowercase-letter}|{uppercase-letter}
 
-
+bin-digit					0|1
 digit 						[0-9]
-hexadecimal_digit 			{digit}|[a-f]|
+hex-digit 					{digit}|[a-f]|[A-F]
 
-id 							{letter}({letter}|{digit})*
-number 						{digit}+(\.{digit}+)?(E[+-]?{digit}+)?
-base_identifier				{letter}|{digit}|_
-type_identifier 			{uppercase_letter}{base_identifier}*
+base-identifier				{letter}|{digit}|_
+type-identifier 			{uppercase-letter}{base-identifier}*
+object-identifier  			{lowercase-letter}({letter}|{digit}|_)*
+
+operator					"{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<="|"<-"|"<"
 
 /* Rules */
 %%
-{ws} {/* no action and no return */ }
-"if" {return IF;}
-"then" {return THEN;}
-"else" {return ELSE;}
-"class" {return CLASS;}
-{id} {yylval = installID (); return ID;}
-{number} { yylval = installNum (); return NUMBER;}
-{type_identifier} {return TYPE;}
+{whitespace} 				{/* no action and no return */ }
 
-"<" {yylval = LT; return RELOP;}
-"<=" {yylval = LE; return RELOP;}
-"=" {yylval = EQ; return RELOP;}
-"<>" {yylval = NE; return RELOP;}
-">" {yylval = GT; return RELOP;}
-">=" {yylval = GE; return RELOP;}
+{type-identifier}			{return TYPE_IDENTIFIER}
+{object-identifier}			{auto k = keywords.find(string(yytext));
+                            if (k != keywords.end())
+                                return k->second;
+                            return OBJECT_IDENTIFIER;}
+{operator}					{
+							/* we have to browse opeartor data structure */
+							}
 
+''
 
 %%
-
-
-int  installID(void){
-	/*  function  to  install  the  lexeme , whosefirst  character  is  pointed  to by yytext ,
-	and  whose  length  is yyleng , into  thesymbol  table  and  return a pointer  thereto*/
-	return 0;
-}
-int  installNum(void){
-	/*  similar  to installID , but  puts  numericalconstants  into a separate  table  */
-	return 0;
-}
 
 /* User subroutines */
 int main()
@@ -72,10 +103,10 @@ int main()
 	while(ntoken){
 		switch (ntoken){
 			case CLASS:
-				printf("class, %d\n", yylineno);
+				//printf("class, %d\n", yylineno);
 				break;
 			case TYPE:
-				printf("type, %d\n", yylineno);
+				//printf("type, %d\n", yylineno);
 				break;
 		}
 		ntoken = yylex();
