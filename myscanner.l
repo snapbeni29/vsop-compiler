@@ -1,15 +1,17 @@
 /* Declarations */
 
 %{
-#include "myscanner.hh"
 #include <iostream>
+#include <map>
+#include "myscanner.hh"
 
 using namespace std;
 
-int yylval = 0;
+string text;
+int entier;
 
 // Keywords data structure
-map<string, int> keywords = {
+map<std::string, int> keywords = {
 	{"and", AND},
 	{"bool", BOOL},
 	{"class", CLASS},
@@ -33,25 +35,25 @@ map<string, int> keywords = {
 };
 
 // Operators data structure
-map<string, int> operators = {
-	{"{", LBRACE},
-	{"}", RBRACE},
-	{"(", LPAR},
-	{")", RPAR},
-	{":", COLON},
-	{";", SEMICOLON}
-	{",", COMMA},
-	{"+", PLUS},
-	{"-", MINUS},
-	{"*", TIMES},
-	{"/", DIV},
-	{"^", POW},
-	{".", DOT},
-	{"=", EQUAL},
-	{"<", LOWER},
-	{"<=", LOWER-EQUAL},
-	{"<-", ASSIGN}
-}
+map<string, string> operators = {
+	{"{", "lbrace"},
+	{"}", "rbrace"},
+	{"(", "lpar"},
+	{")", "rpar"},
+	{":", "colon"},
+	{";", "semicolon"},
+	{",", "comma"},
+	{"+", "plus"},
+	{"-", "minus"},
+	{"*", "times"},
+	{"/", "div"},
+	{"^", "pow"},
+	{".", "dot"},
+	{"=", "equal"},
+	{"<", "lower"},
+	{"<=", "lower-equal"},
+	{"<-", "assign"}
+};
 
 %}
 
@@ -79,14 +81,22 @@ operator					"{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<="|"<-"|"
 %%
 {whitespace} 				{/* no action and no return */ }
 
-{type-identifier}			{return TYPE_IDENTIFIER}
-{object-identifier}			{auto k = keywords.find(string(yytext));
-                            if (k != keywords.end())
-                                return k->second;
-                            return OBJECT_IDENTIFIER;}
-{operator}					{
-							/* we have to browse opeartor data structure */
+{type-identifier}			{text = string(yytext);
+							return TYPE_IDENTIFIER;}
+{object-identifier}			{auto j = keywords.find(string(yytext));
+							if (j != keywords.end()){
+								text = j->first;
+								return KEYWORD;
 							}
+							text = string(yytext);
+							return OBJECT_IDENTIFIER;}
+
+{operator}					{auto j = operators.find(string(yytext));
+							if (j != operators.end()){
+								text = j->second;
+								return OPERATOR;
+							}
+							return -1;}
 
 ''
 
@@ -102,11 +112,19 @@ int main()
 	/* Loop until ntoken equal 0 */
 	while(ntoken){
 		switch (ntoken){
-			case CLASS:
-				//printf("class, %d\n", yylineno);
+			case KEYWORD:
+				cout << text + "\n";
 				break;
-			case TYPE:
-				//printf("type, %d\n", yylineno);
+			case OBJECT_IDENTIFIER:
+				cout << text + "\n";
+				break;
+			case TYPE_IDENTIFIER:
+				cout << text + "\n";
+				break;
+			case OPERATOR:
+				cout << text + "\n";
+				break;
+			default:
 				break;
 		}
 		ntoken = yylex();
