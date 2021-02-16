@@ -90,6 +90,11 @@ object-identifier  			{lowercase-letter}({letter}|{digit}|_)*
 
 operator					"{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<="|"<-"|"<"
 
+escape-sequence				"b"|"t"|"n"|"r"|'"'|"\"|"x"{hex-digit}{hex-digit}
+escaped-char				"\"{escape-sequence}
+regular-char				[^{escaped-char}]
+string-literal				["]{regular-char}
+
 /* Rules */
 %%
 {whitespace} 				{/* no action and no return */ }
@@ -110,6 +115,7 @@ operator					"{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<="|"<-"|"
 								return OPERATOR;
 							}
 							return -1;}
+{escaped-char}				{printf("ookkk");}
 
 
 %%
