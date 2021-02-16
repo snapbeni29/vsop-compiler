@@ -5,10 +5,22 @@
 #include <map>
 #include "myscanner.hh"
 
+int yycolumn = 1;
+int start_line, start_column;
+int prev_yylineno = yylineno;
+
+/* This is executed before every action. */
+#define YY_USER_ACTION                                                   \
+  start_line = prev_yylineno; start_column = yycolumn;                   \
+  if (yylineno == prev_yylineno) yycolumn += yyleng;                     \
+  else {                                                                 \
+    for (yycolumn = 1; yytext[yyleng - yycolumn] != '\n'; ++yycolumn) {} \
+    prev_yylineno = yylineno;                                            \
+  }
+
 using namespace std;
 
 string text;
-int entier;
 
 // Keywords data structure
 map<std::string, int> keywords = {
@@ -59,6 +71,7 @@ map<string, string> operators = {
 
 /* Definitions */
 %option noyywrap
+%option yylineno
 
 delim 						[ \t\n\r]
 whitespace 					{delim}+
@@ -113,16 +126,16 @@ int main()
 	while(ntoken){
 		switch (ntoken){
 			case KEYWORD:
-				cout << text + "\n";
+				cout << to_string(yylineno) + "," +  to_string(start_column) + "," + text + "\n";
 				break;
 			case OBJECT_IDENTIFIER:
-				cout << text + "\n";
+				cout << to_string(yylineno) + "," + to_string(start_column) + "," + "object-identifier," + text + "\n";
 				break;
 			case TYPE_IDENTIFIER:
-				cout << text + "\n";
+				cout << to_string(yylineno) + "," + to_string(start_column) + "," + "type-identifier," + text + "\n";
 				break;
 			case OPERATOR:
-				cout << text + "\n";
+				cout << to_string(yylineno) + "," + to_string(start_column) + "," + text + "\n";
 				break;
 			default:
 				break;
