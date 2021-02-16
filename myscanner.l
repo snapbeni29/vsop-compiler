@@ -20,7 +20,19 @@ int prev_yylineno = yylineno;
 
 using namespace std;
 
-string text;
+string toASCII(char s);
+string toASCII(char s){
+	cout << int(s) << endl;
+	if(int(s) < 32 || int(s) > 126){
+		string val = "x";
+		val += int(s);
+		return val;
+	}
+	return "NOOOOO";
+}
+
+string text = "";
+string buf = "";
 
 // Keywords data structure
 map<std::string, int> keywords = {
@@ -39,11 +51,11 @@ map<std::string, int> keywords = {
 	{"new", NEW},
 	{"not", NOT},
 	{"self", SELF},
-	{"string", STRING},
+	{"string", SELF},
 	{"then", THEN},
 	{"true", TRUE},
 	{"unit", UNIT},
-	{"while", WHILE}
+	{"while", WHILE},
 };
 
 // Operators data structure
@@ -72,6 +84,7 @@ map<string, string> operators = {
 /* Definitions */
 %option noyywrap
 %option yylineno
+%x STRING
 
 delim 						[ \t\n\r]
 whitespace 					{delim}+
@@ -84,16 +97,18 @@ bin-digit					0|1
 digit 						[0-9]
 hex-digit 					{digit}|[a-f]|[A-F]
 
+escape-sequence				[btnr\"\\]|(x{hex-digit}{2})|(\n[ \t]*)
+escaped-char				\\{escape-sequence}
+regular-char				[^\0\n\"\\]
+begin						"\""
+string-literal				\"({regular-char}|{escaped-char})*\"
+
 base-identifier				{letter}|{digit}|_
 type-identifier 			{uppercase-letter}{base-identifier}*
 object-identifier  			{lowercase-letter}({letter}|{digit}|_)*
 
 operator					"{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<="|"<-"|"<"
 
-escape-sequence				"b"|"t"|"n"|"r"|'"'|"\"|"x"{hex-digit}{hex-digit}
-escaped-char				"\"{escape-sequence}
-regular-char				[^{escaped-char}]
-string-literal				["]{regular-char}
 
 /* Rules */
 %%
@@ -115,12 +130,16 @@ string-literal				["]{regular-char}
 								return OPERATOR;
 							}
 							return -1;}
-{escaped-char}				{printf("ookkk");}
 
+{begin}                  	{text = string(yytext); BEGIN(STRING); return BEGIN_STRING_LITERAL;}
+<STRING>{begin}				{text = string(yytext); BEGIN(INITIAL); return END_STRING_LITERAL;}
+<STRING>{regular-char}+ 	{text = string(yytext); return REGULAR_CHAR;}
+<STRING>{escaped-char}		{text = toASCII(yytext); return REGULAR_CHAR;} 
 
 %%
 
 /* User subroutines */
+
 int main()
 {
 	int ntoken, vtoken;
@@ -131,52 +150,30 @@ int main()
 	while(ntoken){
 		switch (ntoken){
 			case KEYWORD:
-				cout << to_string(yylineno) + "," +  to_string(start_column) + "," + text + "\n";
+				cout << to_string(start_line) + "," +  to_string(start_column) + "," + text + "\n";
 				break;
 			case OBJECT_IDENTIFIER:
-				cout << to_string(yylineno) + "," + to_string(start_column) + "," + "object-identifier," + text + "\n";
+				cout << to_string(start_line) + "," + to_string(start_column) + "," + "object-identifier," + text + "\n";
 				break;
 			case TYPE_IDENTIFIER:
-				cout << to_string(yylineno) + "," + to_string(start_column) + "," + "type-identifier," + text + "\n";
+				cout << to_string(start_line) + "," + to_string(start_column) + "," + "type-identifier," + text + "\n";
 				break;
 			case OPERATOR:
-				cout << to_string(yylineno) + "," + to_string(start_column) + "," + text + "\n";
+				cout << to_string(start_line) + "," + to_string(start_column) + "," + text + "\n";
+				break;
+			case BEGIN_STRING_LITERAL:
+				cout << to_string(start_line) + "," + to_string(start_column) + "," + "string-literal" + "," + text ;
+				break;
+			case REGULAR_CHAR:
+				cout << text ;
+				break;
+			case END_STRING_LITERAL:
+				cout << text + "\n";
 				break;
 			default:
 				break;
 		}
 		ntoken = yylex();
 	}
-	/*
-	while(ntoken) {
-		printf("%d\n", ntoken);
-		if(yylex() != COLON) {
-			printf("Syntax error in line %d, Expected a ':' but found %s\n", yylineno, yytext);
-			return 1;
-		}
-		vtoken = yylex();
-		switch (ntoken) {
-			case TYPE:
-			case NAME:
-			case TABLE_PREFIX:
-				if(vtoken != IDENTIFIER) {
-					printf("Syntax error in line %d, Expected an identifier but found %s\n", yylineno, yytext);
-					return 1;
-				}
-				printf("%s is set to %s\n", names[ntoken], yytext);
-				break;
-			case PORT:
-				if(vtoken != INTEGER) {
-					printf("Syntax error in line %d, Expected an integer but found %s\n", yylineno, yytext);
-					return 1;
-				}
-				printf("%s is set to %s\n", names[ntoken], yytext);
-				break;
-			default:
-				printf("Syntax error in line %d\n",yylineno);
-		}
-		ntoken = yylex();
-	}
-	*/
 	return 0;
 }

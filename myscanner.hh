@@ -32,7 +32,6 @@
 #define NEW 30
 #define NOT 31
 #define SELF 32
-#define STRING 33
 #define TRUE 34
 #define UNIT 35
 #define WHILE 36
@@ -58,3 +57,6 @@
 
 #define OPERATOR 54
 #define KEYWORD 55
+#define END_STRING_LITERAL 56
+#define BEGIN_STRING_LITERAL 57
+#define REGULAR_CHAR 58
