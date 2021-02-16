@@ -1,15 +1,44 @@
 /* Declarations */
 
 %{
-#include "myscanner.hh"
 #include <iostream>
+#include <map>
+#include <regex>
+#include "myscanner.hh"
+
+int yycolumn = 1;
+int start_line, start_column;
+int prev_yylineno = yylineno;
+
+/* This is executed before every action. */
+#define YY_USER_ACTION                                                   \
+  start_line = prev_yylineno; start_column = yycolumn;                   \
+  if (yylineno == prev_yylineno) yycolumn += yyleng;                     \
+  else {                                                                 \
+    for (yycolumn = 1; yytext[yyleng - yycolumn] != '\n'; ++yycolumn) {} \
+    prev_yylineno = yylineno;                                            \
+  }
 
 using namespace std;
 
-int yylval = 0;
+string text;
+
+map<string, string> non_printable = {
+	{"\\n", "\x0a"},
+	{"\\r", "\x0d"}
+};
+
+string non_printable_to_esc(string sentence)
+{
+	for (const auto& [id, value] : non_printable) {
+		regex e(id);
+		sentence = regex_replace(sentence, e, value);
+	}
+	return sentence;
+}
 
 // Keywords data structure
-map<string, int> keywords = {
+map<std::string, int> keywords = {
 	{"and", AND},
 	{"bool", BOOL},
 	{"class", CLASS},
@@ -29,34 +58,35 @@ map<string, int> keywords = {
 	{"then", THEN},
 	{"true", TRUE},
 	{"unit", UNIT},
-	{"while", WHILE}
+	{"while", WHILE},
 };
 
 // Operators data structure
-map<string, int> operators = {
-	{"{", LBRACE},
-	{"}", RBRACE},
-	{"(", LPAR},
-	{")", RPAR},
-	{":", COLON},
-	{";", SEMICOLON}
-	{",", COMMA},
-	{"+", PLUS},
-	{"-", MINUS},
-	{"*", TIMES},
-	{"/", DIV},
-	{"^", POW},
-	{".", DOT},
-	{"=", EQUAL},
-	{"<", LOWER},
-	{"<=", LOWER-EQUAL},
-	{"<-", ASSIGN}
-}
+map<string, string> operators = {
+	{"{", "lbrace"},
+	{"}", "rbrace"},
+	{"(", "lpar"},
+	{")", "rpar"},
+	{":", "colon"},
+	{";", "semicolon"},
+	{",", "comma"},
+	{"+", "plus"},
+	{"-", "minus"},
+	{"*", "times"},
+	{"/", "div"},
+	{"^", "pow"},
+	{".", "dot"},
+	{"=", "equal"},
+	{"<", "lower"},
+	{"<=", "lower-equal"},
+	{"<-", "assign"}
+};
 
 %}
 
 /* Definitions */
 %option noyywrap
+%option yylineno
 
 delim 						[ \t\n\r]
 whitespace 					{delim}+
@@ -69,27 +99,40 @@ bin-digit					0|1
 digit 						[0-9]
 hex-digit 					{digit}|[a-f]|[A-F]
 
+escape-sequence				[btnr\"\\]|(x{hex-digit}{2})|(\n[ \t]*)
+escaped-char				\\{escape-sequence}
+regular-char				[^\0\n\"\\]
+string-literal				\"({regular-char}|{escaped-char})*\"
+
 base-identifier				{letter}|{digit}|_
 type-identifier 			{uppercase-letter}{base-identifier}*
 object-identifier  			{lowercase-letter}({letter}|{digit}|_)*
 
 operator					"{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<="|"<-"|"<"
 
+
 /* Rules */
 %%
 {whitespace} 				{/* no action and no return */ }
 
-{type-identifier}			{return TYPE_IDENTIFIER}
-{object-identifier}			{auto k = keywords.find(string(yytext));
-                            if (k != keywords.end())
-                                return k->second;
-                            return OBJECT_IDENTIFIER;}
-{operator}					{
-							/* we have to browse opeartor data structure */
+{type-identifier}			{text = string(yytext);
+							return TYPE_IDENTIFIER;}
+{object-identifier}			{auto j = keywords.find(string(yytext));
+							if (j != keywords.end()){
+								text = j->first;
+								return KEYWORD;
 							}
+							text = string(yytext);
+							return OBJECT_IDENTIFIER;}
 
-''
-
+{operator}					{auto j = operators.find(string(yytext));
+							if (j != operators.end()){
+								text = j->second;
+								return OPERATOR;
+							}
+							return -1;}
+							
+{string-literal}			{text = non_printable_to_esc(string(yytext)); return STRING_LITERAL;}
 %%
 
 /* User subroutines */
@@ -102,11 +145,22 @@ int main()
 	/* Loop until ntoken equal 0 */
 	while(ntoken){
 		switch (ntoken){
-			case CLASS:
-				//printf("class, %d\n", yylineno);
+			case KEYWORD:
+				cout << to_string(start_line) + "," +  to_string(start_column) + "," + text + "\n";
 				break;
-			case TYPE:
-				//printf("type, %d\n", yylineno);
+			case OBJECT_IDENTIFIER:
+				cout << to_string(start_line) + "," + to_string(start_column) + "," + "object-identifier," + text + "\n";
+				break;
+			case TYPE_IDENTIFIER:
+				cout << to_string(start_line) + "," + to_string(start_column) + "," + "type-identifier," + text + "\n";
+				break;
+			case OPERATOR:
+				cout << to_string(start_line) + "," + to_string(start_column) + "," + text + "\n";
+				break;
+			case STRING_LITERAL:
+				cout << to_string(start_line) + "," + to_string(start_column) + "," + "string-literal" + "," + text + "\n";
+				break;
+			default:
 				break;
 		}
 		ntoken = yylex();
