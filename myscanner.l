@@ -3,7 +3,9 @@
 %{
 #include <iostream>
 #include <map>
+#include <string>
 #include <regex>
+#include <stdio.h>
 #include "myscanner.hh"
 
 int yycolumn = 1;
@@ -21,21 +23,60 @@ int prev_yylineno = yylineno;
 
 using namespace std;
 
-string text;
-
-map<string, string> non_printable = {
-	{"\\n", "\x0a"},
-	{"\\r", "\x0d"}
-};
-
-string non_printable_to_esc(string sentence)
-{
-	for (const auto& [id, value] : non_printable) {
-		regex e(id);
-		sentence = regex_replace(sentence, e, value);
+string escape(string s);
+string escape(string s){
+	string escaped = "";
+	switch(s[1]) {
+		case '\n': return "";
+		case '\0': break;
+		case 'n': escaped.push_back('\n'); break;
+		case 't': escaped.push_back('\t'); break;
+		case 'r': escaped.push_back('\r'); break;
+		case 'b': escaped.push_back('\b'); break;
+		case '\\': escaped.push_back('\\'); break;
+		case '\"': escaped.push_back('\"'); break;
+		case 'x': return s;
+		default: return s;
 	}
-	return sentence;
+	return escaped;
 }
+
+string charToHex(char c) {
+	char out[5];
+	sprintf(out, "\\x%02x", c);
+	return out;
+}
+
+
+string stringToHex(string escaped) {
+	if (escaped.length() > 1 || escaped.empty()) {
+		return escaped;
+	} else {
+		char c = escaped[0];
+		return charToHex(c);
+	}
+}
+
+string toDecimal(string value) {
+	int nb;
+	if (value.find("0x") == 0) { // hex string
+		nb = stoi(value.substr(2), 0, 16);
+	} else { // decimal string
+		nb = stoi(value);
+	}
+	return to_string(nb);
+}
+
+int string_row;
+int string_col;
+
+int save_pos() {
+	string_row = start_line;
+	string_col = start_column;
+}
+
+string text = "";
+string buf = "";
 
 // Keywords data structure
 map<std::string, int> keywords = {
@@ -54,7 +95,7 @@ map<std::string, int> keywords = {
 	{"new", NEW},
 	{"not", NOT},
 	{"self", SELF},
-	{"string", STRING},
+	{"string", SELF},
 	{"then", THEN},
 	{"true", TRUE},
 	{"unit", UNIT},
@@ -87,6 +128,7 @@ map<string, string> operators = {
 /* Definitions */
 %option noyywrap
 %option yylineno
+%x STRING
 
 delim 						[ \t\n\r]
 whitespace 					{delim}+
@@ -98,10 +140,12 @@ letter 						{lowercase-letter}|{uppercase-letter}
 bin-digit					0|1
 digit 						[0-9]
 hex-digit 					{digit}|[a-f]|[A-F]
+integer-literal				{digit}+|"0x"{hex-digit}+
 
 escape-sequence				[btnr\"\\]|(x{hex-digit}{2})|(\n[ \t]*)
 escaped-char				\\{escape-sequence}
 regular-char				[^\0\n\"\\]
+begin						\"
 string-literal				\"({regular-char}|{escaped-char})*\"
 
 base-identifier				{letter}|{digit}|_
@@ -131,11 +175,16 @@ operator					"{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<="|"<-"|"
 								return OPERATOR;
 							}
 							return -1;}
-							
-{string-literal}			{text = non_printable_to_esc(string(yytext)); return STRING_LITERAL;}
+{integer-literal}			{text = toDecimal(yytext); return INT_LITERAL;}
+
+{begin}                  	{text = string(yytext); save_pos(); BEGIN(STRING);}
+<STRING>{begin}				{text += string(yytext); BEGIN(INITIAL); return STRING_LITERAL;}
+<STRING>{regular-char}+ 	{text += string(yytext);}
+<STRING>{escaped-char}		{text += stringToHex(escape(yytext));} 
 %%
 
 /* User subroutines */
+
 int main()
 {
 	int ntoken, vtoken;
@@ -158,43 +207,15 @@ int main()
 				cout << to_string(start_line) + "," + to_string(start_column) + "," + text + "\n";
 				break;
 			case STRING_LITERAL:
-				cout << to_string(start_line) + "," + to_string(start_column) + "," + "string-literal" + "," + text + "\n";
+				cout << to_string(string_row) + "," + to_string(string_col) + "," + "string-literal" + "," + text + "\n";
+				break;
+			case INT_LITERAL:
+				cout << to_string(start_line) + "," + to_string(start_column) + "," + "integer-literal" + "," + text + "\n";
 				break;
 			default:
 				break;
 		}
 		ntoken = yylex();
 	}
-	/*
-	while(ntoken) {
-		printf("%d\n", ntoken);
-		if(yylex() != COLON) {
-			printf("Syntax error in line %d, Expected a ':' but found %s\n", yylineno, yytext);
-			return 1;
-		}
-		vtoken = yylex();
-		switch (ntoken) {
-			case TYPE:
-			case NAME:
-			case TABLE_PREFIX:
-				if(vtoken != IDENTIFIER) {
-					printf("Syntax error in line %d, Expected an identifier but found %s\n", yylineno, yytext);
-					return 1;
-				}
-				printf("%s is set to %s\n", names[ntoken], yytext);
-				break;
-			case PORT:
-				if(vtoken != INTEGER) {
-					printf("Syntax error in line %d, Expected an integer but found %s\n", yylineno, yytext);
-					return 1;
-				}
-				printf("%s is set to %s\n", names[ntoken], yytext);
-				break;
-			default:
-				printf("Syntax error in line %d\n",yylineno);
-		}
-		ntoken = yylex();
-	}
-	*/
 	return 0;
 }
