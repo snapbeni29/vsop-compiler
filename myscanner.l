@@ -3,9 +3,6 @@
 %{
 #include <iostream>
 #include <map>
-#include <string>
-#include <regex>
-#include <stdio.h>
 #include "myscanner.hh"
 
 int yycolumn = 1;
@@ -67,16 +64,19 @@ string toDecimal(string value) {
 	return to_string(nb);
 }
 
-int string_row;
-int string_col;
-
-int save_pos() {
-	string_row = start_line;
-	string_col = start_column;
-}
 
 string text = "";
 string buf = "";
+int string_row;
+int string_col;
+string filename;
+int opened_comments = 0;
+
+
+void save_pos() {
+	string_col = start_column;
+	string_row = start_line;
+}
 
 // Keywords data structure
 map<std::string, int> keywords = {
@@ -128,7 +128,7 @@ map<string, string> operators = {
 /* Definitions */
 %option noyywrap
 %option yylineno
-%x STRING
+%x STRING COMMENT
 
 delim 						[ \t\n\r]
 whitespace 					{delim}+
@@ -141,12 +141,19 @@ bin-digit					0|1
 digit 						[0-9]
 hex-digit 					{digit}|[a-f]|[A-F]
 integer-literal				{digit}+|"0x"{hex-digit}+
+invalid-integer				"0x"({digit}|[A-Z]|[a-z])+
 
-escape-sequence				[btnr\"\\]|(x{hex-digit}{2})|(\n[ \t]*)
-escaped-char				\\{escape-sequence}
+escaped-char				[btnr\"\\]|(x{hex-digit}{2})|(\n[ \t]*)
+escape-sequence				\\{escaped-char}
 regular-char				[^\0\n\"\\]
-begin						\"
-string-literal				\"({regular-char}|{escaped-char})*\"
+invalid-esc-seq				\\.
+double-quote				"\""
+
+
+comment-begin				"(*"
+comment-end					"*)"
+comment-one-line 			"//"[^\0\n]*
+
 
 base-identifier				{letter}|{digit}|_
 type-identifier 			{uppercase-letter}{base-identifier}*
@@ -154,6 +161,7 @@ object-identifier  			{lowercase-letter}({letter}|{digit}|_)*
 
 operator					"{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<="|"<-"|"<"
 
+invalid-character			.
 
 /* Rules */
 %%
@@ -175,20 +183,32 @@ operator					"{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<="|"<-"|"
 								return OPERATOR;
 							}
 							return -1;}
-{integer-literal}			{text = toDecimal(yytext); return INT_LITERAL;}
 
-{begin}                  	{text = string(yytext); save_pos(); BEGIN(STRING);}
-<STRING>{begin}				{text += string(yytext); BEGIN(INITIAL); return STRING_LITERAL;}
-<STRING>{regular-char}+ 	{text += string(yytext);}
-<STRING>{escaped-char}		{text += stringToHex(escape(yytext));} 
+{integer-literal}			{text = toDecimal(yytext); return INT_LITERAL;}
+{invalid-integer}			{return INVALID_INTEGER;}
+{double-quote}             	{text = string(yytext); save_pos(); BEGIN(STRING); return BEGIN_STRING_LITERAL;}
+<STRING>{double-quote}		{text = string(yytext); BEGIN(INITIAL); return END_STRING_LITERAL;}
+<STRING>{regular-char}+ 	{text = string(yytext); return REGULAR_CHAR;}
+<STRING>{escape-sequence}	{text = stringToHex(escape(string(yytext))); return REGULAR_CHAR;} 
+<STRING><<EOF>>				{return UNEXPECTED_EOF;} 
+<STRING>\n					{return STRING_ERR_EOL;} 
+<STRING>{invalid-esc-seq}	{return INVALID_ESC_SEQ;} 
+
+{comment-one-line}			{}
+{comment-begin}				{save_pos(); BEGIN(COMMENT); opened_comments += 1;}
+<COMMENT>[^\0]				{}
+<COMMENT><<EOF>>			{return UNEXPECTED_EOF;}
+<COMMENT>{comment-end}		{opened_comments -= 1; if(opened_comments == 0) BEGIN(INITIAL);}
+
+{invalid-character}			{return INVALID_CHARACTER;}
 %%
 
 /* User subroutines */
 
-int main()
+int main(int argc, char** argv)
 {
 	int ntoken, vtoken;
-
+	filename = string(argv[0]).substr(2);
 	ntoken = yylex();
 
 	/* Loop until ntoken equal 0 */
@@ -206,12 +226,33 @@ int main()
 			case OPERATOR:
 				cout << to_string(start_line) + "," + to_string(start_column) + "," + text + "\n";
 				break;
-			case STRING_LITERAL:
-				cout << to_string(string_row) + "," + to_string(string_col) + "," + "string-literal" + "," + text + "\n";
+			case BEGIN_STRING_LITERAL:
+				cout << to_string(start_line) + "," + to_string(start_column) + "," + "string-literal" + "," + text ;
+				break;
+			case REGULAR_CHAR:
+				cout << text ;
+				break;
+			case END_STRING_LITERAL:
+				cout << text + "\n";
 				break;
 			case INT_LITERAL:
 				cout << to_string(start_line) + "," + to_string(start_column) + "," + "integer-literal" + "," + text + "\n";
 				break;
+			case UNEXPECTED_EOF:
+				cerr << filename << ":" << string_row << ":" << string_col << ": lexical error: unexpected end of file\n";
+				exit(-1);
+			case STRING_ERR_EOL:
+				cerr << filename << ":" << start_line << ":" << start_column << ": lexical error: unexpected line feed\n";
+				exit(-1);
+			case INVALID_ESC_SEQ:
+				cerr << filename << ":" << start_line << ":" << start_column << ": lexical error: invalid escape sequence\n";
+				exit(-1);
+			case INVALID_CHARACTER:
+				cerr << filename << ":" << start_line << ":" << start_column << ": lexical error: VSOP invalid character\n";
+				exit(-1);
+			case INVALID_INTEGER:
+				cerr << filename << ":" << start_line << ":" << start_column << ": lexical error: invalid integer\n";
+				exit(-1);
 			default:
 				break;
 		}
