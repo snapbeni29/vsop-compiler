@@ -67,6 +67,7 @@ string toDecimal(string value) {
 
 string text = "";
 string buf = "";
+int tmp = 0;
 
 // Keywords data structure
 map<std::string, int> keywords = {
@@ -118,7 +119,7 @@ map<string, string> operators = {
 /* Definitions */
 %option noyywrap
 %option yylineno
-%x STRING
+%x STRING COMMENT
 
 delim 						[ \t\n\r]
 whitespace 					{delim}+
@@ -137,6 +138,9 @@ escaped-char				\\{escape-sequence}
 regular-char				[^\0\n\"\\]
 begin						"\""
 string-literal				\"({regular-char}|{escaped-char})*\"
+comment-begin				"(*"
+comment-end					"*)"
+comment-one-line 			"//"[^\0\n]*
 
 base-identifier				{letter}|{digit}|_
 type-identifier 			{uppercase-letter}{base-identifier}*
@@ -172,6 +176,12 @@ operator					"{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<="|"<-"|"
 <STRING>{begin}				{text = string(yytext); BEGIN(INITIAL); return END_STRING_LITERAL;}
 <STRING>{regular-char}+ 	{text = string(yytext); return REGULAR_CHAR;}
 <STRING>{escaped-char}		{text = stringToHex(escape(string(yytext))); return REGULAR_CHAR;} 
+
+{comment-one-line}			{}
+{comment-begin}				{BEGIN(COMMENT); tmp += 1;}
+<COMMENT>[^\0]				{}
+<COMMENT>{comment-end}		{tmp -= 1; if(tmp == 0) BEGIN(INITIAL);}
+
 
 %%
 
