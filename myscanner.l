@@ -3,9 +3,6 @@
 %{
 #include <iostream>
 #include <map>
-#include <string>
-#include <regex>
-#include <stdio.h>
 #include "myscanner.hh"
 
 int yycolumn = 1;
@@ -23,56 +20,15 @@ int prev_yylineno = yylineno;
 
 using namespace std;
 
-string escape(string s);
-string escape(string s){
-	string escaped = "";
-	switch(s[1]) {
-		case '\n': return "";
-		case '\0': break;
-		case 'n': escaped.push_back('\n'); break;
-		case 't': escaped.push_back('\t'); break;
-		case 'r': escaped.push_back('\r'); break;
-		case 'b': escaped.push_back('\b'); break;
-		case '\\': escaped.push_back('\\'); break;
-		case '\"': escaped.push_back('\"'); break;
-		case 'x': return s;
-		default: return s;
+string toASCII(char s);
+string toASCII(char s){
+	cout << int(s) << endl;
+	if(int(s) < 32 || int(s) > 126){
+		string val = "x";
+		val += int(s);
+		return val;
 	}
-	return escaped;
-}
-
-string charToHex(char c) {
-	char out[5];
-	sprintf(out, "\\x%02x", c);
-	return out;
-}
-
-
-string stringToHex(string escaped) {
-	if (escaped.length() > 1 || escaped.empty()) {
-		return escaped;
-	} else {
-		char c = escaped[0];
-		return charToHex(c);
-	}
-}
-
-string toDecimal(string value) {
-	int nb;
-	if (value.find("0x") == 0) { // hex string
-		nb = stoi(value.substr(2), 0, 16);
-	} else { // decimal string
-		nb = stoi(value);
-	}
-	return to_string(nb);
-}
-
-int string_row;
-int string_col;
-
-int save_pos() {
-	string_row = start_line;
-	string_col = start_column;
+	return "NOOOOO";
 }
 
 string text = "";
@@ -140,12 +96,11 @@ letter 						{lowercase-letter}|{uppercase-letter}
 bin-digit					0|1
 digit 						[0-9]
 hex-digit 					{digit}|[a-f]|[A-F]
-integer-literal				{digit}+|"0x"{hex-digit}+
 
 escape-sequence				[btnr\"\\]|(x{hex-digit}{2})|(\n[ \t]*)
 escaped-char				\\{escape-sequence}
 regular-char				[^\0\n\"\\]
-begin						\"
+begin						"\""
 string-literal				\"({regular-char}|{escaped-char})*\"
 
 base-identifier				{letter}|{digit}|_
@@ -175,12 +130,12 @@ operator					"{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<="|"<-"|"
 								return OPERATOR;
 							}
 							return -1;}
-{integer-literal}			{text = toDecimal(yytext); return INT_LITERAL;}
 
-{begin}                  	{text = string(yytext); save_pos(); BEGIN(STRING);}
-<STRING>{begin}				{text += string(yytext); BEGIN(INITIAL); return STRING_LITERAL;}
-<STRING>{regular-char}+ 	{text += string(yytext);}
-<STRING>{escaped-char}		{text += stringToHex(escape(yytext));} 
+{begin}                  	{text = string(yytext); BEGIN(STRING); return BEGIN_STRING_LITERAL;}
+<STRING>{begin}				{text = string(yytext); BEGIN(INITIAL); return END_STRING_LITERAL;}
+<STRING>{regular-char}+ 	{text = string(yytext); return REGULAR_CHAR;}
+<STRING>{escaped-char}		{text = string(yytext); return REGULAR_CHAR;} 
+
 %%
 
 /* User subroutines */
@@ -206,11 +161,14 @@ int main()
 			case OPERATOR:
 				cout << to_string(start_line) + "," + to_string(start_column) + "," + text + "\n";
 				break;
-			case STRING_LITERAL:
-				cout << to_string(string_row) + "," + to_string(string_col) + "," + "string-literal" + "," + text + "\n";
+			case BEGIN_STRING_LITERAL:
+				cout << to_string(start_line) + "," + to_string(start_column) + "," + "string-literal" + "," + text ;
 				break;
-			case INT_LITERAL:
-				cout << to_string(start_line) + "," + to_string(start_column) + "," + "integer-literal" + "," + text + "\n";
+			case REGULAR_CHAR:
+				cout << text ;
+				break;
+			case END_STRING_LITERAL:
+				cout << text + "\n";
 				break;
 			default:
 				break;
