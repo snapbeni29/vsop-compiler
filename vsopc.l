@@ -3,7 +3,7 @@
 %{
 #include <iostream>
 #include <map>
-#include "myscanner.hh"
+#include "vsopc.hh"
 
 int yycolumn = 1;
 int start_line, start_column;
