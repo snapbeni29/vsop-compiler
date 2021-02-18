@@ -3,6 +3,7 @@
 %{
 #include <iostream>
 #include <map>
+#include <cstring>
 #include "vsopc.hh"
 
 int yycolumn = 1;
@@ -206,8 +207,14 @@ invalid-character			.
 
 /* User subroutines */
 
-int main(int argc, char** argv)
+int main(int argc, char* argv[])
 {
+	if(string(argv[1]) != "-lex" || argc < 3){
+		cout << "Bad command" << endl;
+		return -1;
+	}
+
+	yyin = fopen(argv[2], "r");
 	int ntoken, vtoken;
 
 	filename = string(argv[0]).substr(2);
@@ -260,5 +267,6 @@ int main(int argc, char** argv)
 		}
 		ntoken = yylex();
 	}
+	fclose(yyin);
 	return 0;
 }
