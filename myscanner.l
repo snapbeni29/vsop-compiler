@@ -72,11 +72,12 @@ int string_col;
 string filename;
 int opened_comments = 0;
 
-
 void save_pos() {
 	string_col = start_column;
 	string_row = start_line;
 }
+
+
 
 // Keywords data structure
 map<std::string, int> keywords = {
@@ -143,17 +144,15 @@ hex-digit 					{digit}|[a-f]|[A-F]
 integer-literal				{digit}+|"0x"{hex-digit}+
 invalid-integer				"0x"({digit}|[A-Z]|[a-z])+
 
-escaped-char				[btnr\"\\]|(x{hex-digit}{2})|(\n[ \t]*)
-escape-sequence				\\{escaped-char}
+escape-sequence				[btnr\"\\]|(x{hex-digit}{2})|(\n[ \t]*)
+escaped-char				\\{escape-sequence}
 regular-char				[^\0\n\"\\]
-invalid-esc-seq				\\.
 double-quote				"\""
-
+invalid-esc-seq				\\.
 
 comment-begin				"(*"
 comment-end					"*)"
 comment-one-line 			"//"[^\0\n]*
-
 
 base-identifier				{letter}|{digit}|_
 type-identifier 			{uppercase-letter}{base-identifier}*
@@ -186,17 +185,19 @@ invalid-character			.
 
 {integer-literal}			{text = toDecimal(yytext); return INT_LITERAL;}
 {invalid-integer}			{return INVALID_INTEGER;}
+
 {double-quote}             	{text = string(yytext); save_pos(); BEGIN(STRING); return BEGIN_STRING_LITERAL;}
 <STRING>{double-quote}		{text = string(yytext); BEGIN(INITIAL); return END_STRING_LITERAL;}
 <STRING>{regular-char}+ 	{text = string(yytext); return REGULAR_CHAR;}
-<STRING>{escape-sequence}	{text = stringToHex(escape(string(yytext))); return REGULAR_CHAR;} 
+<STRING>{escaped-char}		{text = stringToHex(escape(string(yytext))); return REGULAR_CHAR;} 
 <STRING><<EOF>>				{return UNEXPECTED_EOF;} 
 <STRING>\n					{return STRING_ERR_EOL;} 
 <STRING>{invalid-esc-seq}	{return INVALID_ESC_SEQ;} 
 
 {comment-one-line}			{}
-{comment-begin}				{save_pos(); BEGIN(COMMENT); opened_comments += 1;}
+{comment-begin}				{save_pos(); opened_comments += 1; BEGIN(COMMENT);}
 <COMMENT>[^\0]				{}
+<COMMENT>{comment-begin}	{opened_comments += 1;}
 <COMMENT><<EOF>>			{return UNEXPECTED_EOF;}
 <COMMENT>{comment-end}		{opened_comments -= 1; if(opened_comments == 0) BEGIN(INITIAL);}
 
@@ -208,6 +209,7 @@ invalid-character			.
 int main(int argc, char** argv)
 {
 	int ntoken, vtoken;
+
 	filename = string(argv[0]).substr(2);
 	ntoken = yylex();
 
