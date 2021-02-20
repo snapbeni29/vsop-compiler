@@ -166,8 +166,8 @@ map<string, string> operators = {
 	{"<-", "assign"}
 };
 
-
 %}
+
 
 /* Definitions */
 %option noyywrap
