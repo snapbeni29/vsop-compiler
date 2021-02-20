@@ -3,30 +3,54 @@
 %{
 #include <iostream>
 #include <map>
+#include <vector>
+#include <algorithm> 
 #include <cstring>
 #include "vsopc.hh"
 
-int yycolumn = 1;
-int start_line, start_column;
-int prev_yylineno = yylineno;
-
-/* This is executed before every action. */
-#define YY_USER_ACTION                                                   \
-  start_line = prev_yylineno; start_column = yycolumn;                   \
-  if (yylineno == prev_yylineno) yycolumn += yyleng;                     \
-  else {                                                                 \
-    for (yycolumn = 1; yytext[yyleng - yycolumn] != '\n'; ++yycolumn) {} \
-    prev_yylineno = yylineno;                                            \
-  }
-
 using namespace std;
 
-string escape(string s);
-string escape(string s){
+int previousColumn = 1;
+int currentLine, currentColumn;
+int previousLine = yylineno;
+string text = "";
+string buf = "";
+int string_row;
+int string_col;
+string filename;
+int opened_comments = 0;
+
+// Executed before every action
+#define YY_USER_ACTION	update();
+
+string getEscapeChar(string s);
+string charToHex(char c);
+string stringToHex(string escaped);
+string toDecimal(string value);
+void save_pos();
+void printLexicalError(int row, int col, string message);
+
+
+/*
+Update the token position in the file
+*/
+void update() {
+	currentLine = previousLine; // update line pos
+	currentColumn = previousColumn; // update column pos
+	for (int i = 0; i < yyleng; i++){ // if line feed, increase the line ad set column to 1, otherwise increase the column
+		yytext[i] == '\n' ? previousLine++, previousColumn = 1 : previousColumn++;
+	}
+}
+
+/*
+Reads the representation of an escaped character and transform it
+into a real escaped character (put in a string)
+Returns a string with the escaped char at 1st position if it's a valid one,
+returns the input string otherwise.
+*/
+string getEscapeChar(string s){
 	string escaped = "";
 	switch(s[1]) {
-		case '\n': return "";
-		case '\0': break;
 		case 'n': escaped.push_back('\n'); break;
 		case 't': escaped.push_back('\t'); break;
 		case 'r': escaped.push_back('\r'); break;
@@ -39,13 +63,19 @@ string escape(string s){
 	return escaped;
 }
 
+/*
+Returns the hex value of the input character
+*/
 string charToHex(char c) {
 	char out[5];
 	sprintf(out, "\\x%02x", c);
 	return out;
 }
 
-
+/*
+Returns the hex value of the input string if it contains a single character,
+returns the original string otherwise.
+*/
 string stringToHex(string escaped) {
 	if (escaped.length() > 1 || escaped.empty()) {
 		return escaped;
@@ -55,6 +85,11 @@ string stringToHex(string escaped) {
 	}
 }
 
+/*
+Converts a string representation of an integer to the string
+representation of its decimal version.
+Returns a string representing the number in base 10.
+*/
 string toDecimal(string value) {
 	int nb;
 	if (value.find("0x") == 0) { // hex string
@@ -65,46 +100,48 @@ string toDecimal(string value) {
 	return to_string(nb);
 }
 
-
-string text = "";
-string buf = "";
-int string_row;
-int string_col;
-string filename;
-int opened_comments = 0;
-
+/*
+Saves the current position of the token.
+*/
 void save_pos() {
-	string_col = start_column;
-	string_row = start_line;
+	string_col = currentColumn;
+	string_row = currentLine;
+}
+
+/*
+Prints an error message and the position of the error.
+*/
+void printLexicalError(int row, int col, string message) {
+	cerr << "\n" + filename << ":" << row << ":" << col << ": lexical error: " + message + "\n";
 }
 
 
 
-// Keywords data structure
-map<std::string, int> keywords = {
-	{"and", AND},
-	{"bool", BOOL},
-	{"class", CLASS},
-	{"do", DO},
-	{"else", ELSE},
-	{"extends", EXTENDS},
-	{"false", FALSE},
-	{"if", IF},
-	{"in", IN},
-	{"int32", INT32},
-	{"isnull", ISNULL},
-	{"let", LET},
-	{"new", NEW},
-	{"not", NOT},
-	{"self", SELF},
-	{"string", SELF},
-	{"then", THEN},
-	{"true", TRUE},
-	{"unit", UNIT},
-	{"while", WHILE},
+// Keywords vector
+vector<string> keywords {
+	"class",
+	"and",
+	"bool",
+	"do",
+	"if",
+	"else",
+	"then",
+	"extends",
+	"false",
+	"in",
+	"int32",
+	"isnull",
+	"let",
+	"new",
+	"not",
+	"self",
+	"string",
+	"true",
+	"unit",
+	"while",
 };
 
-// Operators data structure
+// Operators map
 map<string, string> operators = {
 	{"{", "lbrace"},
 	{"}", "rbrace"},
@@ -125,6 +162,7 @@ map<string, string> operators = {
 	{"<-", "assign"}
 };
 
+
 %}
 
 /* Definitions */
@@ -132,8 +170,7 @@ map<string, string> operators = {
 %option yylineno
 %x STRING COMMENT
 
-delim 						[ \t\n\r]
-whitespace 					{delim}+
+whitespace 					[ \t\n\f\r]+
 
 lowercase-letter			[a-z]
 uppercase-letter			[A-Z]
@@ -144,16 +181,16 @@ digit 						[0-9]
 hex-digit 					{digit}|[a-f]|[A-F]
 integer-literal				{digit}+|"0x"{hex-digit}+
 invalid-integer				"0x"({digit}|[A-Z]|[a-z])+
-
-escape-sequence				[btnr\"\\]|(x{hex-digit}{2})|(\n[ \t]*)
+lf-followed					\n[ \t]*
+escape-sequence				[btnr\"\\]|(x{hex-digit}{2})|{lf-followed}
 escaped-char				\\{escape-sequence}
-regular-char				[^\0\n\"\\]
+regular-char				[^\b\t\r\n\"\\]
 double-quote				"\""
 invalid-esc-seq				\\.
 
 comment-begin				"(*"
 comment-end					"*)"
-comment-one-line 			"//"[^\0\n]*
+comment-one-line 			"//"[^\n]*
 
 base-identifier				{letter}|{digit}|_
 type-identifier 			{uppercase-letter}{base-identifier}*
@@ -165,21 +202,20 @@ invalid-character			.
 
 /* Rules */
 %%
-{whitespace} 				{/* no action and no return */ }
+{whitespace} 				{/* do nothing */}
 
 {type-identifier}			{text = string(yytext);
 							return TYPE_IDENTIFIER;}
-{object-identifier}			{auto j = keywords.find(string(yytext));
-							if (j != keywords.end()){
-								text = j->first;
+{object-identifier}			{text = string(yytext);
+							auto iterator = find(keywords.begin(), keywords.end(), text);
+							if (iterator != keywords.end()){
 								return KEYWORD;
 							}
-							text = string(yytext);
 							return OBJECT_IDENTIFIER;}
 
-{operator}					{auto j = operators.find(string(yytext));
-							if (j != operators.end()){
-								text = j->second;
+{operator}					{auto op = operators.find(string(yytext));
+							if (op != operators.end()){
+								text = op->second;
 								return OPERATOR;
 							}
 							return -1;}
@@ -189,8 +225,9 @@ invalid-character			.
 
 {double-quote}             	{text = string(yytext); save_pos(); BEGIN(STRING); return BEGIN_STRING_LITERAL;}
 <STRING>{double-quote}		{text = string(yytext); BEGIN(INITIAL); return END_STRING_LITERAL;}
+<STRING>\\{lf-followed}		{}
 <STRING>{regular-char}+ 	{text = string(yytext); return REGULAR_CHAR;}
-<STRING>{escaped-char}		{text = stringToHex(escape(string(yytext))); return REGULAR_CHAR;} 
+<STRING>{escaped-char}		{text = stringToHex(getEscapeChar(string(yytext))); return REGULAR_CHAR;} 
 <STRING><<EOF>>				{return UNEXPECTED_EOF;} 
 <STRING>\n					{return STRING_ERR_EOL;} 
 <STRING>{invalid-esc-seq}	{return INVALID_ESC_SEQ;} 
@@ -215,28 +252,27 @@ int main(int argc, char* argv[])
 	}
 
 	yyin = fopen(argv[2], "r");
-	int ntoken, vtoken;
+	filename = string(argv[2]);
+	int token;
 
-	filename = string(argv[0]).substr(2);
-	ntoken = yylex();
+	token = yylex();
 
-	/* Loop until ntoken equal 0 */
-	while(ntoken){
-		switch (ntoken){
+	while(token){
+		switch (token){
 			case KEYWORD:
-				cout << to_string(start_line) + "," +  to_string(start_column) + "," + text + "\n";
+				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
 				break;
 			case OBJECT_IDENTIFIER:
-				cout << to_string(start_line) + "," + to_string(start_column) + "," + "object-identifier," + text + "\n";
+				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + "object-identifier," + text + "\n";
 				break;
 			case TYPE_IDENTIFIER:
-				cout << to_string(start_line) + "," + to_string(start_column) + "," + "type-identifier," + text + "\n";
+				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + "type-identifier," + text + "\n";
 				break;
 			case OPERATOR:
-				cout << to_string(start_line) + "," + to_string(start_column) + "," + text + "\n";
+				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
 				break;
 			case BEGIN_STRING_LITERAL:
-				cout << to_string(start_line) + "," + to_string(start_column) + "," + "string-literal" + "," + text ;
+				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + "string-literal" + "," + text ;
 				break;
 			case REGULAR_CHAR:
 				cout << text ;
@@ -245,27 +281,27 @@ int main(int argc, char* argv[])
 				cout << text + "\n";
 				break;
 			case INT_LITERAL:
-				cout << to_string(start_line) + "," + to_string(start_column) + "," + "integer-literal" + "," + text + "\n";
+				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + "integer-literal" + "," + text + "\n";
 				break;
 			case UNEXPECTED_EOF:
-				cerr << filename << ":" << string_row << ":" << string_col << ": lexical error: unexpected end of file\n";
+				printLexicalError(string_row, string_col, string("unexpected end of file"));
 				exit(-1);
 			case STRING_ERR_EOL:
-				cerr << filename << ":" << start_line << ":" << start_column << ": lexical error: unexpected line feed\n";
+				printLexicalError(currentLine, currentColumn, string("unexpected line feed"));
 				exit(-1);
 			case INVALID_ESC_SEQ:
-				cerr << filename << ":" << start_line << ":" << start_column << ": lexical error: invalid escape sequence\n";
+				printLexicalError(currentLine, currentColumn, string("invalid escape sequence"));
 				exit(-1);
 			case INVALID_CHARACTER:
-				cerr << filename << ":" << start_line << ":" << start_column << ": lexical error: VSOP invalid character\n";
+				printLexicalError(currentLine, currentColumn, string("VSOP invalid character"));
 				exit(-1);
 			case INVALID_INTEGER:
-				cerr << filename << ":" << start_line << ":" << start_column << ": lexical error: invalid integer\n";
+				printLexicalError(currentLine, currentColumn, string("invalid integer"));
 				exit(-1);
 			default:
 				break;
 		}
-		ntoken = yylex();
+		token = yylex();
 	}
 	fclose(yyin);
 	return 0;
