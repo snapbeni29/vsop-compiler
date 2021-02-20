@@ -6,6 +6,7 @@
 #include <vector>
 #include <algorithm> 
 #include <cstring>
+#include <stack> 
 #include "vsopc.hh"
 
 using namespace std;
@@ -18,7 +19,7 @@ string buf = "";
 int string_row;
 int string_col;
 string filename;
-int opened_comments = 0;
+stack<pair<int, int>> commentStack;
 
 // Executed before every action
 #define YY_USER_ACTION	update();
@@ -108,14 +109,17 @@ void save_pos() {
 	string_row = currentLine;
 }
 
+void setPos(int line, int col) {
+	string_col = col;
+	string_row = line;
+}
+
 /*
 Prints an error message and the position of the error.
 */
 void printLexicalError(int row, int col, string message) {
-	cerr << "\n" + filename << ":" << row << ":" << col << ": lexical error: " + message + "\n";
+	cerr << filename << ":" << row << ":" << col << ": lexical error: " + message + "\n";
 }
-
-
 
 // Keywords vector
 vector<string> keywords {
@@ -180,7 +184,7 @@ bin-digit					0|1
 digit 						[0-9]
 hex-digit 					{digit}|[a-f]|[A-F]
 integer-literal				{digit}+|"0x"{hex-digit}+
-invalid-integer				"0x"({digit}|[A-Z]|[a-z])+
+invalid-integer				{integer-literal}([A-Z]|[a-z])+
 lf-followed					\n[ \t]*
 escape-sequence				[btnr\"\\]|(x{hex-digit}{2})|{lf-followed}
 escaped-char				\\{escape-sequence}
@@ -221,7 +225,7 @@ invalid-character			.
 							return -1;}
 
 {integer-literal}			{text = toDecimal(yytext); return INT_LITERAL;}
-{invalid-integer}			{return INVALID_INTEGER;}
+{invalid-integer}			{text = string(yytext); return INVALID_INTEGER;}
 
 {double-quote}             	{text = string(yytext); save_pos(); BEGIN(STRING); return BEGIN_STRING_LITERAL;}
 <STRING>{double-quote}		{text = string(yytext); BEGIN(INITIAL); return END_STRING_LITERAL;}
@@ -233,11 +237,11 @@ invalid-character			.
 <STRING>{invalid-esc-seq}	{return INVALID_ESC_SEQ;} 
 
 {comment-one-line}			{}
-{comment-begin}				{save_pos(); opened_comments += 1; BEGIN(COMMENT);}
+{comment-begin}				{commentStack.push({currentLine, currentColumn}); BEGIN(COMMENT);}
 <COMMENT>[^\0]				{}
-<COMMENT>{comment-begin}	{opened_comments += 1;}
-<COMMENT><<EOF>>			{return UNEXPECTED_EOF;}
-<COMMENT>{comment-end}		{opened_comments -= 1; if(opened_comments == 0) BEGIN(INITIAL);}
+<COMMENT>{comment-begin}	{commentStack.push({currentLine, currentColumn});}
+<COMMENT><<EOF>>			{auto row_col = commentStack.top(); setPos(row_col.first, row_col.second); return UNEXPECTED_EOF;}
+<COMMENT>{comment-end}		{commentStack.pop(); if(commentStack.empty()) BEGIN(INITIAL);}
 
 {invalid-character}			{return INVALID_CHARACTER;}
 %%
@@ -296,7 +300,7 @@ int main(int argc, char* argv[])
 				printLexicalError(currentLine, currentColumn, string("VSOP invalid character"));
 				exit(-1);
 			case INVALID_INTEGER:
-				printLexicalError(currentLine, currentColumn, string("invalid integer"));
+				printLexicalError(currentLine, currentColumn, text + string(" is not a invalid integer"));
 				exit(-1);
 			default:
 				break;
