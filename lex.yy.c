@@ -1066,7 +1066,7 @@ YY_RULE_SETUP
 case 13:
 YY_RULE_SETUP
 #line 237 "vsopc.l"
-{return INVALID_ESC_SEQ;} 
+{text = yytext; return INVALID_ESC_SEQ;} 
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
@@ -1101,7 +1101,7 @@ YY_RULE_SETUP
 case 19:
 YY_RULE_SETUP
 #line 246 "vsopc.l"
-{return INVALID_CHARACTER;}
+{text = yytext; return INVALID_CHARACTER;}
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
@@ -2176,10 +2176,10 @@ int main(int argc, char* argv[])
 				printLexicalError(currentLine, currentColumn, string("unexpected line feed"));
 				exit(-1);
 			case INVALID_ESC_SEQ:
-				printLexicalError(currentLine, currentColumn, string("invalid escape sequence"));
+				printLexicalError(currentLine, currentColumn, text + string(" is an invalid escape sequence"));
 				exit(-1);
 			case INVALID_CHARACTER:
-				printLexicalError(currentLine, currentColumn, string("VSOP invalid character"));
+				printLexicalError(currentLine, currentColumn, text + string(" is not a VSOP valid character"));
 				exit(-1);
 			case INVALID_INTEGER:
 				printLexicalError(currentLine, currentColumn, text + string(" is not a invalid integer"));

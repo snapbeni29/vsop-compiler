@@ -234,7 +234,7 @@ invalid-character			.
 <STRING>{escaped-char}		{text = stringToHex(getEscapeChar(string(yytext))); return REGULAR_CHAR;} 
 <STRING><<EOF>>				{return UNEXPECTED_EOF;} 
 <STRING>\n					{return STRING_ERR_EOL;} 
-<STRING>{invalid-esc-seq}	{return INVALID_ESC_SEQ;} 
+<STRING>{invalid-esc-seq}	{text = yytext; return INVALID_ESC_SEQ;} 
 
 {comment-one-line}			{}
 {comment-begin}				{commentStack.push({currentLine, currentColumn}); BEGIN(COMMENT);}
@@ -243,7 +243,7 @@ invalid-character			.
 <COMMENT><<EOF>>			{auto row_col = commentStack.top(); setPos(row_col.first, row_col.second); return UNEXPECTED_EOF;}
 <COMMENT>{comment-end}		{commentStack.pop(); if(commentStack.empty()) BEGIN(INITIAL);}
 
-{invalid-character}			{return INVALID_CHARACTER;}
+{invalid-character}			{text = yytext; return INVALID_CHARACTER;}
 %%
 
 /* User subroutines */
@@ -294,10 +294,10 @@ int main(int argc, char* argv[])
 				printLexicalError(currentLine, currentColumn, string("unexpected line feed"));
 				exit(-1);
 			case INVALID_ESC_SEQ:
-				printLexicalError(currentLine, currentColumn, string("invalid escape sequence"));
+				printLexicalError(currentLine, currentColumn, text + string(" is an invalid escape sequence"));
 				exit(-1);
 			case INVALID_CHARACTER:
-				printLexicalError(currentLine, currentColumn, string("VSOP invalid character"));
+				printLexicalError(currentLine, currentColumn, text + string(" is not a VSOP valid character"));
 				exit(-1);
 			case INVALID_INTEGER:
 				printLexicalError(currentLine, currentColumn, text + string(" is not a invalid integer"));
