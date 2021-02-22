@@ -540,13 +540,12 @@ int previousColumn = 1;
 int currentLine, currentColumn;
 int previousLine = yylineno;
 string text = "";
-string buf = "";
-int string_row;
-int string_col;
+int stringRow;
+int stringCol;
 string filename;
 stack<pair<int, int>> commentStack;
 
-// Executed before every action
+// Executed before every action.
 #define YY_USER_ACTION	update();
 
 string getEscapeChar(string s);
@@ -558,20 +557,20 @@ void printLexicalError(int row, int col, string message);
 
 
 /*
-Update the token position in the file
+Updates the token position in the file.
 */
 void update() {
 	currentLine = previousLine; // update line pos
 	currentColumn = previousColumn; // update column pos
-	for (int i = 0; i < yyleng; i++){ // if line feed, increase the line ad set column to 1, otherwise increase the column
+	for (int i = 0; i < yyleng; i++){ // if line feed, increase the line and set column to 1, otherwise increase the column
 		yytext[i] == '\n' ? previousLine++, previousColumn = 1 : previousColumn++;
 	}
 }
 
 /*
-Reads the representation of an escaped character and transform it
-into a real escaped character (put in a string)
-Returns a string with the escaped char at 1st position if it's a valid one,
+Reads the representation of an escaped character and transforms it
+into a real escaped character (put in a string).
+Returns a string with the escaped char at 1st position if it is a valid one,
 returns the input string otherwise.
 */
 string getEscapeChar(string s){
@@ -603,9 +602,10 @@ Returns the hex value of the input string if it contains a single character,
 returns the original string otherwise.
 */
 string stringToHex(string escaped) {
-	if (escaped.length() > 1 || escaped.empty()) {
+	if(escaped.length() > 1 || escaped.empty()){
 		return escaped;
-	} else {
+	}
+	else{
 		char c = escaped[0];
 		return charToHex(c);
 	}
@@ -618,9 +618,10 @@ Returns a string representing the number in base 10.
 */
 string toDecimal(string value) {
 	int nb;
-	if (value.find("0x") == 0) { // hex string
+	if(value.find("0x") == 0){ // hex string
 		nb = stoi(value.substr(2), 0, 16);
-	} else { // decimal string
+	}
+	else{ // decimal string
 		nb = stoi(value);
 	}
 	return to_string(nb);
@@ -630,13 +631,16 @@ string toDecimal(string value) {
 Saves the current position of the token.
 */
 void save_pos() {
-	string_col = currentColumn;
-	string_row = currentLine;
+	stringCol = currentColumn;
+	stringRow = currentLine;
 }
 
+/*
+Sets a new position.
+*/
 void setPos(int line, int col) {
-	string_col = col;
-	string_row = line;
+	stringCol = col;
+	stringRow = line;
 }
 
 /*
@@ -647,7 +651,7 @@ void printLexicalError(int row, int col, string message) {
 }
 
 // Keywords vector
-vector<string> keywords {
+vector<string> keywords{
 	"class",
 	"and",
 	"bool",
@@ -691,11 +695,11 @@ map<string, string> operators = {
 	{"<-", "assign"}
 };
 
-#line 695 "lex.yy.c"
+#line 699 "lex.yy.c"
 /* Definitions */
 
 /* Rules */
-#line 699 "lex.yy.c"
+#line 703 "lex.yy.c"
 
 #define INITIAL 0
 #define STRING 1
@@ -914,9 +918,9 @@ YY_DECL
 		}
 
 	{
-#line 208 "vsopc.l"
+#line 212 "vsopc.l"
 
-#line 920 "lex.yy.c"
+#line 924 "lex.yy.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -986,18 +990,18 @@ do_action:	/* This label is used only to access EOF actions. */
 case 1:
 /* rule 1 can match eol */
 YY_RULE_SETUP
-#line 209 "vsopc.l"
+#line 213 "vsopc.l"
 {/* do nothing */}
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 211 "vsopc.l"
+#line 215 "vsopc.l"
 {text = string(yytext);
 							return TYPE_IDENTIFIER;}
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 213 "vsopc.l"
+#line 217 "vsopc.l"
 {text = string(yytext);
 							auto iterator = find(keywords.begin(), keywords.end(), text);
 							if (iterator != keywords.end()){
@@ -1007,7 +1011,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 220 "vsopc.l"
+#line 224 "vsopc.l"
 {auto op = operators.find(string(yytext));
 							if (op != operators.end()){
 								text = op->second;
@@ -1017,97 +1021,97 @@ YY_RULE_SETUP
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 227 "vsopc.l"
+#line 231 "vsopc.l"
 {text = toDecimal(yytext); return INT_LITERAL;}
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 228 "vsopc.l"
+#line 232 "vsopc.l"
 {text = string(yytext); return INVALID_INTEGER;}
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 230 "vsopc.l"
+#line 234 "vsopc.l"
 {text = string(yytext); save_pos(); BEGIN(STRING); return BEGIN_STRING_LITERAL;}
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 231 "vsopc.l"
+#line 235 "vsopc.l"
 {text = string(yytext); BEGIN(INITIAL); return END_STRING_LITERAL;}
 	YY_BREAK
 case 9:
 /* rule 9 can match eol */
 YY_RULE_SETUP
-#line 232 "vsopc.l"
+#line 236 "vsopc.l"
 {}
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 233 "vsopc.l"
+#line 237 "vsopc.l"
 {text = string(yytext); return REGULAR_CHAR;}
 	YY_BREAK
 case 11:
 /* rule 11 can match eol */
 YY_RULE_SETUP
-#line 234 "vsopc.l"
+#line 238 "vsopc.l"
 {text = stringToHex(getEscapeChar(string(yytext))); return REGULAR_CHAR;} 
 	YY_BREAK
 case YY_STATE_EOF(STRING):
-#line 235 "vsopc.l"
+#line 239 "vsopc.l"
 {return UNEXPECTED_EOF;} 
 	YY_BREAK
 case 12:
 /* rule 12 can match eol */
 YY_RULE_SETUP
-#line 236 "vsopc.l"
+#line 240 "vsopc.l"
 {return STRING_ERR_EOL;} 
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 237 "vsopc.l"
+#line 241 "vsopc.l"
 {text = yytext; return INVALID_ESC_SEQ;} 
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 239 "vsopc.l"
+#line 243 "vsopc.l"
 {}
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 240 "vsopc.l"
+#line 244 "vsopc.l"
 {commentStack.push({currentLine, currentColumn}); BEGIN(COMMENT);}
 	YY_BREAK
 case 16:
 /* rule 16 can match eol */
 YY_RULE_SETUP
-#line 241 "vsopc.l"
+#line 245 "vsopc.l"
 {}
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 242 "vsopc.l"
+#line 246 "vsopc.l"
 {commentStack.push({currentLine, currentColumn});}
 	YY_BREAK
 case YY_STATE_EOF(COMMENT):
-#line 243 "vsopc.l"
+#line 247 "vsopc.l"
 {auto row_col = commentStack.top(); setPos(row_col.first, row_col.second); return UNEXPECTED_EOF;}
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 244 "vsopc.l"
+#line 248 "vsopc.l"
 {commentStack.pop(); if(commentStack.empty()) BEGIN(INITIAL);}
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 246 "vsopc.l"
+#line 250 "vsopc.l"
 {text = yytext; return INVALID_CHARACTER;}
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 247 "vsopc.l"
+#line 251 "vsopc.l"
 ECHO;
 	YY_BREAK
-#line 1111 "lex.yy.c"
+#line 1115 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -2124,7 +2128,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 247 "vsopc.l"
+#line 251 "vsopc.l"
 
 
 /* User subroutines */
@@ -2132,7 +2136,7 @@ void yyfree (void * ptr )
 int main(int argc, char* argv[])
 {
 	if(string(argv[1]) != "-lex" || argc < 3){
-		cout << "Bad command" << endl;
+		cout << "Error: the executed command is not valid." << endl;
 		return -1;
 	}
 
@@ -2160,7 +2164,7 @@ int main(int argc, char* argv[])
 				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + "string-literal" + "," + text ;
 				break;
 			case REGULAR_CHAR:
-				cout << text ;
+				cout << text;
 				break;
 			case END_STRING_LITERAL:
 				cout << text + "\n";
@@ -2169,7 +2173,7 @@ int main(int argc, char* argv[])
 				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + "integer-literal" + "," + text + "\n";
 				break;
 			case UNEXPECTED_EOF:
-				printLexicalError(string_row, string_col, string("unexpected end of file"));
+				printLexicalError(stringRow, stringCol, string("unexpected end of file"));
 				exit(-1);
 			case STRING_ERR_EOL:
 				printLexicalError(currentLine, currentColumn, string("unexpected line feed"));

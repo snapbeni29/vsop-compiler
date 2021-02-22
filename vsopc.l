@@ -15,13 +15,12 @@ int previousColumn = 1;
 int currentLine, currentColumn;
 int previousLine = yylineno;
 string text = "";
-string buf = "";
-int string_row;
-int string_col;
+int stringRow;
+int stringCol;
 string filename;
 stack<pair<int, int>> commentStack;
 
-// Executed before every action
+// Executed before every action.
 #define YY_USER_ACTION	update();
 
 string getEscapeChar(string s);
@@ -33,20 +32,20 @@ void printLexicalError(int row, int col, string message);
 
 
 /*
-Update the token position in the file
+Updates the token position in the file.
 */
 void update() {
 	currentLine = previousLine; // update line pos
 	currentColumn = previousColumn; // update column pos
-	for (int i = 0; i < yyleng; i++){ // if line feed, increase the line ad set column to 1, otherwise increase the column
+	for (int i = 0; i < yyleng; i++){ // if line feed, increase the line and set column to 1, otherwise increase the column
 		yytext[i] == '\n' ? previousLine++, previousColumn = 1 : previousColumn++;
 	}
 }
 
 /*
-Reads the representation of an escaped character and transform it
-into a real escaped character (put in a string)
-Returns a string with the escaped char at 1st position if it's a valid one,
+Reads the representation of an escaped character and transforms it
+into a real escaped character (put in a string).
+Returns a string with the escaped char at 1st position if it is a valid one,
 returns the input string otherwise.
 */
 string getEscapeChar(string s){
@@ -78,9 +77,10 @@ Returns the hex value of the input string if it contains a single character,
 returns the original string otherwise.
 */
 string stringToHex(string escaped) {
-	if (escaped.length() > 1 || escaped.empty()) {
+	if(escaped.length() > 1 || escaped.empty()){
 		return escaped;
-	} else {
+	}
+	else{
 		char c = escaped[0];
 		return charToHex(c);
 	}
@@ -93,9 +93,10 @@ Returns a string representing the number in base 10.
 */
 string toDecimal(string value) {
 	int nb;
-	if (value.find("0x") == 0) { // hex string
+	if(value.find("0x") == 0){ // hex string
 		nb = stoi(value.substr(2), 0, 16);
-	} else { // decimal string
+	}
+	else{ // decimal string
 		nb = stoi(value);
 	}
 	return to_string(nb);
@@ -105,13 +106,16 @@ string toDecimal(string value) {
 Saves the current position of the token.
 */
 void save_pos() {
-	string_col = currentColumn;
-	string_row = currentLine;
+	stringCol = currentColumn;
+	stringRow = currentLine;
 }
 
+/*
+Sets a new position.
+*/
 void setPos(int line, int col) {
-	string_col = col;
-	string_row = line;
+	stringCol = col;
+	stringRow = line;
 }
 
 /*
@@ -122,7 +126,7 @@ void printLexicalError(int row, int col, string message) {
 }
 
 // Keywords vector
-vector<string> keywords {
+vector<string> keywords{
 	"class",
 	"and",
 	"bool",
@@ -251,7 +255,7 @@ invalid-character			.
 int main(int argc, char* argv[])
 {
 	if(string(argv[1]) != "-lex" || argc < 3){
-		cout << "Bad command" << endl;
+		cout << "Error: the executed command is not valid." << endl;
 		return -1;
 	}
 
@@ -279,7 +283,7 @@ int main(int argc, char* argv[])
 				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + "string-literal" + "," + text ;
 				break;
 			case REGULAR_CHAR:
-				cout << text ;
+				cout << text;
 				break;
 			case END_STRING_LITERAL:
 				cout << text + "\n";
@@ -288,7 +292,7 @@ int main(int argc, char* argv[])
 				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + "integer-literal" + "," + text + "\n";
 				break;
 			case UNEXPECTED_EOF:
-				printLexicalError(string_row, string_col, string("unexpected end of file"));
+				printLexicalError(stringRow, stringCol, string("unexpected end of file"));
 				exit(-1);
 			case STRING_ERR_EOL:
 				printLexicalError(currentLine, currentColumn, string("unexpected line feed"));
