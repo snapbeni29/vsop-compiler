@@ -188,7 +188,7 @@ bin-digit					0|1
 digit 						[0-9]
 hex-digit 					{digit}|[a-f]|[A-F]
 integer-literal				{digit}+|"0x"{hex-digit}+
-invalid-integer				{integer-literal}([A-Z]|[a-z])+
+invalid-integer				{integer-literal}([A-Z]|[a-z]|[0-9])+
 lf-followed					\n[ \t]*
 escape-sequence				[btnr\"\\]|(x{hex-digit}{2})|{lf-followed}
 escaped-char				\\{escape-sequence}
