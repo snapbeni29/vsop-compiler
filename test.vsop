@@ -3,3 +3,4 @@ class MyClass {
     three\r\n"
     i : int32 <- 0x1b
 }
+42x

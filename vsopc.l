@@ -304,7 +304,7 @@ int main(int argc, char* argv[])
 				printLexicalError(currentLine, currentColumn, text + string(" is not a VSOP valid character"));
 				exit(-1);
 			case INVALID_INTEGER:
-				printLexicalError(currentLine, currentColumn, text + string(" is not a invalid integer"));
+				printLexicalError(currentLine, currentColumn, text + string(" is an invalid integer"));
 				exit(-1);
 			default:
 				break;
