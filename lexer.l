@@ -7,7 +7,7 @@
 #include <algorithm> 
 #include <cstring>
 #include <stack> 
-#include "vsopc.hh"
+#include "lexer.hh"
 
 using namespace std;
 

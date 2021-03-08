@@ -12,7 +12,7 @@ dist-clean:	clean
 install-tools:
 	sudo apt install flex bison clang
 
-lex.yy.c: vsopc.l
+lex.yy.c: lexer.l
 	flex $^
 
 vsopc:	lex.yy.c
