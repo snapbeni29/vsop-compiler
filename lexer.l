@@ -8,6 +8,7 @@
 #include <cstring>
 #include <stack> 
 #include "lexer.hh"
+#include "parser.tab.h"
 
 using namespace std;
 
@@ -251,7 +252,7 @@ invalid-character			.
 %%
 
 /* User subroutines */
-
+/*
 int main(int argc, char* argv[])
 {
 	if(string(argv[1]) != "-lex" || argc < 3){
@@ -314,3 +315,4 @@ int main(int argc, char* argv[])
 	fclose(yyin);
 	return 0;
 }
+*/

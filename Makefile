@@ -1,5 +1,5 @@
 CXX=clang++
-CXXFLAGS=-std=c++14 -Wno-everything
+CXXFLAGS=-std=c++14 -Wall
 
 all:	vsopc
 
@@ -12,11 +12,14 @@ dist-clean:	clean
 install-tools:
 	sudo apt install flex bison clang
 
-lex.yy.c: lexer.l
-	flex $^
+lex.yy.c: parser.tab.c lexer.l
+	flex lexer.l
+
+parser.tab.c: parser.y
+	bison -v -d parser.y
 
 vsopc:	lex.yy.c
-	$(CXX) $(CXXFLAGS) -o $@ $^
+	$(CXX) $(CXXFLAGS) -g lex.yy.c parser.tab.c -o vsopc
 
 # Phony rules are those that do not correspond to an actual file
 .PHONY: all clean dist-clean
