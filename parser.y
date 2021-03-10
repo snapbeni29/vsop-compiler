@@ -74,6 +74,18 @@ using namespace std;
 %token START_LEXER START_PARSER START_EXT_LEXER START_EXT_PARSER;
 %start program;
 
+%precedence IF THEN WHILE DO FOR TO LET LETS IN
+%precedence ELSE
+%right ASSIGN
+%left AND
+%right NOT
+%nonassoc LOWER LOWER_EQUAL EQUAL
+%left PLUS MINUS
+%left TIMES DIV
+%right UMINUS ISNULL
+%right MOD POW
+%left DOT
+
 %%
 
 program: 	/* epsilon */

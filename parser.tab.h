@@ -107,7 +107,8 @@ extern int yydebug;
     START_LEXER = 312,
     START_PARSER = 313,
     START_EXT_LEXER = 314,
-    START_EXT_PARSER = 315
+    START_EXT_PARSER = 315,
+    UMINUS = 316
   };
 #endif
 
