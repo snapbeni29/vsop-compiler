@@ -2,13 +2,33 @@
 #include <iostream>
 #include <cmath>
 #include <cstdlib>
+#include <map>
+#include <vector>
+#include <algorithm> 
+#include <cstring>
+#include <stack> 
 #define YYSTYPE double /* Define main semantic type */
+using namespace std;
+
 int yylex(void);
-int yyerror(char *s);
+int yyerror(string s);
 extern char *yytext;   /* Flex global variables */
 extern int yylineno;
 extern FILE *yyin;
-using namespace std;
+
+extern int previousColumn;
+extern int currentLine, currentColumn;
+extern int previousLine;
+extern string text;
+extern int stringRow;
+extern int stringCol;
+extern string filename;
+extern stack<pair<int, int>> commentStack;
+
+int yyerror(string s) {
+	// On doit gérer colonne et ligne pour UNEXPECTED_EOF qui utilise stringRow et stringCol
+	cerr << filename << ":" << currentLine << ":" << currentColumn << ": lexical error: " + s + "\n";
+}
 %}
 
 %union // yylval
@@ -184,8 +204,8 @@ int yywrap(void) {
   return 1;
 }
 
+/*
 int main(int argc, char **argv) {
-  /* if any input file has been specified read from that */
   if (argc >= 2) {
     yyin = fopen(argv[1], "r");
     if (!yyin) {
@@ -202,3 +222,155 @@ int main(int argc, char **argv) {
   fprintf(stdout, "End of processing\n");
   return EXIT_SUCCESS;
 }
+*/
+
+int main(int argc, char* argv[])
+{
+	if(string(argv[1]) != "-lex" || argc < 3){
+		cout << "Error: the executed command is not valid." << endl;
+		return -1;
+	}
+
+	yyin = fopen(argv[2], "r");
+	filename = string(argv[2]);
+	int token;
+
+	token = yylex();
+
+	while(token){
+		switch (token){
+			// Keywords
+			case CLASS:
+				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				break;
+			case AND:
+				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				break;
+			case BOOL:
+				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				break;
+			case DO:
+				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				break;
+			case IF:
+				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				break;
+			case ELSE:
+				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				break;
+			case THEN:
+				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				break;
+			case EXTENDS:
+				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				break;
+			case FALSE:
+				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				break;
+			case IN:
+				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				break;
+			case INT32:
+				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				break;
+			case ISNULL:
+				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				break;
+			case LET:
+				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				break;
+			case NEW:
+				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				break;
+			case NOT:
+				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				break;
+			case SELF:
+				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				break;
+			case SSTRING:
+				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				break;
+			case TRUE:
+				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				break;
+			case UNIT:
+				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				break;
+			case WHILE:
+				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				break;
+
+			case OBJECT_IDENTIFIER:
+				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + "object-identifier," + text + "\n";
+				break;
+			case TYPE_IDENTIFIER:
+				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + "type-identifier," + text + "\n";
+				break;
+
+			// Operators
+			case LBRACE:
+				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				break;
+			case RBRACE:
+				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				break;
+			case LPAR:
+				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				break;
+			case RPAR:
+				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				break;	
+			case COLON:
+				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				break;	
+			case SEMICOLON:
+				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				break;	
+			case COMMA:
+				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				break;	
+			case PLUS:
+				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				break;	
+			case MINUS:
+				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				break;	
+			case TIMES:
+				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				break;	
+			case DIV:
+				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				break;
+			case POW:
+				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				break;	
+			case DOT:
+				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				break;	
+			case EQUAL:
+				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				break;
+			case LOWER_EQUAL:
+				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				break;				
+			case ASSIGN:
+				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				break;	
+
+			case STRING_LITERAL:
+				cout << to_string(stringRow) + "," + to_string(stringCol) + "," + "string-literal" + "," + text  + "\n";
+				break;
+			case INT_LITERAL:
+				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + "integer-literal" + "," + text + "\n";
+				break;
+			default:
+				break;
+		}
+		token = yylex();
+	}
+	fclose(yyin);
+	return 0;
+}
+
+

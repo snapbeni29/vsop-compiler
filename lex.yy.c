@@ -532,7 +532,6 @@ char *yytext;
 #include <algorithm> 
 #include <cstring>
 #include <stack> 
-#include "lexer.hh"
 #include "parser.tab.h"
 
 using namespace std;
@@ -555,6 +554,7 @@ string stringToHex(string escaped);
 string toDecimal(string value);
 void save_pos();
 void printLexicalError(int row, int col, string message);
+extern int yyerror(string s);
 
 
 /*
@@ -1029,91 +1029,94 @@ YY_RULE_SETUP
 case 6:
 YY_RULE_SETUP
 #line 234 "lexer.l"
-{text = string(yytext); return INVALID_INTEGER;}
+{text = string(yytext);
+							yyerror(text + string(" is an invalid integer"));}
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 236 "lexer.l"
-{text += string(yytext); save_pos(); BEGIN(STRING);}
+#line 237 "lexer.l"
+{text = string(yytext); save_pos(); BEGIN(STRING);}
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 237 "lexer.l"
+#line 238 "lexer.l"
 {text += string(yytext); BEGIN(INITIAL); return STRING_LITERAL;}
 	YY_BREAK
 case 9:
 /* rule 9 can match eol */
 YY_RULE_SETUP
-#line 238 "lexer.l"
+#line 239 "lexer.l"
 {}
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 239 "lexer.l"
+#line 240 "lexer.l"
 {text += string(yytext);}
 	YY_BREAK
 case 11:
 /* rule 11 can match eol */
 YY_RULE_SETUP
-#line 240 "lexer.l"
+#line 241 "lexer.l"
 {text += stringToHex(getEscapeChar(string(yytext)));} 
 	YY_BREAK
 case YY_STATE_EOF(STRING):
-#line 241 "lexer.l"
-{return UNEXPECTED_EOF;} 
+#line 242 "lexer.l"
+{yyerror(string("unexpected end of file"));} 
 	YY_BREAK
 case 12:
 /* rule 12 can match eol */
 YY_RULE_SETUP
-#line 242 "lexer.l"
-{return STRING_ERR_EOL;} 
+#line 243 "lexer.l"
+{yyerror(string("unexpected line feed"));} 
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 243 "lexer.l"
-{text = yytext; return INVALID_ESC_SEQ;} 
+#line 244 "lexer.l"
+{text = yytext;
+							yyerror(text + string(" is an invalid escape sequence"));} 
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 245 "lexer.l"
+#line 247 "lexer.l"
 {}
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 246 "lexer.l"
+#line 248 "lexer.l"
 {commentStack.push({currentLine, currentColumn}); BEGIN(COMMENT);}
 	YY_BREAK
 case 16:
 /* rule 16 can match eol */
 YY_RULE_SETUP
-#line 247 "lexer.l"
+#line 249 "lexer.l"
 {}
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 248 "lexer.l"
+#line 250 "lexer.l"
 {commentStack.push({currentLine, currentColumn});}
 	YY_BREAK
 case YY_STATE_EOF(COMMENT):
-#line 249 "lexer.l"
-{auto row_col = commentStack.top(); setPos(row_col.first, row_col.second); return UNEXPECTED_EOF;}
+#line 251 "lexer.l"
+{auto row_col = commentStack.top(); setPos(row_col.first, row_col.second);
+							yyerror(string("unexpected end of file"));}
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 250 "lexer.l"
+#line 253 "lexer.l"
 {commentStack.pop(); if(commentStack.empty()) BEGIN(INITIAL);}
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 252 "lexer.l"
-{text = yytext; return INVALID_CHARACTER;}
+#line 255 "lexer.l"
+{text = yytext; yyerror(text + string(" is not a VSOP valid character"));}
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 253 "lexer.l"
+#line 256 "lexer.l"
 ECHO;
 	YY_BREAK
-#line 1117 "lex.yy.c"
+#line 1120 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -2130,7 +2133,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 253 "lexer.l"
+#line 256 "lexer.l"
 
 
 /* User subroutines */

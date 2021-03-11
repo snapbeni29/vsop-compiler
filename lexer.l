@@ -7,7 +7,6 @@
 #include <algorithm> 
 #include <cstring>
 #include <stack> 
-#include "lexer.hh"
 #include "parser.tab.h"
 
 using namespace std;
@@ -30,6 +29,7 @@ string stringToHex(string escaped);
 string toDecimal(string value);
 void save_pos();
 void printLexicalError(int row, int col, string message);
+extern int yyerror(string s);
 
 
 /*
@@ -231,25 +231,28 @@ invalid-character			.
 							return -1;}
 
 {integer-literal}			{text = toDecimal(yytext); return INT_LITERAL;}
-{invalid-integer}			{text = string(yytext); return INVALID_INTEGER;}
+{invalid-integer}			{text = string(yytext);
+							yyerror(text + string(" is an invalid integer"));}
 
-{double-quote}             	{text += string(yytext); save_pos(); BEGIN(STRING);}
+{double-quote}             	{text = string(yytext); save_pos(); BEGIN(STRING);}
 <STRING>{double-quote}		{text += string(yytext); BEGIN(INITIAL); return STRING_LITERAL;}
 <STRING>\\{lf-followed}		{}
 <STRING>{regular-char}+ 	{text += string(yytext);}
 <STRING>{escaped-char}		{text += stringToHex(getEscapeChar(string(yytext)));} 
-<STRING><<EOF>>				{return UNEXPECTED_EOF;} 
-<STRING>\n					{return STRING_ERR_EOL;} 
-<STRING>{invalid-esc-seq}	{text = yytext; return INVALID_ESC_SEQ;} 
+<STRING><<EOF>>				{yyerror(string("unexpected end of file"));} 
+<STRING>\n					{yyerror(string("unexpected line feed"));} 
+<STRING>{invalid-esc-seq}	{text = yytext;
+							yyerror(text + string(" is an invalid escape sequence"));} 
 
 {comment-one-line}			{}
 {comment-begin}				{commentStack.push({currentLine, currentColumn}); BEGIN(COMMENT);}
 <COMMENT>[^\0]				{}
 <COMMENT>{comment-begin}	{commentStack.push({currentLine, currentColumn});}
-<COMMENT><<EOF>>			{auto row_col = commentStack.top(); setPos(row_col.first, row_col.second); return UNEXPECTED_EOF;}
+<COMMENT><<EOF>>			{auto row_col = commentStack.top(); setPos(row_col.first, row_col.second);
+							yyerror(string("unexpected end of file"));}
 <COMMENT>{comment-end}		{commentStack.pop(); if(commentStack.empty()) BEGIN(INITIAL);}
 
-{invalid-character}			{text = yytext; return INVALID_CHARACTER;}
+{invalid-character}			{text = yytext; yyerror(text + string(" is not a VSOP valid character"));}
 %%
 
 /* User subroutines */
