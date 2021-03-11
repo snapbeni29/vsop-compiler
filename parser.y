@@ -74,8 +74,8 @@ using namespace std;
 %token START_LEXER START_PARSER START_EXT_LEXER START_EXT_PARSER;
 %start program;
 
-%precedence IF THEN WHILE DO FOR TO LET LETS IN
-%precedence ELSE
+%right THEN ELSE
+
 %right ASSIGN
 %left AND
 %right NOT

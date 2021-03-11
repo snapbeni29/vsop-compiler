@@ -23,6 +23,8 @@ Terminals unused in grammar
 
 State 85 conflicts: 10 shift/reduce
 State 88 conflicts: 11 shift/reduce
+State 90 conflicts: 10 shift/reduce
+State 102 conflicts: 10 shift/reduce
 
 
 Grammar
@@ -1399,6 +1401,16 @@ State 90
     "<"    shift, and go to state 71
     "<="   shift, and go to state 72
 
+    "and"     [reduce using rule 25 (expr)]
+    "+"       [reduce using rule 25 (expr)]
+    "-"       [reduce using rule 25 (expr)]
+    "*"       [reduce using rule 25 (expr)]
+    "/"       [reduce using rule 25 (expr)]
+    "^"       [reduce using rule 25 (expr)]
+    "."       [reduce using rule 25 (expr)]
+    "="       [reduce using rule 25 (expr)]
+    "<"       [reduce using rule 25 (expr)]
+    "<="      [reduce using rule 25 (expr)]
     $default  reduce using rule 25 (expr)
 
     bin-operator  go to state 73
@@ -1588,6 +1600,16 @@ State 102
     "<"    shift, and go to state 71
     "<="   shift, and go to state 72
 
+    "and"     [reduce using rule 26 (expr)]
+    "+"       [reduce using rule 26 (expr)]
+    "-"       [reduce using rule 26 (expr)]
+    "*"       [reduce using rule 26 (expr)]
+    "/"       [reduce using rule 26 (expr)]
+    "^"       [reduce using rule 26 (expr)]
+    "."       [reduce using rule 26 (expr)]
+    "="       [reduce using rule 26 (expr)]
+    "<"       [reduce using rule 26 (expr)]
+    "<="      [reduce using rule 26 (expr)]
     $default  reduce using rule 26 (expr)
 
     bin-operator  go to state 73
