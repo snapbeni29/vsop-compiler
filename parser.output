@@ -1,0 +1,1593 @@
+Terminals unused in grammar
+
+    "real-literal"
+    "break"
+    "double"
+    "extern"
+    "for"
+    "lets"
+    "mod"
+    "or"
+    "to"
+    "vararg"
+    ","
+    "!="
+    ">"
+    ">="
+    START_LEXER
+    START_PARSER
+    START_EXT_LEXER
+    START_EXT_PARSER
+    UMINUS
+
+
+State 85 conflicts: 10 shift/reduce
+State 88 conflicts: 11 shift/reduce
+
+
+Grammar
+
+    0 $accept: program "end-of-file"
+
+    1 program: %empty
+    2        | class program
+
+    3 class: "class" "type-identifier" class-parent "{" class-body "}"
+
+    4 class-parent: %empty
+    5             | "extends" "type-identifier"
+
+    6 class-body: %empty
+    7           | class-body field
+    8           | class-body method
+
+    9 field: formal assignment ";"
+
+   10 assignment: %empty
+   11           | "<-" expr
+
+   12 method: "object-identifier" "(" formals ")" ":" type block
+
+   13 type: "type-identifier"
+   14     | "int32"
+   15     | "bool"
+   16     | "string"
+   17     | "unit"
+
+   18 formals: %empty
+   19        | formal
+
+   20 formal: "object-identifier" ":" type
+
+   21 block: "{" expr second-instr "}"
+
+   22 second-instr: %empty
+   23             | ";" expr
+
+   24 expr: "if" expr "then" expr else
+   25     | "while" expr "do" expr
+   26     | "let" "object-identifier" ":" type assignment "in" expr
+   27     | "object-identifier" "<-" expr
+   28     | "not" expr
+   29     | expr bin-operator expr
+   30     | "-" expr
+   31     | "isnull" expr
+   32     | "object-identifier" "(" args ")"
+   33     | expr "." "object-identifier" "(" args ")"
+   34     | "new" "type-identifier"
+   35     | "object-identifier"
+   36     | "self"
+   37     | literal
+   38     | "(" ")"
+   39     | "(" expr ")"
+   40     | block
+
+   41 else: %empty
+   42     | "else" expr
+
+   43 bin-operator: "="
+   44             | "<"
+   45             | "<="
+   46             | "+"
+   47             | "-"
+   48             | "*"
+   49             | "/"
+   50             | "^"
+   51             | "and"
+
+   52 args: %empty
+   53     | expr
+
+   54 literal: "integer-literal"
+   55        | "string-literal"
+   56        | boolean-literal
+
+   57 boolean-literal: "true"
+   58                | "false"
+
+
+Terminals, with rules where they appear
+
+    "end-of-file" (0) 0
+    error (256)
+    "integer-literal" <int32> (258) 54
+    "real-literal" <doubl> (259)
+    "string-literal" <id> (260) 55
+    "type-identifier" <id> (261) 3 5 13 34
+    "object-identifier" <id> (262) 12 20 26 27 32 33 35
+    "and" <id> (263) 51
+    "bool" <id> (264) 15
+    "break" <id> (265)
+    "class" <id> (266) 3
+    "do" <id> (267) 25
+    "double" <id> (268)
+    "else" <id> (269) 42
+    "extends" <id> (270) 5
+    "extern" <id> (271)
+    "false" <id> (272) 58
+    "for" <id> (273)
+    "if" <id> (274) 24
+    "in" <id> (275) 26
+    "int32" <id> (276) 14
+    "isnull" <id> (277) 31
+    "let" <id> (278) 26
+    "lets" <id> (279)
+    "new" <id> (280) 34
+    "not" <id> (281) 28
+    "mod" <id> (282)
+    "or" <id> (283)
+    "self" <id> (284) 36
+    "string" <id> (285) 16
+    "then" <id> (286) 24
+    "to" <id> (287)
+    "true" <id> (288) 57
+    "unit" <id> (289) 17
+    "while" <id> (290) 25
+    "vararg" <id> (291)
+    "{" <id> (292) 3 21
+    "}" <id> (293) 3 21
+    "(" <id> (294) 12 32 33 38 39
+    ")" <id> (295) 12 32 33 38 39
+    ":" <id> (296) 12 20 26
+    ";" <id> (297) 9 23
+    "," <id> (298)
+    "+" <id> (299) 46
+    "-" <id> (300) 30 47
+    "*" <id> (301) 48
+    "/" <id> (302) 49
+    "^" <id> (303) 50
+    "." <id> (304) 33
+    "=" <id> (305) 43
+    "!=" <id> (306)
+    "<" <id> (307) 44
+    "<=" <id> (308) 45
+    ">" <id> (309)
+    ">=" <id> (310)
+    "<-" <id> (311) 11 27
+    START_LEXER (312)
+    START_PARSER (313)
+    START_EXT_LEXER (314)
+    START_EXT_PARSER (315)
+    UMINUS (316)
+
+
+Nonterminals, with rules where they appear
+
+    $accept (62)
+        on left: 0
+    program (63)
+        on left: 1 2
+        on right: 0 2
+    class (64)
+        on left: 3
+        on right: 2
+    class-parent (65)
+        on left: 4 5
+        on right: 3
+    class-body (66)
+        on left: 6 7 8
+        on right: 3 7 8
+    field (67)
+        on left: 9
+        on right: 7
+    assignment (68)
+        on left: 10 11
+        on right: 9 26
+    method (69)
+        on left: 12
+        on right: 8
+    type (70)
+        on left: 13 14 15 16 17
+        on right: 12 20 26
+    formals (71)
+        on left: 18 19
+        on right: 12
+    formal (72)
+        on left: 20
+        on right: 9 19
+    block (73)
+        on left: 21
+        on right: 12 40
+    second-instr (74)
+        on left: 22 23
+        on right: 21
+    expr (75)
+        on left: 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40
+        on right: 11 21 23 24 25 26 27 28 29 30 31 33 39 42 53
+    else (76)
+        on left: 41 42
+        on right: 24
+    bin-operator (77)
+        on left: 43 44 45 46 47 48 49 50 51
+        on right: 29
+    args (78)
+        on left: 52 53
+        on right: 32 33
+    literal (79)
+        on left: 54 55 56
+        on right: 37
+    boolean-literal (80)
+        on left: 57 58
+        on right: 56
+
+
+State 0
+
+    0 $accept: . program "end-of-file"
+
+    "class"  shift, and go to state 1
+
+    $default  reduce using rule 1 (program)
+
+    program  go to state 2
+    class    go to state 3
+
+
+State 1
+
+    3 class: "class" . "type-identifier" class-parent "{" class-body "}"
+
+    "type-identifier"  shift, and go to state 4
+
+
+State 2
+
+    0 $accept: program . "end-of-file"
+
+    "end-of-file"  shift, and go to state 5
+
+
+State 3
+
+    2 program: class . program
+
+    "class"  shift, and go to state 1
+
+    $default  reduce using rule 1 (program)
+
+    program  go to state 6
+    class    go to state 3
+
+
+State 4
+
+    3 class: "class" "type-identifier" . class-parent "{" class-body "}"
+
+    "extends"  shift, and go to state 7
+
+    $default  reduce using rule 4 (class-parent)
+
+    class-parent  go to state 8
+
+
+State 5
+
+    0 $accept: program "end-of-file" .
+
+    $default  accept
+
+
+State 6
+
+    2 program: class program .
+
+    $default  reduce using rule 2 (program)
+
+
+State 7
+
+    5 class-parent: "extends" . "type-identifier"
+
+    "type-identifier"  shift, and go to state 9
+
+
+State 8
+
+    3 class: "class" "type-identifier" class-parent . "{" class-body "}"
+
+    "{"  shift, and go to state 10
+
+
+State 9
+
+    5 class-parent: "extends" "type-identifier" .
+
+    $default  reduce using rule 5 (class-parent)
+
+
+State 10
+
+    3 class: "class" "type-identifier" class-parent "{" . class-body "}"
+
+    $default  reduce using rule 6 (class-body)
+
+    class-body  go to state 11
+
+
+State 11
+
+    3 class: "class" "type-identifier" class-parent "{" class-body . "}"
+    7 class-body: class-body . field
+    8           | class-body . method
+
+    "object-identifier"  shift, and go to state 12
+    "}"                  shift, and go to state 13
+
+    field   go to state 14
+    method  go to state 15
+    formal  go to state 16
+
+
+State 12
+
+   12 method: "object-identifier" . "(" formals ")" ":" type block
+   20 formal: "object-identifier" . ":" type
+
+    "("  shift, and go to state 17
+    ":"  shift, and go to state 18
+
+
+State 13
+
+    3 class: "class" "type-identifier" class-parent "{" class-body "}" .
+
+    $default  reduce using rule 3 (class)
+
+
+State 14
+
+    7 class-body: class-body field .
+
+    $default  reduce using rule 7 (class-body)
+
+
+State 15
+
+    8 class-body: class-body method .
+
+    $default  reduce using rule 8 (class-body)
+
+
+State 16
+
+    9 field: formal . assignment ";"
+
+    "<-"  shift, and go to state 19
+
+    $default  reduce using rule 10 (assignment)
+
+    assignment  go to state 20
+
+
+State 17
+
+   12 method: "object-identifier" "(" . formals ")" ":" type block
+
+    "object-identifier"  shift, and go to state 21
+
+    $default  reduce using rule 18 (formals)
+
+    formals  go to state 22
+    formal   go to state 23
+
+
+State 18
+
+   20 formal: "object-identifier" ":" . type
+
+    "type-identifier"  shift, and go to state 24
+    "bool"             shift, and go to state 25
+    "int32"            shift, and go to state 26
+    "string"           shift, and go to state 27
+    "unit"             shift, and go to state 28
+
+    type  go to state 29
+
+
+State 19
+
+   11 assignment: "<-" . expr
+
+    "integer-literal"    shift, and go to state 30
+    "string-literal"     shift, and go to state 31
+    "object-identifier"  shift, and go to state 32
+    "false"              shift, and go to state 33
+    "if"                 shift, and go to state 34
+    "isnull"             shift, and go to state 35
+    "let"                shift, and go to state 36
+    "new"                shift, and go to state 37
+    "not"                shift, and go to state 38
+    "self"               shift, and go to state 39
+    "true"               shift, and go to state 40
+    "while"              shift, and go to state 41
+    "{"                  shift, and go to state 42
+    "("                  shift, and go to state 43
+    "-"                  shift, and go to state 44
+
+    block            go to state 45
+    expr             go to state 46
+    literal          go to state 47
+    boolean-literal  go to state 48
+
+
+State 20
+
+    9 field: formal assignment . ";"
+
+    ";"  shift, and go to state 49
+
+
+State 21
+
+   20 formal: "object-identifier" . ":" type
+
+    ":"  shift, and go to state 18
+
+
+State 22
+
+   12 method: "object-identifier" "(" formals . ")" ":" type block
+
+    ")"  shift, and go to state 50
+
+
+State 23
+
+   19 formals: formal .
+
+    $default  reduce using rule 19 (formals)
+
+
+State 24
+
+   13 type: "type-identifier" .
+
+    $default  reduce using rule 13 (type)
+
+
+State 25
+
+   15 type: "bool" .
+
+    $default  reduce using rule 15 (type)
+
+
+State 26
+
+   14 type: "int32" .
+
+    $default  reduce using rule 14 (type)
+
+
+State 27
+
+   16 type: "string" .
+
+    $default  reduce using rule 16 (type)
+
+
+State 28
+
+   17 type: "unit" .
+
+    $default  reduce using rule 17 (type)
+
+
+State 29
+
+   20 formal: "object-identifier" ":" type .
+
+    $default  reduce using rule 20 (formal)
+
+
+State 30
+
+   54 literal: "integer-literal" .
+
+    $default  reduce using rule 54 (literal)
+
+
+State 31
+
+   55 literal: "string-literal" .
+
+    $default  reduce using rule 55 (literal)
+
+
+State 32
+
+   27 expr: "object-identifier" . "<-" expr
+   32     | "object-identifier" . "(" args ")"
+   35     | "object-identifier" .
+
+    "("   shift, and go to state 51
+    "<-"  shift, and go to state 52
+
+    $default  reduce using rule 35 (expr)
+
+
+State 33
+
+   58 boolean-literal: "false" .
+
+    $default  reduce using rule 58 (boolean-literal)
+
+
+State 34
+
+   24 expr: "if" . expr "then" expr else
+
+    "integer-literal"    shift, and go to state 30
+    "string-literal"     shift, and go to state 31
+    "object-identifier"  shift, and go to state 32
+    "false"              shift, and go to state 33
+    "if"                 shift, and go to state 34
+    "isnull"             shift, and go to state 35
+    "let"                shift, and go to state 36
+    "new"                shift, and go to state 37
+    "not"                shift, and go to state 38
+    "self"               shift, and go to state 39
+    "true"               shift, and go to state 40
+    "while"              shift, and go to state 41
+    "{"                  shift, and go to state 42
+    "("                  shift, and go to state 43
+    "-"                  shift, and go to state 44
+
+    block            go to state 45
+    expr             go to state 53
+    literal          go to state 47
+    boolean-literal  go to state 48
+
+
+State 35
+
+   31 expr: "isnull" . expr
+
+    "integer-literal"    shift, and go to state 30
+    "string-literal"     shift, and go to state 31
+    "object-identifier"  shift, and go to state 32
+    "false"              shift, and go to state 33
+    "if"                 shift, and go to state 34
+    "isnull"             shift, and go to state 35
+    "let"                shift, and go to state 36
+    "new"                shift, and go to state 37
+    "not"                shift, and go to state 38
+    "self"               shift, and go to state 39
+    "true"               shift, and go to state 40
+    "while"              shift, and go to state 41
+    "{"                  shift, and go to state 42
+    "("                  shift, and go to state 43
+    "-"                  shift, and go to state 44
+
+    block            go to state 45
+    expr             go to state 54
+    literal          go to state 47
+    boolean-literal  go to state 48
+
+
+State 36
+
+   26 expr: "let" . "object-identifier" ":" type assignment "in" expr
+
+    "object-identifier"  shift, and go to state 55
+
+
+State 37
+
+   34 expr: "new" . "type-identifier"
+
+    "type-identifier"  shift, and go to state 56
+
+
+State 38
+
+   28 expr: "not" . expr
+
+    "integer-literal"    shift, and go to state 30
+    "string-literal"     shift, and go to state 31
+    "object-identifier"  shift, and go to state 32
+    "false"              shift, and go to state 33
+    "if"                 shift, and go to state 34
+    "isnull"             shift, and go to state 35
+    "let"                shift, and go to state 36
+    "new"                shift, and go to state 37
+    "not"                shift, and go to state 38
+    "self"               shift, and go to state 39
+    "true"               shift, and go to state 40
+    "while"              shift, and go to state 41
+    "{"                  shift, and go to state 42
+    "("                  shift, and go to state 43
+    "-"                  shift, and go to state 44
+
+    block            go to state 45
+    expr             go to state 57
+    literal          go to state 47
+    boolean-literal  go to state 48
+
+
+State 39
+
+   36 expr: "self" .
+
+    $default  reduce using rule 36 (expr)
+
+
+State 40
+
+   57 boolean-literal: "true" .
+
+    $default  reduce using rule 57 (boolean-literal)
+
+
+State 41
+
+   25 expr: "while" . expr "do" expr
+
+    "integer-literal"    shift, and go to state 30
+    "string-literal"     shift, and go to state 31
+    "object-identifier"  shift, and go to state 32
+    "false"              shift, and go to state 33
+    "if"                 shift, and go to state 34
+    "isnull"             shift, and go to state 35
+    "let"                shift, and go to state 36
+    "new"                shift, and go to state 37
+    "not"                shift, and go to state 38
+    "self"               shift, and go to state 39
+    "true"               shift, and go to state 40
+    "while"              shift, and go to state 41
+    "{"                  shift, and go to state 42
+    "("                  shift, and go to state 43
+    "-"                  shift, and go to state 44
+
+    block            go to state 45
+    expr             go to state 58
+    literal          go to state 47
+    boolean-literal  go to state 48
+
+
+State 42
+
+   21 block: "{" . expr second-instr "}"
+
+    "integer-literal"    shift, and go to state 30
+    "string-literal"     shift, and go to state 31
+    "object-identifier"  shift, and go to state 32
+    "false"              shift, and go to state 33
+    "if"                 shift, and go to state 34
+    "isnull"             shift, and go to state 35
+    "let"                shift, and go to state 36
+    "new"                shift, and go to state 37
+    "not"                shift, and go to state 38
+    "self"               shift, and go to state 39
+    "true"               shift, and go to state 40
+    "while"              shift, and go to state 41
+    "{"                  shift, and go to state 42
+    "("                  shift, and go to state 43
+    "-"                  shift, and go to state 44
+
+    block            go to state 45
+    expr             go to state 59
+    literal          go to state 47
+    boolean-literal  go to state 48
+
+
+State 43
+
+   38 expr: "(" . ")"
+   39     | "(" . expr ")"
+
+    "integer-literal"    shift, and go to state 30
+    "string-literal"     shift, and go to state 31
+    "object-identifier"  shift, and go to state 32
+    "false"              shift, and go to state 33
+    "if"                 shift, and go to state 34
+    "isnull"             shift, and go to state 35
+    "let"                shift, and go to state 36
+    "new"                shift, and go to state 37
+    "not"                shift, and go to state 38
+    "self"               shift, and go to state 39
+    "true"               shift, and go to state 40
+    "while"              shift, and go to state 41
+    "{"                  shift, and go to state 42
+    "("                  shift, and go to state 43
+    ")"                  shift, and go to state 60
+    "-"                  shift, and go to state 44
+
+    block            go to state 45
+    expr             go to state 61
+    literal          go to state 47
+    boolean-literal  go to state 48
+
+
+State 44
+
+   30 expr: "-" . expr
+
+    "integer-literal"    shift, and go to state 30
+    "string-literal"     shift, and go to state 31
+    "object-identifier"  shift, and go to state 32
+    "false"              shift, and go to state 33
+    "if"                 shift, and go to state 34
+    "isnull"             shift, and go to state 35
+    "let"                shift, and go to state 36
+    "new"                shift, and go to state 37
+    "not"                shift, and go to state 38
+    "self"               shift, and go to state 39
+    "true"               shift, and go to state 40
+    "while"              shift, and go to state 41
+    "{"                  shift, and go to state 42
+    "("                  shift, and go to state 43
+    "-"                  shift, and go to state 44
+
+    block            go to state 45
+    expr             go to state 62
+    literal          go to state 47
+    boolean-literal  go to state 48
+
+
+State 45
+
+   40 expr: block .
+
+    $default  reduce using rule 40 (expr)
+
+
+State 46
+
+   11 assignment: "<-" expr .
+   29 expr: expr . bin-operator expr
+   33     | expr . "." "object-identifier" "(" args ")"
+
+    "and"  shift, and go to state 63
+    "+"    shift, and go to state 64
+    "-"    shift, and go to state 65
+    "*"    shift, and go to state 66
+    "/"    shift, and go to state 67
+    "^"    shift, and go to state 68
+    "."    shift, and go to state 69
+    "="    shift, and go to state 70
+    "<"    shift, and go to state 71
+    "<="   shift, and go to state 72
+
+    $default  reduce using rule 11 (assignment)
+
+    bin-operator  go to state 73
+
+
+State 47
+
+   37 expr: literal .
+
+    $default  reduce using rule 37 (expr)
+
+
+State 48
+
+   56 literal: boolean-literal .
+
+    $default  reduce using rule 56 (literal)
+
+
+State 49
+
+    9 field: formal assignment ";" .
+
+    $default  reduce using rule 9 (field)
+
+
+State 50
+
+   12 method: "object-identifier" "(" formals ")" . ":" type block
+
+    ":"  shift, and go to state 74
+
+
+State 51
+
+   32 expr: "object-identifier" "(" . args ")"
+
+    "integer-literal"    shift, and go to state 30
+    "string-literal"     shift, and go to state 31
+    "object-identifier"  shift, and go to state 32
+    "false"              shift, and go to state 33
+    "if"                 shift, and go to state 34
+    "isnull"             shift, and go to state 35
+    "let"                shift, and go to state 36
+    "new"                shift, and go to state 37
+    "not"                shift, and go to state 38
+    "self"               shift, and go to state 39
+    "true"               shift, and go to state 40
+    "while"              shift, and go to state 41
+    "{"                  shift, and go to state 42
+    "("                  shift, and go to state 43
+    "-"                  shift, and go to state 44
+
+    $default  reduce using rule 52 (args)
+
+    block            go to state 45
+    expr             go to state 75
+    args             go to state 76
+    literal          go to state 47
+    boolean-literal  go to state 48
+
+
+State 52
+
+   27 expr: "object-identifier" "<-" . expr
+
+    "integer-literal"    shift, and go to state 30
+    "string-literal"     shift, and go to state 31
+    "object-identifier"  shift, and go to state 32
+    "false"              shift, and go to state 33
+    "if"                 shift, and go to state 34
+    "isnull"             shift, and go to state 35
+    "let"                shift, and go to state 36
+    "new"                shift, and go to state 37
+    "not"                shift, and go to state 38
+    "self"               shift, and go to state 39
+    "true"               shift, and go to state 40
+    "while"              shift, and go to state 41
+    "{"                  shift, and go to state 42
+    "("                  shift, and go to state 43
+    "-"                  shift, and go to state 44
+
+    block            go to state 45
+    expr             go to state 77
+    literal          go to state 47
+    boolean-literal  go to state 48
+
+
+State 53
+
+   24 expr: "if" expr . "then" expr else
+   29     | expr . bin-operator expr
+   33     | expr . "." "object-identifier" "(" args ")"
+
+    "and"   shift, and go to state 63
+    "then"  shift, and go to state 78
+    "+"     shift, and go to state 64
+    "-"     shift, and go to state 65
+    "*"     shift, and go to state 66
+    "/"     shift, and go to state 67
+    "^"     shift, and go to state 68
+    "."     shift, and go to state 69
+    "="     shift, and go to state 70
+    "<"     shift, and go to state 71
+    "<="    shift, and go to state 72
+
+    bin-operator  go to state 73
+
+
+State 54
+
+   29 expr: expr . bin-operator expr
+   31     | "isnull" expr .
+   33     | expr . "." "object-identifier" "(" args ")"
+
+    "^"  shift, and go to state 68
+    "."  shift, and go to state 69
+
+    $default  reduce using rule 31 (expr)
+
+    bin-operator  go to state 73
+
+
+State 55
+
+   26 expr: "let" "object-identifier" . ":" type assignment "in" expr
+
+    ":"  shift, and go to state 79
+
+
+State 56
+
+   34 expr: "new" "type-identifier" .
+
+    $default  reduce using rule 34 (expr)
+
+
+State 57
+
+   28 expr: "not" expr .
+   29     | expr . bin-operator expr
+   33     | expr . "." "object-identifier" "(" args ")"
+
+    "+"   shift, and go to state 64
+    "-"   shift, and go to state 65
+    "*"   shift, and go to state 66
+    "/"   shift, and go to state 67
+    "^"   shift, and go to state 68
+    "."   shift, and go to state 69
+    "="   shift, and go to state 70
+    "<"   shift, and go to state 71
+    "<="  shift, and go to state 72
+
+    $default  reduce using rule 28 (expr)
+
+    bin-operator  go to state 73
+
+
+State 58
+
+   25 expr: "while" expr . "do" expr
+   29     | expr . bin-operator expr
+   33     | expr . "." "object-identifier" "(" args ")"
+
+    "and"  shift, and go to state 63
+    "do"   shift, and go to state 80
+    "+"    shift, and go to state 64
+    "-"    shift, and go to state 65
+    "*"    shift, and go to state 66
+    "/"    shift, and go to state 67
+    "^"    shift, and go to state 68
+    "."    shift, and go to state 69
+    "="    shift, and go to state 70
+    "<"    shift, and go to state 71
+    "<="   shift, and go to state 72
+
+    bin-operator  go to state 73
+
+
+State 59
+
+   21 block: "{" expr . second-instr "}"
+   29 expr: expr . bin-operator expr
+   33     | expr . "." "object-identifier" "(" args ")"
+
+    "and"  shift, and go to state 63
+    ";"    shift, and go to state 81
+    "+"    shift, and go to state 64
+    "-"    shift, and go to state 65
+    "*"    shift, and go to state 66
+    "/"    shift, and go to state 67
+    "^"    shift, and go to state 68
+    "."    shift, and go to state 69
+    "="    shift, and go to state 70
+    "<"    shift, and go to state 71
+    "<="   shift, and go to state 72
+
+    $default  reduce using rule 22 (second-instr)
+
+    second-instr  go to state 82
+    bin-operator  go to state 73
+
+
+State 60
+
+   38 expr: "(" ")" .
+
+    $default  reduce using rule 38 (expr)
+
+
+State 61
+
+   29 expr: expr . bin-operator expr
+   33     | expr . "." "object-identifier" "(" args ")"
+   39     | "(" expr . ")"
+
+    "and"  shift, and go to state 63
+    ")"    shift, and go to state 83
+    "+"    shift, and go to state 64
+    "-"    shift, and go to state 65
+    "*"    shift, and go to state 66
+    "/"    shift, and go to state 67
+    "^"    shift, and go to state 68
+    "."    shift, and go to state 69
+    "="    shift, and go to state 70
+    "<"    shift, and go to state 71
+    "<="   shift, and go to state 72
+
+    bin-operator  go to state 73
+
+
+State 62
+
+   29 expr: expr . bin-operator expr
+   30     | "-" expr .
+   33     | expr . "." "object-identifier" "(" args ")"
+
+    "*"  shift, and go to state 66
+    "/"  shift, and go to state 67
+    "^"  shift, and go to state 68
+    "."  shift, and go to state 69
+
+    $default  reduce using rule 30 (expr)
+
+    bin-operator  go to state 73
+
+
+State 63
+
+   51 bin-operator: "and" .
+
+    $default  reduce using rule 51 (bin-operator)
+
+
+State 64
+
+   46 bin-operator: "+" .
+
+    $default  reduce using rule 46 (bin-operator)
+
+
+State 65
+
+   47 bin-operator: "-" .
+
+    $default  reduce using rule 47 (bin-operator)
+
+
+State 66
+
+   48 bin-operator: "*" .
+
+    $default  reduce using rule 48 (bin-operator)
+
+
+State 67
+
+   49 bin-operator: "/" .
+
+    $default  reduce using rule 49 (bin-operator)
+
+
+State 68
+
+   50 bin-operator: "^" .
+
+    $default  reduce using rule 50 (bin-operator)
+
+
+State 69
+
+   33 expr: expr "." . "object-identifier" "(" args ")"
+
+    "object-identifier"  shift, and go to state 84
+
+
+State 70
+
+   43 bin-operator: "=" .
+
+    $default  reduce using rule 43 (bin-operator)
+
+
+State 71
+
+   44 bin-operator: "<" .
+
+    $default  reduce using rule 44 (bin-operator)
+
+
+State 72
+
+   45 bin-operator: "<=" .
+
+    $default  reduce using rule 45 (bin-operator)
+
+
+State 73
+
+   29 expr: expr bin-operator . expr
+
+    "integer-literal"    shift, and go to state 30
+    "string-literal"     shift, and go to state 31
+    "object-identifier"  shift, and go to state 32
+    "false"              shift, and go to state 33
+    "if"                 shift, and go to state 34
+    "isnull"             shift, and go to state 35
+    "let"                shift, and go to state 36
+    "new"                shift, and go to state 37
+    "not"                shift, and go to state 38
+    "self"               shift, and go to state 39
+    "true"               shift, and go to state 40
+    "while"              shift, and go to state 41
+    "{"                  shift, and go to state 42
+    "("                  shift, and go to state 43
+    "-"                  shift, and go to state 44
+
+    block            go to state 45
+    expr             go to state 85
+    literal          go to state 47
+    boolean-literal  go to state 48
+
+
+State 74
+
+   12 method: "object-identifier" "(" formals ")" ":" . type block
+
+    "type-identifier"  shift, and go to state 24
+    "bool"             shift, and go to state 25
+    "int32"            shift, and go to state 26
+    "string"           shift, and go to state 27
+    "unit"             shift, and go to state 28
+
+    type  go to state 86
+
+
+State 75
+
+   29 expr: expr . bin-operator expr
+   33     | expr . "." "object-identifier" "(" args ")"
+   53 args: expr .
+
+    "and"  shift, and go to state 63
+    "+"    shift, and go to state 64
+    "-"    shift, and go to state 65
+    "*"    shift, and go to state 66
+    "/"    shift, and go to state 67
+    "^"    shift, and go to state 68
+    "."    shift, and go to state 69
+    "="    shift, and go to state 70
+    "<"    shift, and go to state 71
+    "<="   shift, and go to state 72
+
+    $default  reduce using rule 53 (args)
+
+    bin-operator  go to state 73
+
+
+State 76
+
+   32 expr: "object-identifier" "(" args . ")"
+
+    ")"  shift, and go to state 87
+
+
+State 77
+
+   27 expr: "object-identifier" "<-" expr .
+   29     | expr . bin-operator expr
+   33     | expr . "." "object-identifier" "(" args ")"
+
+    "and"  shift, and go to state 63
+    "+"    shift, and go to state 64
+    "-"    shift, and go to state 65
+    "*"    shift, and go to state 66
+    "/"    shift, and go to state 67
+    "^"    shift, and go to state 68
+    "."    shift, and go to state 69
+    "="    shift, and go to state 70
+    "<"    shift, and go to state 71
+    "<="   shift, and go to state 72
+
+    $default  reduce using rule 27 (expr)
+
+    bin-operator  go to state 73
+
+
+State 78
+
+   24 expr: "if" expr "then" . expr else
+
+    "integer-literal"    shift, and go to state 30
+    "string-literal"     shift, and go to state 31
+    "object-identifier"  shift, and go to state 32
+    "false"              shift, and go to state 33
+    "if"                 shift, and go to state 34
+    "isnull"             shift, and go to state 35
+    "let"                shift, and go to state 36
+    "new"                shift, and go to state 37
+    "not"                shift, and go to state 38
+    "self"               shift, and go to state 39
+    "true"               shift, and go to state 40
+    "while"              shift, and go to state 41
+    "{"                  shift, and go to state 42
+    "("                  shift, and go to state 43
+    "-"                  shift, and go to state 44
+
+    block            go to state 45
+    expr             go to state 88
+    literal          go to state 47
+    boolean-literal  go to state 48
+
+
+State 79
+
+   26 expr: "let" "object-identifier" ":" . type assignment "in" expr
+
+    "type-identifier"  shift, and go to state 24
+    "bool"             shift, and go to state 25
+    "int32"            shift, and go to state 26
+    "string"           shift, and go to state 27
+    "unit"             shift, and go to state 28
+
+    type  go to state 89
+
+
+State 80
+
+   25 expr: "while" expr "do" . expr
+
+    "integer-literal"    shift, and go to state 30
+    "string-literal"     shift, and go to state 31
+    "object-identifier"  shift, and go to state 32
+    "false"              shift, and go to state 33
+    "if"                 shift, and go to state 34
+    "isnull"             shift, and go to state 35
+    "let"                shift, and go to state 36
+    "new"                shift, and go to state 37
+    "not"                shift, and go to state 38
+    "self"               shift, and go to state 39
+    "true"               shift, and go to state 40
+    "while"              shift, and go to state 41
+    "{"                  shift, and go to state 42
+    "("                  shift, and go to state 43
+    "-"                  shift, and go to state 44
+
+    block            go to state 45
+    expr             go to state 90
+    literal          go to state 47
+    boolean-literal  go to state 48
+
+
+State 81
+
+   23 second-instr: ";" . expr
+
+    "integer-literal"    shift, and go to state 30
+    "string-literal"     shift, and go to state 31
+    "object-identifier"  shift, and go to state 32
+    "false"              shift, and go to state 33
+    "if"                 shift, and go to state 34
+    "isnull"             shift, and go to state 35
+    "let"                shift, and go to state 36
+    "new"                shift, and go to state 37
+    "not"                shift, and go to state 38
+    "self"               shift, and go to state 39
+    "true"               shift, and go to state 40
+    "while"              shift, and go to state 41
+    "{"                  shift, and go to state 42
+    "("                  shift, and go to state 43
+    "-"                  shift, and go to state 44
+
+    block            go to state 45
+    expr             go to state 91
+    literal          go to state 47
+    boolean-literal  go to state 48
+
+
+State 82
+
+   21 block: "{" expr second-instr . "}"
+
+    "}"  shift, and go to state 92
+
+
+State 83
+
+   39 expr: "(" expr ")" .
+
+    $default  reduce using rule 39 (expr)
+
+
+State 84
+
+   33 expr: expr "." "object-identifier" . "(" args ")"
+
+    "("  shift, and go to state 93
+
+
+State 85
+
+   29 expr: expr . bin-operator expr
+   29     | expr bin-operator expr .
+   33     | expr . "." "object-identifier" "(" args ")"
+
+    "and"  shift, and go to state 63
+    "+"    shift, and go to state 64
+    "-"    shift, and go to state 65
+    "*"    shift, and go to state 66
+    "/"    shift, and go to state 67
+    "^"    shift, and go to state 68
+    "."    shift, and go to state 69
+    "="    shift, and go to state 70
+    "<"    shift, and go to state 71
+    "<="   shift, and go to state 72
+
+    "and"     [reduce using rule 29 (expr)]
+    "+"       [reduce using rule 29 (expr)]
+    "-"       [reduce using rule 29 (expr)]
+    "*"       [reduce using rule 29 (expr)]
+    "/"       [reduce using rule 29 (expr)]
+    "^"       [reduce using rule 29 (expr)]
+    "."       [reduce using rule 29 (expr)]
+    "="       [reduce using rule 29 (expr)]
+    "<"       [reduce using rule 29 (expr)]
+    "<="      [reduce using rule 29 (expr)]
+    $default  reduce using rule 29 (expr)
+
+    bin-operator  go to state 73
+
+
+State 86
+
+   12 method: "object-identifier" "(" formals ")" ":" type . block
+
+    "{"  shift, and go to state 42
+
+    block  go to state 94
+
+
+State 87
+
+   32 expr: "object-identifier" "(" args ")" .
+
+    $default  reduce using rule 32 (expr)
+
+
+State 88
+
+   24 expr: "if" expr "then" expr . else
+   29     | expr . bin-operator expr
+   33     | expr . "." "object-identifier" "(" args ")"
+
+    "and"   shift, and go to state 63
+    "else"  shift, and go to state 95
+    "+"     shift, and go to state 64
+    "-"     shift, and go to state 65
+    "*"     shift, and go to state 66
+    "/"     shift, and go to state 67
+    "^"     shift, and go to state 68
+    "."     shift, and go to state 69
+    "="     shift, and go to state 70
+    "<"     shift, and go to state 71
+    "<="    shift, and go to state 72
+
+    "and"     [reduce using rule 41 (else)]
+    "else"    [reduce using rule 41 (else)]
+    "+"       [reduce using rule 41 (else)]
+    "-"       [reduce using rule 41 (else)]
+    "*"       [reduce using rule 41 (else)]
+    "/"       [reduce using rule 41 (else)]
+    "^"       [reduce using rule 41 (else)]
+    "."       [reduce using rule 41 (else)]
+    "="       [reduce using rule 41 (else)]
+    "<"       [reduce using rule 41 (else)]
+    "<="      [reduce using rule 41 (else)]
+    $default  reduce using rule 41 (else)
+
+    else          go to state 96
+    bin-operator  go to state 73
+
+
+State 89
+
+   26 expr: "let" "object-identifier" ":" type . assignment "in" expr
+
+    "<-"  shift, and go to state 19
+
+    $default  reduce using rule 10 (assignment)
+
+    assignment  go to state 97
+
+
+State 90
+
+   25 expr: "while" expr "do" expr .
+   29     | expr . bin-operator expr
+   33     | expr . "." "object-identifier" "(" args ")"
+
+    "and"  shift, and go to state 63
+    "+"    shift, and go to state 64
+    "-"    shift, and go to state 65
+    "*"    shift, and go to state 66
+    "/"    shift, and go to state 67
+    "^"    shift, and go to state 68
+    "."    shift, and go to state 69
+    "="    shift, and go to state 70
+    "<"    shift, and go to state 71
+    "<="   shift, and go to state 72
+
+    $default  reduce using rule 25 (expr)
+
+    bin-operator  go to state 73
+
+
+State 91
+
+   23 second-instr: ";" expr .
+   29 expr: expr . bin-operator expr
+   33     | expr . "." "object-identifier" "(" args ")"
+
+    "and"  shift, and go to state 63
+    "+"    shift, and go to state 64
+    "-"    shift, and go to state 65
+    "*"    shift, and go to state 66
+    "/"    shift, and go to state 67
+    "^"    shift, and go to state 68
+    "."    shift, and go to state 69
+    "="    shift, and go to state 70
+    "<"    shift, and go to state 71
+    "<="   shift, and go to state 72
+
+    $default  reduce using rule 23 (second-instr)
+
+    bin-operator  go to state 73
+
+
+State 92
+
+   21 block: "{" expr second-instr "}" .
+
+    $default  reduce using rule 21 (block)
+
+
+State 93
+
+   33 expr: expr "." "object-identifier" "(" . args ")"
+
+    "integer-literal"    shift, and go to state 30
+    "string-literal"     shift, and go to state 31
+    "object-identifier"  shift, and go to state 32
+    "false"              shift, and go to state 33
+    "if"                 shift, and go to state 34
+    "isnull"             shift, and go to state 35
+    "let"                shift, and go to state 36
+    "new"                shift, and go to state 37
+    "not"                shift, and go to state 38
+    "self"               shift, and go to state 39
+    "true"               shift, and go to state 40
+    "while"              shift, and go to state 41
+    "{"                  shift, and go to state 42
+    "("                  shift, and go to state 43
+    "-"                  shift, and go to state 44
+
+    $default  reduce using rule 52 (args)
+
+    block            go to state 45
+    expr             go to state 75
+    args             go to state 98
+    literal          go to state 47
+    boolean-literal  go to state 48
+
+
+State 94
+
+   12 method: "object-identifier" "(" formals ")" ":" type block .
+
+    $default  reduce using rule 12 (method)
+
+
+State 95
+
+   42 else: "else" . expr
+
+    "integer-literal"    shift, and go to state 30
+    "string-literal"     shift, and go to state 31
+    "object-identifier"  shift, and go to state 32
+    "false"              shift, and go to state 33
+    "if"                 shift, and go to state 34
+    "isnull"             shift, and go to state 35
+    "let"                shift, and go to state 36
+    "new"                shift, and go to state 37
+    "not"                shift, and go to state 38
+    "self"               shift, and go to state 39
+    "true"               shift, and go to state 40
+    "while"              shift, and go to state 41
+    "{"                  shift, and go to state 42
+    "("                  shift, and go to state 43
+    "-"                  shift, and go to state 44
+
+    block            go to state 45
+    expr             go to state 99
+    literal          go to state 47
+    boolean-literal  go to state 48
+
+
+State 96
+
+   24 expr: "if" expr "then" expr else .
+
+    $default  reduce using rule 24 (expr)
+
+
+State 97
+
+   26 expr: "let" "object-identifier" ":" type assignment . "in" expr
+
+    "in"  shift, and go to state 100
+
+
+State 98
+
+   33 expr: expr "." "object-identifier" "(" args . ")"
+
+    ")"  shift, and go to state 101
+
+
+State 99
+
+   29 expr: expr . bin-operator expr
+   33     | expr . "." "object-identifier" "(" args ")"
+   42 else: "else" expr .
+
+    "and"  shift, and go to state 63
+    "+"    shift, and go to state 64
+    "-"    shift, and go to state 65
+    "*"    shift, and go to state 66
+    "/"    shift, and go to state 67
+    "^"    shift, and go to state 68
+    "."    shift, and go to state 69
+    "="    shift, and go to state 70
+    "<"    shift, and go to state 71
+    "<="   shift, and go to state 72
+
+    $default  reduce using rule 42 (else)
+
+    bin-operator  go to state 73
+
+
+State 100
+
+   26 expr: "let" "object-identifier" ":" type assignment "in" . expr
+
+    "integer-literal"    shift, and go to state 30
+    "string-literal"     shift, and go to state 31
+    "object-identifier"  shift, and go to state 32
+    "false"              shift, and go to state 33
+    "if"                 shift, and go to state 34
+    "isnull"             shift, and go to state 35
+    "let"                shift, and go to state 36
+    "new"                shift, and go to state 37
+    "not"                shift, and go to state 38
+    "self"               shift, and go to state 39
+    "true"               shift, and go to state 40
+    "while"              shift, and go to state 41
+    "{"                  shift, and go to state 42
+    "("                  shift, and go to state 43
+    "-"                  shift, and go to state 44
+
+    block            go to state 45
+    expr             go to state 102
+    literal          go to state 47
+    boolean-literal  go to state 48
+
+
+State 101
+
+   33 expr: expr "." "object-identifier" "(" args ")" .
+
+    $default  reduce using rule 33 (expr)
+
+
+State 102
+
+   26 expr: "let" "object-identifier" ":" type assignment "in" expr .
+   29     | expr . bin-operator expr
+   33     | expr . "." "object-identifier" "(" args ")"
+
+    "and"  shift, and go to state 63
+    "+"    shift, and go to state 64
+    "-"    shift, and go to state 65
+    "*"    shift, and go to state 66
+    "/"    shift, and go to state 67
+    "^"    shift, and go to state 68
+    "."    shift, and go to state 69
+    "="    shift, and go to state 70
+    "<"    shift, and go to state 71
+    "<="   shift, and go to state 72
+
+    $default  reduce using rule 26 (expr)
+
+    bin-operator  go to state 73

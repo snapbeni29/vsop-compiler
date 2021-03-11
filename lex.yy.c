@@ -523,16 +523,17 @@ int yy_flex_debug = 0;
 #define YY_MORE_ADJ 0
 #define YY_RESTORE_YY_MORE_OFFSET
 char *yytext;
-#line 1 "vsopc.l"
+#line 1 "lexer.l"
 /* Declarations */
-#line 4 "vsopc.l"
+#line 4 "lexer.l"
 #include <iostream>
 #include <map>
 #include <vector>
 #include <algorithm> 
 #include <cstring>
 #include <stack> 
-#include "vsopc.hh"
+#include "lexer.hh"
+#include "parser.tab.h"
 
 using namespace std;
 
@@ -695,11 +696,11 @@ map<string, string> operators = {
 	{"<-", "assign"}
 };
 
-#line 699 "lex.yy.c"
+#line 700 "lex.yy.c"
 /* Definitions */
 
 /* Rules */
-#line 703 "lex.yy.c"
+#line 704 "lex.yy.c"
 
 #define INITIAL 0
 #define STRING 1
@@ -918,9 +919,9 @@ YY_DECL
 		}
 
 	{
-#line 212 "vsopc.l"
+#line 213 "lexer.l"
 
-#line 924 "lex.yy.c"
+#line 925 "lex.yy.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -990,18 +991,18 @@ do_action:	/* This label is used only to access EOF actions. */
 case 1:
 /* rule 1 can match eol */
 YY_RULE_SETUP
-#line 213 "vsopc.l"
+#line 214 "lexer.l"
 {/* do nothing */}
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 215 "vsopc.l"
+#line 216 "lexer.l"
 {text = string(yytext);
 							return TYPE_IDENTIFIER;}
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 217 "vsopc.l"
+#line 218 "lexer.l"
 {text = string(yytext);
 							auto iterator = find(keywords.begin(), keywords.end(), text);
 							if (iterator != keywords.end()){
@@ -1011,7 +1012,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 224 "vsopc.l"
+#line 225 "lexer.l"
 {auto op = operators.find(string(yytext));
 							if (op != operators.end()){
 								text = op->second;
@@ -1021,97 +1022,97 @@ YY_RULE_SETUP
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 231 "vsopc.l"
+#line 232 "lexer.l"
 {text = toDecimal(yytext); return INT_LITERAL;}
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 232 "vsopc.l"
+#line 233 "lexer.l"
 {text = string(yytext); return INVALID_INTEGER;}
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 234 "vsopc.l"
+#line 235 "lexer.l"
 {text = string(yytext); save_pos(); BEGIN(STRING); return BEGIN_STRING_LITERAL;}
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 235 "vsopc.l"
+#line 236 "lexer.l"
 {text = string(yytext); BEGIN(INITIAL); return END_STRING_LITERAL;}
 	YY_BREAK
 case 9:
 /* rule 9 can match eol */
 YY_RULE_SETUP
-#line 236 "vsopc.l"
+#line 237 "lexer.l"
 {}
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 237 "vsopc.l"
+#line 238 "lexer.l"
 {text = string(yytext); return REGULAR_CHAR;}
 	YY_BREAK
 case 11:
 /* rule 11 can match eol */
 YY_RULE_SETUP
-#line 238 "vsopc.l"
+#line 239 "lexer.l"
 {text = stringToHex(getEscapeChar(string(yytext))); return REGULAR_CHAR;} 
 	YY_BREAK
 case YY_STATE_EOF(STRING):
-#line 239 "vsopc.l"
+#line 240 "lexer.l"
 {return UNEXPECTED_EOF;} 
 	YY_BREAK
 case 12:
 /* rule 12 can match eol */
 YY_RULE_SETUP
-#line 240 "vsopc.l"
+#line 241 "lexer.l"
 {return STRING_ERR_EOL;} 
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 241 "vsopc.l"
+#line 242 "lexer.l"
 {text = yytext; return INVALID_ESC_SEQ;} 
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 243 "vsopc.l"
+#line 244 "lexer.l"
 {}
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 244 "vsopc.l"
+#line 245 "lexer.l"
 {commentStack.push({currentLine, currentColumn}); BEGIN(COMMENT);}
 	YY_BREAK
 case 16:
 /* rule 16 can match eol */
 YY_RULE_SETUP
-#line 245 "vsopc.l"
+#line 246 "lexer.l"
 {}
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 246 "vsopc.l"
+#line 247 "lexer.l"
 {commentStack.push({currentLine, currentColumn});}
 	YY_BREAK
 case YY_STATE_EOF(COMMENT):
-#line 247 "vsopc.l"
+#line 248 "lexer.l"
 {auto row_col = commentStack.top(); setPos(row_col.first, row_col.second); return UNEXPECTED_EOF;}
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 248 "vsopc.l"
+#line 249 "lexer.l"
 {commentStack.pop(); if(commentStack.empty()) BEGIN(INITIAL);}
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 250 "vsopc.l"
+#line 251 "lexer.l"
 {text = yytext; return INVALID_CHARACTER;}
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 251 "vsopc.l"
+#line 252 "lexer.l"
 ECHO;
 	YY_BREAK
-#line 1115 "lex.yy.c"
+#line 1116 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -2128,11 +2129,11 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 251 "vsopc.l"
+#line 252 "lexer.l"
 
 
 /* User subroutines */
-
+/*
 int main(int argc, char* argv[])
 {
 	if(string(argv[1]) != "-lex" || argc < 3){
@@ -2195,4 +2196,5 @@ int main(int argc, char* argv[])
 	fclose(yyin);
 	return 0;
 }
+*/
 
