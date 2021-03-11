@@ -127,48 +127,49 @@ void printLexicalError(int row, int col, string message) {
 }
 
 // Keywords vector
-vector<string> keywords{
-	"class",
-	"and",
-	"bool",
-	"do",
-	"if",
-	"else",
-	"then",
-	"extends",
-	"false",
-	"in",
-	"int32",
-	"isnull",
-	"let",
-	"new",
-	"not",
-	"self",
-	"string",
-	"true",
-	"unit",
-	"while",
+map<string, int> keywords{
+	{"class", CLASS},
+	{"and", AND},
+	{"bool", BOOL},
+	{"do", DO},
+	{"if", IF},
+	{"else", ELSE},
+	{"then", THEN},
+	{"extends", EXTENDS},
+	{"false", FALSE},
+	{"in", IN},
+	{"int32", INT32},
+	{"isnull", ISNULL},
+	{"let", LET},
+	{"new", NEW},
+	{"not", NOT},
+	{"self", SELF},
+	{"string", SSTRING},
+	{"true", TRUE},
+	{"unit", UNIT},
+	{"while", WHILE}
 };
 
+struct op { int code; string val; };
+
 // Operators map
-map<string, string> operators = {
-	{"{", "lbrace"},
-	{"}", "rbrace"},
-	{"(", "lpar"},
-	{")", "rpar"},
-	{":", "colon"},
-	{";", "semicolon"},
-	{",", "comma"},
-	{"+", "plus"},
-	{"-", "minus"},
-	{"*", "times"},
-	{"/", "div"},
-	{"^", "pow"},
-	{".", "dot"},
-	{"=", "equal"},
-	{"<", "lower"},
-	{"<=", "lower-equal"},
-	{"<-", "assign"}
+map<string, op> operators = {
+	{"{", {LBRACE, "lbrace"}},
+	{"}", {RBRACE, "rbrace"}},
+	{"(", {LPAR, "lpar"}},
+	{")", {RPAR, "rpar"}},
+	{":", {COLON, "colon"}},
+	{";", {SEMICOLON, "semicolon"}},
+	{",", {COMMA, "comma"}},
+	{"+", {PLUS, "plus"}},
+	{"-", {MINUS, "minus"}},
+	{"*", {TIMES, "times"}},
+	{"/", {DIV, "div"}},
+	{"^", {POW, "pow"}},
+	{".", {DOT, "dot"}},
+	{"=", {EQUAL, "equal"}},
+	{"<=", {LOWER_EQUAL, "lower-equal"}},
+	{"<-", {ASSIGN, "assign"}}
 };
 
 %}
@@ -216,27 +217,27 @@ invalid-character			.
 {type-identifier}			{text = string(yytext);
 							return TYPE_IDENTIFIER;}
 {object-identifier}			{text = string(yytext);
-							auto iterator = find(keywords.begin(), keywords.end(), text);
+							auto iterator = keywords.find(text);
 							if (iterator != keywords.end()){
-								return KEYWORD;
+								return iterator->second;
 							}
 							return OBJECT_IDENTIFIER;}
 
 {operator}					{auto op = operators.find(string(yytext));
 							if (op != operators.end()){
-								text = op->second;
-								return OPERATOR;
+								text = op->second.val;
+								return op->second.code;
 							}
 							return -1;}
 
 {integer-literal}			{text = toDecimal(yytext); return INT_LITERAL;}
 {invalid-integer}			{text = string(yytext); return INVALID_INTEGER;}
 
-{double-quote}             	{text = string(yytext); save_pos(); BEGIN(STRING); return BEGIN_STRING_LITERAL;}
-<STRING>{double-quote}		{text = string(yytext); BEGIN(INITIAL); return END_STRING_LITERAL;}
+{double-quote}             	{text += string(yytext); save_pos(); BEGIN(STRING);}
+<STRING>{double-quote}		{text += string(yytext); BEGIN(INITIAL); return STRING_LITERAL;}
 <STRING>\\{lf-followed}		{}
-<STRING>{regular-char}+ 	{text = string(yytext); return REGULAR_CHAR;}
-<STRING>{escaped-char}		{text = stringToHex(getEscapeChar(string(yytext))); return REGULAR_CHAR;} 
+<STRING>{regular-char}+ 	{text += string(yytext);}
+<STRING>{escaped-char}		{text += stringToHex(getEscapeChar(string(yytext)));} 
 <STRING><<EOF>>				{return UNEXPECTED_EOF;} 
 <STRING>\n					{return STRING_ERR_EOL;} 
 <STRING>{invalid-esc-seq}	{text = yytext; return INVALID_ESC_SEQ;} 

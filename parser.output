@@ -1,90 +1,20 @@
-Nonterminals useless in grammar
-
-    literal
-    boolean-literal
-    args
-    arg
-    args-supp
-    call
-    binary-op
-    unary-op
-
-
 Terminals unused in grammar
 
-    "integer-literal"
     "real-literal"
-    "string-literal"
     "and"
     "break"
-    "do"
     "double"
-    "else"
     "extern"
-    "false"
     "for"
-    "if"
-    "in"
-    "isnull"
-    "let"
     "lets"
-    "new"
-    "not"
     "mod"
     "or"
-    "self"
-    "then"
     "to"
-    "true"
-    "while"
     "vararg"
-    "+"
-    "-"
-    "*"
-    "/"
-    "^"
-    "."
-    "="
     "!="
-    "<"
-    "<="
     ">"
     ">="
     UMINUS
-
-
-Rules useless in grammar
-
-   30 literal: "integer-literal"
-   31        | "string-literal"
-   32        | boolean-literal
-
-   33 boolean-literal: "true"
-   34                | "false"
-
-   35 args: %empty
-   36     | arg
-
-   37 arg: expr args-supp
-
-   38 args-supp: %empty
-   39          | "," arg
-
-   40 call: "object-identifier" "(" args ")"
-   41     | expr "." "object-identifier" "(" args ")"
-
-   42 binary-op: "="
-   43          | "<"
-   44          | "<="
-   45          | "+"
-   46          | "-"
-   47          | "*"
-   48          | "/"
-   49          | "^"
-
-   50 unary-op: "not" expr
-   51         | "-" expr
-   52         | "isnull" expr
 
 
 Grammar
@@ -131,66 +61,109 @@ Grammar
    25 block-supp: %empty
    26           | ";" expr block-supp
 
-   27 expr: %empty
-   28     | "(" ")"
-   29     | block
+   27 expr: "if" expr "then" expr
+   28     | "if" expr "then" expr "else" expr
+   29     | "while" expr "do" expr
+   30     | "let" "object-identifier" ":" type opt-assignment "in" expr
+   31     | "object-identifier" assignment
+   32     | unary-op
+   33     | binary-op
+   34     | call
+   35     | "new" "type-identifier"
+   36     | "object-identifier"
+   37     | "self"
+   38     | literal
+   39     | "(" ")"
+   40     | "(" expr ")"
+   41     | block
+
+   42 literal: "integer-literal"
+   43        | "string-literal"
+   44        | boolean-literal
+
+   45 boolean-literal: "true"
+   46                | "false"
+
+   47 args: %empty
+   48     | arg
+
+   49 arg: expr args-supp
+
+   50 args-supp: %empty
+   51          | "," arg
+
+   52 call: "object-identifier" "(" args ")"
+   53     | expr "." "object-identifier" "(" args ")"
+
+   54 binary-op: expr "=" expr
+   55          | expr "<" expr
+   56          | expr "<=" expr
+   57          | expr "+" expr
+   58          | expr "-" expr
+   59          | expr "*" expr
+   60          | expr "/" expr
+   61          | expr "^" expr
+
+   62 unary-op: "not" expr
+   63         | "-" expr
+   64         | "isnull" expr
 
 
 Terminals, with rules where they appear
 
     "end-of-file" (0) 0
     error (256)
-    "integer-literal" <int32> (258)
+    "integer-literal" <int32> (258) 42
     "real-literal" <doubl> (259)
-    "string-literal" <id> (260)
-    "type-identifier" <id> (261) 3 5 14
-    "object-identifier" <id> (262) 13 21
+    "string-literal" <id> (260) 43
+    "type-identifier" <id> (261) 3 5 14 35
+    "object-identifier" <id> (262) 13 21 30 31 36 52 53
     "and" <id> (263)
     "bool" <id> (264) 16
     "break" <id> (265)
     "class" <id> (266) 3
-    "do" <id> (267)
+    "do" <id> (267) 29
     "double" <id> (268)
-    "else" <id> (269)
+    "else" <id> (269) 28
     "extends" <id> (270) 5
     "extern" <id> (271)
-    "false" <id> (272)
+    "false" <id> (272) 46
     "for" <id> (273)
-    "if" <id> (274)
-    "in" <id> (275)
+    "if" <id> (274) 27 28
+    "in" <id> (275) 30
     "int32" <id> (276) 15
-    "isnull" <id> (277)
-    "let" <id> (278)
+    "isnull" <id> (277) 64
+    "let" <id> (278) 30
     "lets" <id> (279)
-    "new" <id> (280)
-    "not" <id> (281)
+    "new" <id> (280) 35
+    "not" <id> (281) 62
     "mod" <id> (282)
     "or" <id> (283)
-    "self" <id> (284)
+    "self" <id> (284) 37
     "string" <id> (285) 17
-    "then" <id> (286)
+    "then" <id> (286) 27 28
     "to" <id> (287)
-    "true" <id> (288)
+    "true" <id> (288) 45
     "unit" <id> (289) 18
-    "while" <id> (290)
+    "while" <id> (290) 29
     "vararg" <id> (291)
     "{" <id> (292) 3 24
     "}" <id> (293) 3 24
-    "(" <id> (294) 13 28
-    ")" <id> (295) 13 28
-    ":" <id> (296) 13 21
+    "(" <id> (294) 13 39 40 52 53
+    ")" <id> (295) 13 39 40 52 53
+    ":" <id> (296) 13 21 30
     ";" <id> (297) 9 26
-    "," <id> (298) 23
-    "+" <id> (299)
-    "-" <id> (300)
-    "*" <id> (301)
-    "/" <id> (302)
-    "^" <id> (303)
-    "." <id> (304)
-    "=" <id> (305)
+    "," <id> (298) 23 51
+    "+" <id> (299) 57
+    "-" <id> (300) 58 63
+    "*" <id> (301) 59
+    "/" <id> (302) 60
+    "^" <id> (303) 61
+    "." <id> (304) 53
+    "=" <id> (305) 54
     "!=" <id> (306)
-    "<" <id> (307)
-    "<=" <id> (308)
+    "<" <id> (307) 55
+    "<=" <id> (308) 56
     ">" <id> (309)
     ">=" <id> (310)
     "<-" <id> (311) 12
@@ -218,16 +191,16 @@ Nonterminals, with rules where they appear
         on right: 7
     opt-assignment (64)
         on left: 10 11
-        on right: 9
+        on right: 9 30
     assignment (65)
         on left: 12
-        on right: 11
+        on right: 11 31
     method (66)
         on left: 13
         on right: 8
     type (67)
         on left: 14 15 16 17 18
-        on right: 13 21
+        on right: 13 21 30
     formals (68)
         on left: 19 20
         on right: 13
@@ -239,13 +212,37 @@ Nonterminals, with rules where they appear
         on right: 21
     block (71)
         on left: 24
-        on right: 13 29
+        on right: 13 41
     block-supp (72)
         on left: 25 26
         on right: 24 26
     expr (73)
-        on left: 27 28 29
-        on right: 12 24 26
+        on left: 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41
+        on right: 12 24 26 27 28 29 30 40 49 53 54 55 56 57 58 59 60 61 62 63 64
+    literal (74)
+        on left: 42 43 44
+        on right: 38
+    boolean-literal (75)
+        on left: 45 46
+        on right: 44
+    args (76)
+        on left: 47 48
+        on right: 52 53
+    arg (77)
+        on left: 49
+        on right: 48 51
+    args-supp (78)
+        on left: 50 51
+        on right: 49
+    call (79)
+        on left: 52 53
+        on right: 34
+    binary-op (80)
+        on left: 54 55 56 57 58 59 60 61
+        on right: 33
+    unary-op (81)
+        on left: 62 63 64
+        on right: 32
 
 
 State 0
@@ -426,20 +423,36 @@ State 19
 
    12 assignment: "<-" . expr
 
-    "{"  shift, and go to state 31
-    "("  shift, and go to state 32
+    "integer-literal"    shift, and go to state 31
+    "string-literal"     shift, and go to state 32
+    "object-identifier"  shift, and go to state 33
+    "false"              shift, and go to state 34
+    "if"                 shift, and go to state 35
+    "isnull"             shift, and go to state 36
+    "let"                shift, and go to state 37
+    "new"                shift, and go to state 38
+    "not"                shift, and go to state 39
+    "self"               shift, and go to state 40
+    "true"               shift, and go to state 41
+    "while"              shift, and go to state 42
+    "{"                  shift, and go to state 43
+    "("                  shift, and go to state 44
+    "-"                  shift, and go to state 45
 
-    $default  reduce using rule 27 (expr)
-
-    block  go to state 33
-    expr   go to state 34
+    block            go to state 46
+    expr             go to state 47
+    literal          go to state 48
+    boolean-literal  go to state 49
+    call             go to state 50
+    binary-op        go to state 51
+    unary-op         go to state 52
 
 
 State 20
 
     9 field: formal opt-assignment . ";"
 
-    ";"  shift, and go to state 35
+    ";"  shift, and go to state 53
 
 
 State 21
@@ -460,7 +473,7 @@ State 23
 
    13 method: "object-identifier" "(" formals . ")" ":" type block
 
-    ")"  shift, and go to state 36
+    ")"  shift, and go to state 54
 
 
 State 24
@@ -509,96 +522,852 @@ State 30
 
    21 formal: "object-identifier" ":" type . formal-supp
 
-    ","  shift, and go to state 37
+    ","  shift, and go to state 55
 
     $default  reduce using rule 22 (formal-supp)
 
-    formal-supp  go to state 38
+    formal-supp  go to state 56
 
 
 State 31
 
-   24 block: "{" . expr block-supp "}"
+   42 literal: "integer-literal" .
 
-    "{"  shift, and go to state 31
-    "("  shift, and go to state 32
-
-    $default  reduce using rule 27 (expr)
-
-    block  go to state 33
-    expr   go to state 39
+    $default  reduce using rule 42 (literal)
 
 
 State 32
 
-   28 expr: "(" . ")"
+   43 literal: "string-literal" .
 
-    ")"  shift, and go to state 40
+    $default  reduce using rule 43 (literal)
 
 
 State 33
 
-   29 expr: block .
+   31 expr: "object-identifier" . assignment
+   36     | "object-identifier" .
+   52 call: "object-identifier" . "(" args ")"
 
-    $default  reduce using rule 29 (expr)
+    "("   shift, and go to state 57
+    "<-"  shift, and go to state 19
+
+    $default  reduce using rule 36 (expr)
+
+    assignment  go to state 58
 
 
 State 34
 
+   46 boolean-literal: "false" .
+
+    $default  reduce using rule 46 (boolean-literal)
+
+
+State 35
+
+   27 expr: "if" . expr "then" expr
+   28     | "if" . expr "then" expr "else" expr
+
+    "integer-literal"    shift, and go to state 31
+    "string-literal"     shift, and go to state 32
+    "object-identifier"  shift, and go to state 33
+    "false"              shift, and go to state 34
+    "if"                 shift, and go to state 35
+    "isnull"             shift, and go to state 36
+    "let"                shift, and go to state 37
+    "new"                shift, and go to state 38
+    "not"                shift, and go to state 39
+    "self"               shift, and go to state 40
+    "true"               shift, and go to state 41
+    "while"              shift, and go to state 42
+    "{"                  shift, and go to state 43
+    "("                  shift, and go to state 44
+    "-"                  shift, and go to state 45
+
+    block            go to state 46
+    expr             go to state 59
+    literal          go to state 48
+    boolean-literal  go to state 49
+    call             go to state 50
+    binary-op        go to state 51
+    unary-op         go to state 52
+
+
+State 36
+
+   64 unary-op: "isnull" . expr
+
+    "integer-literal"    shift, and go to state 31
+    "string-literal"     shift, and go to state 32
+    "object-identifier"  shift, and go to state 33
+    "false"              shift, and go to state 34
+    "if"                 shift, and go to state 35
+    "isnull"             shift, and go to state 36
+    "let"                shift, and go to state 37
+    "new"                shift, and go to state 38
+    "not"                shift, and go to state 39
+    "self"               shift, and go to state 40
+    "true"               shift, and go to state 41
+    "while"              shift, and go to state 42
+    "{"                  shift, and go to state 43
+    "("                  shift, and go to state 44
+    "-"                  shift, and go to state 45
+
+    block            go to state 46
+    expr             go to state 60
+    literal          go to state 48
+    boolean-literal  go to state 49
+    call             go to state 50
+    binary-op        go to state 51
+    unary-op         go to state 52
+
+
+State 37
+
+   30 expr: "let" . "object-identifier" ":" type opt-assignment "in" expr
+
+    "object-identifier"  shift, and go to state 61
+
+
+State 38
+
+   35 expr: "new" . "type-identifier"
+
+    "type-identifier"  shift, and go to state 62
+
+
+State 39
+
+   62 unary-op: "not" . expr
+
+    "integer-literal"    shift, and go to state 31
+    "string-literal"     shift, and go to state 32
+    "object-identifier"  shift, and go to state 33
+    "false"              shift, and go to state 34
+    "if"                 shift, and go to state 35
+    "isnull"             shift, and go to state 36
+    "let"                shift, and go to state 37
+    "new"                shift, and go to state 38
+    "not"                shift, and go to state 39
+    "self"               shift, and go to state 40
+    "true"               shift, and go to state 41
+    "while"              shift, and go to state 42
+    "{"                  shift, and go to state 43
+    "("                  shift, and go to state 44
+    "-"                  shift, and go to state 45
+
+    block            go to state 46
+    expr             go to state 63
+    literal          go to state 48
+    boolean-literal  go to state 49
+    call             go to state 50
+    binary-op        go to state 51
+    unary-op         go to state 52
+
+
+State 40
+
+   37 expr: "self" .
+
+    $default  reduce using rule 37 (expr)
+
+
+State 41
+
+   45 boolean-literal: "true" .
+
+    $default  reduce using rule 45 (boolean-literal)
+
+
+State 42
+
+   29 expr: "while" . expr "do" expr
+
+    "integer-literal"    shift, and go to state 31
+    "string-literal"     shift, and go to state 32
+    "object-identifier"  shift, and go to state 33
+    "false"              shift, and go to state 34
+    "if"                 shift, and go to state 35
+    "isnull"             shift, and go to state 36
+    "let"                shift, and go to state 37
+    "new"                shift, and go to state 38
+    "not"                shift, and go to state 39
+    "self"               shift, and go to state 40
+    "true"               shift, and go to state 41
+    "while"              shift, and go to state 42
+    "{"                  shift, and go to state 43
+    "("                  shift, and go to state 44
+    "-"                  shift, and go to state 45
+
+    block            go to state 46
+    expr             go to state 64
+    literal          go to state 48
+    boolean-literal  go to state 49
+    call             go to state 50
+    binary-op        go to state 51
+    unary-op         go to state 52
+
+
+State 43
+
+   24 block: "{" . expr block-supp "}"
+
+    "integer-literal"    shift, and go to state 31
+    "string-literal"     shift, and go to state 32
+    "object-identifier"  shift, and go to state 33
+    "false"              shift, and go to state 34
+    "if"                 shift, and go to state 35
+    "isnull"             shift, and go to state 36
+    "let"                shift, and go to state 37
+    "new"                shift, and go to state 38
+    "not"                shift, and go to state 39
+    "self"               shift, and go to state 40
+    "true"               shift, and go to state 41
+    "while"              shift, and go to state 42
+    "{"                  shift, and go to state 43
+    "("                  shift, and go to state 44
+    "-"                  shift, and go to state 45
+
+    block            go to state 46
+    expr             go to state 65
+    literal          go to state 48
+    boolean-literal  go to state 49
+    call             go to state 50
+    binary-op        go to state 51
+    unary-op         go to state 52
+
+
+State 44
+
+   39 expr: "(" . ")"
+   40     | "(" . expr ")"
+
+    "integer-literal"    shift, and go to state 31
+    "string-literal"     shift, and go to state 32
+    "object-identifier"  shift, and go to state 33
+    "false"              shift, and go to state 34
+    "if"                 shift, and go to state 35
+    "isnull"             shift, and go to state 36
+    "let"                shift, and go to state 37
+    "new"                shift, and go to state 38
+    "not"                shift, and go to state 39
+    "self"               shift, and go to state 40
+    "true"               shift, and go to state 41
+    "while"              shift, and go to state 42
+    "{"                  shift, and go to state 43
+    "("                  shift, and go to state 44
+    ")"                  shift, and go to state 66
+    "-"                  shift, and go to state 45
+
+    block            go to state 46
+    expr             go to state 67
+    literal          go to state 48
+    boolean-literal  go to state 49
+    call             go to state 50
+    binary-op        go to state 51
+    unary-op         go to state 52
+
+
+State 45
+
+   63 unary-op: "-" . expr
+
+    "integer-literal"    shift, and go to state 31
+    "string-literal"     shift, and go to state 32
+    "object-identifier"  shift, and go to state 33
+    "false"              shift, and go to state 34
+    "if"                 shift, and go to state 35
+    "isnull"             shift, and go to state 36
+    "let"                shift, and go to state 37
+    "new"                shift, and go to state 38
+    "not"                shift, and go to state 39
+    "self"               shift, and go to state 40
+    "true"               shift, and go to state 41
+    "while"              shift, and go to state 42
+    "{"                  shift, and go to state 43
+    "("                  shift, and go to state 44
+    "-"                  shift, and go to state 45
+
+    block            go to state 46
+    expr             go to state 68
+    literal          go to state 48
+    boolean-literal  go to state 49
+    call             go to state 50
+    binary-op        go to state 51
+    unary-op         go to state 52
+
+
+State 46
+
+   41 expr: block .
+
+    $default  reduce using rule 41 (expr)
+
+
+State 47
+
    12 assignment: "<-" expr .
+   53 call: expr . "." "object-identifier" "(" args ")"
+   54 binary-op: expr . "=" expr
+   55          | expr . "<" expr
+   56          | expr . "<=" expr
+   57          | expr . "+" expr
+   58          | expr . "-" expr
+   59          | expr . "*" expr
+   60          | expr . "/" expr
+   61          | expr . "^" expr
+
+    "+"   shift, and go to state 69
+    "-"   shift, and go to state 70
+    "*"   shift, and go to state 71
+    "/"   shift, and go to state 72
+    "^"   shift, and go to state 73
+    "."   shift, and go to state 74
+    "="   shift, and go to state 75
+    "<"   shift, and go to state 76
+    "<="  shift, and go to state 77
 
     $default  reduce using rule 12 (assignment)
 
 
-State 35
+State 48
+
+   38 expr: literal .
+
+    $default  reduce using rule 38 (expr)
+
+
+State 49
+
+   44 literal: boolean-literal .
+
+    $default  reduce using rule 44 (literal)
+
+
+State 50
+
+   34 expr: call .
+
+    $default  reduce using rule 34 (expr)
+
+
+State 51
+
+   33 expr: binary-op .
+
+    $default  reduce using rule 33 (expr)
+
+
+State 52
+
+   32 expr: unary-op .
+
+    $default  reduce using rule 32 (expr)
+
+
+State 53
 
     9 field: formal opt-assignment ";" .
 
     $default  reduce using rule 9 (field)
 
 
-State 36
+State 54
 
    13 method: "object-identifier" "(" formals ")" . ":" type block
 
-    ":"  shift, and go to state 41
+    ":"  shift, and go to state 78
 
 
-State 37
+State 55
 
    23 formal-supp: "," . formal
 
     "object-identifier"  shift, and go to state 22
 
-    formal  go to state 42
+    formal  go to state 79
 
 
-State 38
+State 56
 
    21 formal: "object-identifier" ":" type formal-supp .
 
     $default  reduce using rule 21 (formal)
 
 
-State 39
+State 57
+
+   52 call: "object-identifier" "(" . args ")"
+
+    "integer-literal"    shift, and go to state 31
+    "string-literal"     shift, and go to state 32
+    "object-identifier"  shift, and go to state 33
+    "false"              shift, and go to state 34
+    "if"                 shift, and go to state 35
+    "isnull"             shift, and go to state 36
+    "let"                shift, and go to state 37
+    "new"                shift, and go to state 38
+    "not"                shift, and go to state 39
+    "self"               shift, and go to state 40
+    "true"               shift, and go to state 41
+    "while"              shift, and go to state 42
+    "{"                  shift, and go to state 43
+    "("                  shift, and go to state 44
+    "-"                  shift, and go to state 45
+
+    $default  reduce using rule 47 (args)
+
+    block            go to state 46
+    expr             go to state 80
+    literal          go to state 48
+    boolean-literal  go to state 49
+    args             go to state 81
+    arg              go to state 82
+    call             go to state 50
+    binary-op        go to state 51
+    unary-op         go to state 52
+
+
+State 58
+
+   31 expr: "object-identifier" assignment .
+
+    $default  reduce using rule 31 (expr)
+
+
+State 59
+
+   27 expr: "if" expr . "then" expr
+   28     | "if" expr . "then" expr "else" expr
+   53 call: expr . "." "object-identifier" "(" args ")"
+   54 binary-op: expr . "=" expr
+   55          | expr . "<" expr
+   56          | expr . "<=" expr
+   57          | expr . "+" expr
+   58          | expr . "-" expr
+   59          | expr . "*" expr
+   60          | expr . "/" expr
+   61          | expr . "^" expr
+
+    "then"  shift, and go to state 83
+    "+"     shift, and go to state 69
+    "-"     shift, and go to state 70
+    "*"     shift, and go to state 71
+    "/"     shift, and go to state 72
+    "^"     shift, and go to state 73
+    "."     shift, and go to state 74
+    "="     shift, and go to state 75
+    "<"     shift, and go to state 76
+    "<="    shift, and go to state 77
+
+
+State 60
+
+   53 call: expr . "." "object-identifier" "(" args ")"
+   54 binary-op: expr . "=" expr
+   55          | expr . "<" expr
+   56          | expr . "<=" expr
+   57          | expr . "+" expr
+   58          | expr . "-" expr
+   59          | expr . "*" expr
+   60          | expr . "/" expr
+   61          | expr . "^" expr
+   64 unary-op: "isnull" expr .
+
+    "^"  shift, and go to state 73
+    "."  shift, and go to state 74
+
+    $default  reduce using rule 64 (unary-op)
+
+
+State 61
+
+   30 expr: "let" "object-identifier" . ":" type opt-assignment "in" expr
+
+    ":"  shift, and go to state 84
+
+
+State 62
+
+   35 expr: "new" "type-identifier" .
+
+    $default  reduce using rule 35 (expr)
+
+
+State 63
+
+   53 call: expr . "." "object-identifier" "(" args ")"
+   54 binary-op: expr . "=" expr
+   55          | expr . "<" expr
+   56          | expr . "<=" expr
+   57          | expr . "+" expr
+   58          | expr . "-" expr
+   59          | expr . "*" expr
+   60          | expr . "/" expr
+   61          | expr . "^" expr
+   62 unary-op: "not" expr .
+
+    "+"   shift, and go to state 69
+    "-"   shift, and go to state 70
+    "*"   shift, and go to state 71
+    "/"   shift, and go to state 72
+    "^"   shift, and go to state 73
+    "."   shift, and go to state 74
+    "="   shift, and go to state 75
+    "<"   shift, and go to state 76
+    "<="  shift, and go to state 77
+
+    $default  reduce using rule 62 (unary-op)
+
+
+State 64
+
+   29 expr: "while" expr . "do" expr
+   53 call: expr . "." "object-identifier" "(" args ")"
+   54 binary-op: expr . "=" expr
+   55          | expr . "<" expr
+   56          | expr . "<=" expr
+   57          | expr . "+" expr
+   58          | expr . "-" expr
+   59          | expr . "*" expr
+   60          | expr . "/" expr
+   61          | expr . "^" expr
+
+    "do"  shift, and go to state 85
+    "+"   shift, and go to state 69
+    "-"   shift, and go to state 70
+    "*"   shift, and go to state 71
+    "/"   shift, and go to state 72
+    "^"   shift, and go to state 73
+    "."   shift, and go to state 74
+    "="   shift, and go to state 75
+    "<"   shift, and go to state 76
+    "<="  shift, and go to state 77
+
+
+State 65
 
    24 block: "{" expr . block-supp "}"
+   53 call: expr . "." "object-identifier" "(" args ")"
+   54 binary-op: expr . "=" expr
+   55          | expr . "<" expr
+   56          | expr . "<=" expr
+   57          | expr . "+" expr
+   58          | expr . "-" expr
+   59          | expr . "*" expr
+   60          | expr . "/" expr
+   61          | expr . "^" expr
 
-    ";"  shift, and go to state 43
+    ";"   shift, and go to state 86
+    "+"   shift, and go to state 69
+    "-"   shift, and go to state 70
+    "*"   shift, and go to state 71
+    "/"   shift, and go to state 72
+    "^"   shift, and go to state 73
+    "."   shift, and go to state 74
+    "="   shift, and go to state 75
+    "<"   shift, and go to state 76
+    "<="  shift, and go to state 77
 
     $default  reduce using rule 25 (block-supp)
 
-    block-supp  go to state 44
+    block-supp  go to state 87
 
 
-State 40
+State 66
 
-   28 expr: "(" ")" .
+   39 expr: "(" ")" .
 
-    $default  reduce using rule 28 (expr)
+    $default  reduce using rule 39 (expr)
 
 
-State 41
+State 67
+
+   40 expr: "(" expr . ")"
+   53 call: expr . "." "object-identifier" "(" args ")"
+   54 binary-op: expr . "=" expr
+   55          | expr . "<" expr
+   56          | expr . "<=" expr
+   57          | expr . "+" expr
+   58          | expr . "-" expr
+   59          | expr . "*" expr
+   60          | expr . "/" expr
+   61          | expr . "^" expr
+
+    ")"   shift, and go to state 88
+    "+"   shift, and go to state 69
+    "-"   shift, and go to state 70
+    "*"   shift, and go to state 71
+    "/"   shift, and go to state 72
+    "^"   shift, and go to state 73
+    "."   shift, and go to state 74
+    "="   shift, and go to state 75
+    "<"   shift, and go to state 76
+    "<="  shift, and go to state 77
+
+
+State 68
+
+   53 call: expr . "." "object-identifier" "(" args ")"
+   54 binary-op: expr . "=" expr
+   55          | expr . "<" expr
+   56          | expr . "<=" expr
+   57          | expr . "+" expr
+   58          | expr . "-" expr
+   59          | expr . "*" expr
+   60          | expr . "/" expr
+   61          | expr . "^" expr
+   63 unary-op: "-" expr .
+
+    "*"  shift, and go to state 71
+    "/"  shift, and go to state 72
+    "^"  shift, and go to state 73
+    "."  shift, and go to state 74
+
+    $default  reduce using rule 63 (unary-op)
+
+
+State 69
+
+   57 binary-op: expr "+" . expr
+
+    "integer-literal"    shift, and go to state 31
+    "string-literal"     shift, and go to state 32
+    "object-identifier"  shift, and go to state 33
+    "false"              shift, and go to state 34
+    "if"                 shift, and go to state 35
+    "isnull"             shift, and go to state 36
+    "let"                shift, and go to state 37
+    "new"                shift, and go to state 38
+    "not"                shift, and go to state 39
+    "self"               shift, and go to state 40
+    "true"               shift, and go to state 41
+    "while"              shift, and go to state 42
+    "{"                  shift, and go to state 43
+    "("                  shift, and go to state 44
+    "-"                  shift, and go to state 45
+
+    block            go to state 46
+    expr             go to state 89
+    literal          go to state 48
+    boolean-literal  go to state 49
+    call             go to state 50
+    binary-op        go to state 51
+    unary-op         go to state 52
+
+
+State 70
+
+   58 binary-op: expr "-" . expr
+
+    "integer-literal"    shift, and go to state 31
+    "string-literal"     shift, and go to state 32
+    "object-identifier"  shift, and go to state 33
+    "false"              shift, and go to state 34
+    "if"                 shift, and go to state 35
+    "isnull"             shift, and go to state 36
+    "let"                shift, and go to state 37
+    "new"                shift, and go to state 38
+    "not"                shift, and go to state 39
+    "self"               shift, and go to state 40
+    "true"               shift, and go to state 41
+    "while"              shift, and go to state 42
+    "{"                  shift, and go to state 43
+    "("                  shift, and go to state 44
+    "-"                  shift, and go to state 45
+
+    block            go to state 46
+    expr             go to state 90
+    literal          go to state 48
+    boolean-literal  go to state 49
+    call             go to state 50
+    binary-op        go to state 51
+    unary-op         go to state 52
+
+
+State 71
+
+   59 binary-op: expr "*" . expr
+
+    "integer-literal"    shift, and go to state 31
+    "string-literal"     shift, and go to state 32
+    "object-identifier"  shift, and go to state 33
+    "false"              shift, and go to state 34
+    "if"                 shift, and go to state 35
+    "isnull"             shift, and go to state 36
+    "let"                shift, and go to state 37
+    "new"                shift, and go to state 38
+    "not"                shift, and go to state 39
+    "self"               shift, and go to state 40
+    "true"               shift, and go to state 41
+    "while"              shift, and go to state 42
+    "{"                  shift, and go to state 43
+    "("                  shift, and go to state 44
+    "-"                  shift, and go to state 45
+
+    block            go to state 46
+    expr             go to state 91
+    literal          go to state 48
+    boolean-literal  go to state 49
+    call             go to state 50
+    binary-op        go to state 51
+    unary-op         go to state 52
+
+
+State 72
+
+   60 binary-op: expr "/" . expr
+
+    "integer-literal"    shift, and go to state 31
+    "string-literal"     shift, and go to state 32
+    "object-identifier"  shift, and go to state 33
+    "false"              shift, and go to state 34
+    "if"                 shift, and go to state 35
+    "isnull"             shift, and go to state 36
+    "let"                shift, and go to state 37
+    "new"                shift, and go to state 38
+    "not"                shift, and go to state 39
+    "self"               shift, and go to state 40
+    "true"               shift, and go to state 41
+    "while"              shift, and go to state 42
+    "{"                  shift, and go to state 43
+    "("                  shift, and go to state 44
+    "-"                  shift, and go to state 45
+
+    block            go to state 46
+    expr             go to state 92
+    literal          go to state 48
+    boolean-literal  go to state 49
+    call             go to state 50
+    binary-op        go to state 51
+    unary-op         go to state 52
+
+
+State 73
+
+   61 binary-op: expr "^" . expr
+
+    "integer-literal"    shift, and go to state 31
+    "string-literal"     shift, and go to state 32
+    "object-identifier"  shift, and go to state 33
+    "false"              shift, and go to state 34
+    "if"                 shift, and go to state 35
+    "isnull"             shift, and go to state 36
+    "let"                shift, and go to state 37
+    "new"                shift, and go to state 38
+    "not"                shift, and go to state 39
+    "self"               shift, and go to state 40
+    "true"               shift, and go to state 41
+    "while"              shift, and go to state 42
+    "{"                  shift, and go to state 43
+    "("                  shift, and go to state 44
+    "-"                  shift, and go to state 45
+
+    block            go to state 46
+    expr             go to state 93
+    literal          go to state 48
+    boolean-literal  go to state 49
+    call             go to state 50
+    binary-op        go to state 51
+    unary-op         go to state 52
+
+
+State 74
+
+   53 call: expr "." . "object-identifier" "(" args ")"
+
+    "object-identifier"  shift, and go to state 94
+
+
+State 75
+
+   54 binary-op: expr "=" . expr
+
+    "integer-literal"    shift, and go to state 31
+    "string-literal"     shift, and go to state 32
+    "object-identifier"  shift, and go to state 33
+    "false"              shift, and go to state 34
+    "if"                 shift, and go to state 35
+    "isnull"             shift, and go to state 36
+    "let"                shift, and go to state 37
+    "new"                shift, and go to state 38
+    "not"                shift, and go to state 39
+    "self"               shift, and go to state 40
+    "true"               shift, and go to state 41
+    "while"              shift, and go to state 42
+    "{"                  shift, and go to state 43
+    "("                  shift, and go to state 44
+    "-"                  shift, and go to state 45
+
+    block            go to state 46
+    expr             go to state 95
+    literal          go to state 48
+    boolean-literal  go to state 49
+    call             go to state 50
+    binary-op        go to state 51
+    unary-op         go to state 52
+
+
+State 76
+
+   55 binary-op: expr "<" . expr
+
+    "integer-literal"    shift, and go to state 31
+    "string-literal"     shift, and go to state 32
+    "object-identifier"  shift, and go to state 33
+    "false"              shift, and go to state 34
+    "if"                 shift, and go to state 35
+    "isnull"             shift, and go to state 36
+    "let"                shift, and go to state 37
+    "new"                shift, and go to state 38
+    "not"                shift, and go to state 39
+    "self"               shift, and go to state 40
+    "true"               shift, and go to state 41
+    "while"              shift, and go to state 42
+    "{"                  shift, and go to state 43
+    "("                  shift, and go to state 44
+    "-"                  shift, and go to state 45
+
+    block            go to state 46
+    expr             go to state 96
+    literal          go to state 48
+    boolean-literal  go to state 49
+    call             go to state 50
+    binary-op        go to state 51
+    unary-op         go to state 52
+
+
+State 77
+
+   56 binary-op: expr "<=" . expr
+
+    "integer-literal"    shift, and go to state 31
+    "string-literal"     shift, and go to state 32
+    "object-identifier"  shift, and go to state 33
+    "false"              shift, and go to state 34
+    "if"                 shift, and go to state 35
+    "isnull"             shift, and go to state 36
+    "let"                shift, and go to state 37
+    "new"                shift, and go to state 38
+    "not"                shift, and go to state 39
+    "self"               shift, and go to state 40
+    "true"               shift, and go to state 41
+    "while"              shift, and go to state 42
+    "{"                  shift, and go to state 43
+    "("                  shift, and go to state 44
+    "-"                  shift, and go to state 45
+
+    block            go to state 46
+    expr             go to state 97
+    literal          go to state 48
+    boolean-literal  go to state 49
+    call             go to state 50
+    binary-op        go to state 51
+    unary-op         go to state 52
+
+
+State 78
 
    13 method: "object-identifier" "(" formals ")" ":" . type block
 
@@ -608,72 +1377,696 @@ State 41
     "string"           shift, and go to state 28
     "unit"             shift, and go to state 29
 
-    type  go to state 45
+    type  go to state 98
 
 
-State 42
+State 79
 
    23 formal-supp: "," formal .
 
     $default  reduce using rule 23 (formal-supp)
 
 
-State 43
+State 80
+
+   49 arg: expr . args-supp
+   53 call: expr . "." "object-identifier" "(" args ")"
+   54 binary-op: expr . "=" expr
+   55          | expr . "<" expr
+   56          | expr . "<=" expr
+   57          | expr . "+" expr
+   58          | expr . "-" expr
+   59          | expr . "*" expr
+   60          | expr . "/" expr
+   61          | expr . "^" expr
+
+    ","   shift, and go to state 99
+    "+"   shift, and go to state 69
+    "-"   shift, and go to state 70
+    "*"   shift, and go to state 71
+    "/"   shift, and go to state 72
+    "^"   shift, and go to state 73
+    "."   shift, and go to state 74
+    "="   shift, and go to state 75
+    "<"   shift, and go to state 76
+    "<="  shift, and go to state 77
+
+    $default  reduce using rule 50 (args-supp)
+
+    args-supp  go to state 100
+
+
+State 81
+
+   52 call: "object-identifier" "(" args . ")"
+
+    ")"  shift, and go to state 101
+
+
+State 82
+
+   48 args: arg .
+
+    $default  reduce using rule 48 (args)
+
+
+State 83
+
+   27 expr: "if" expr "then" . expr
+   28     | "if" expr "then" . expr "else" expr
+
+    "integer-literal"    shift, and go to state 31
+    "string-literal"     shift, and go to state 32
+    "object-identifier"  shift, and go to state 33
+    "false"              shift, and go to state 34
+    "if"                 shift, and go to state 35
+    "isnull"             shift, and go to state 36
+    "let"                shift, and go to state 37
+    "new"                shift, and go to state 38
+    "not"                shift, and go to state 39
+    "self"               shift, and go to state 40
+    "true"               shift, and go to state 41
+    "while"              shift, and go to state 42
+    "{"                  shift, and go to state 43
+    "("                  shift, and go to state 44
+    "-"                  shift, and go to state 45
+
+    block            go to state 46
+    expr             go to state 102
+    literal          go to state 48
+    boolean-literal  go to state 49
+    call             go to state 50
+    binary-op        go to state 51
+    unary-op         go to state 52
+
+
+State 84
+
+   30 expr: "let" "object-identifier" ":" . type opt-assignment "in" expr
+
+    "type-identifier"  shift, and go to state 25
+    "bool"             shift, and go to state 26
+    "int32"            shift, and go to state 27
+    "string"           shift, and go to state 28
+    "unit"             shift, and go to state 29
+
+    type  go to state 103
+
+
+State 85
+
+   29 expr: "while" expr "do" . expr
+
+    "integer-literal"    shift, and go to state 31
+    "string-literal"     shift, and go to state 32
+    "object-identifier"  shift, and go to state 33
+    "false"              shift, and go to state 34
+    "if"                 shift, and go to state 35
+    "isnull"             shift, and go to state 36
+    "let"                shift, and go to state 37
+    "new"                shift, and go to state 38
+    "not"                shift, and go to state 39
+    "self"               shift, and go to state 40
+    "true"               shift, and go to state 41
+    "while"              shift, and go to state 42
+    "{"                  shift, and go to state 43
+    "("                  shift, and go to state 44
+    "-"                  shift, and go to state 45
+
+    block            go to state 46
+    expr             go to state 104
+    literal          go to state 48
+    boolean-literal  go to state 49
+    call             go to state 50
+    binary-op        go to state 51
+    unary-op         go to state 52
+
+
+State 86
 
    26 block-supp: ";" . expr block-supp
 
-    "{"  shift, and go to state 31
-    "("  shift, and go to state 32
+    "integer-literal"    shift, and go to state 31
+    "string-literal"     shift, and go to state 32
+    "object-identifier"  shift, and go to state 33
+    "false"              shift, and go to state 34
+    "if"                 shift, and go to state 35
+    "isnull"             shift, and go to state 36
+    "let"                shift, and go to state 37
+    "new"                shift, and go to state 38
+    "not"                shift, and go to state 39
+    "self"               shift, and go to state 40
+    "true"               shift, and go to state 41
+    "while"              shift, and go to state 42
+    "{"                  shift, and go to state 43
+    "("                  shift, and go to state 44
+    "-"                  shift, and go to state 45
 
-    $default  reduce using rule 27 (expr)
+    block            go to state 46
+    expr             go to state 105
+    literal          go to state 48
+    boolean-literal  go to state 49
+    call             go to state 50
+    binary-op        go to state 51
+    unary-op         go to state 52
 
-    block  go to state 33
-    expr   go to state 46
 
-
-State 44
+State 87
 
    24 block: "{" expr block-supp . "}"
 
-    "}"  shift, and go to state 47
+    "}"  shift, and go to state 106
 
 
-State 45
+State 88
+
+   40 expr: "(" expr ")" .
+
+    $default  reduce using rule 40 (expr)
+
+
+State 89
+
+   53 call: expr . "." "object-identifier" "(" args ")"
+   54 binary-op: expr . "=" expr
+   55          | expr . "<" expr
+   56          | expr . "<=" expr
+   57          | expr . "+" expr
+   57          | expr "+" expr .
+   58          | expr . "-" expr
+   59          | expr . "*" expr
+   60          | expr . "/" expr
+   61          | expr . "^" expr
+
+    "*"  shift, and go to state 71
+    "/"  shift, and go to state 72
+    "^"  shift, and go to state 73
+    "."  shift, and go to state 74
+
+    $default  reduce using rule 57 (binary-op)
+
+
+State 90
+
+   53 call: expr . "." "object-identifier" "(" args ")"
+   54 binary-op: expr . "=" expr
+   55          | expr . "<" expr
+   56          | expr . "<=" expr
+   57          | expr . "+" expr
+   58          | expr . "-" expr
+   58          | expr "-" expr .
+   59          | expr . "*" expr
+   60          | expr . "/" expr
+   61          | expr . "^" expr
+
+    "*"  shift, and go to state 71
+    "/"  shift, and go to state 72
+    "^"  shift, and go to state 73
+    "."  shift, and go to state 74
+
+    $default  reduce using rule 58 (binary-op)
+
+
+State 91
+
+   53 call: expr . "." "object-identifier" "(" args ")"
+   54 binary-op: expr . "=" expr
+   55          | expr . "<" expr
+   56          | expr . "<=" expr
+   57          | expr . "+" expr
+   58          | expr . "-" expr
+   59          | expr . "*" expr
+   59          | expr "*" expr .
+   60          | expr . "/" expr
+   61          | expr . "^" expr
+
+    "^"  shift, and go to state 73
+    "."  shift, and go to state 74
+
+    $default  reduce using rule 59 (binary-op)
+
+
+State 92
+
+   53 call: expr . "." "object-identifier" "(" args ")"
+   54 binary-op: expr . "=" expr
+   55          | expr . "<" expr
+   56          | expr . "<=" expr
+   57          | expr . "+" expr
+   58          | expr . "-" expr
+   59          | expr . "*" expr
+   60          | expr . "/" expr
+   60          | expr "/" expr .
+   61          | expr . "^" expr
+
+    "^"  shift, and go to state 73
+    "."  shift, and go to state 74
+
+    $default  reduce using rule 60 (binary-op)
+
+
+State 93
+
+   53 call: expr . "." "object-identifier" "(" args ")"
+   54 binary-op: expr . "=" expr
+   55          | expr . "<" expr
+   56          | expr . "<=" expr
+   57          | expr . "+" expr
+   58          | expr . "-" expr
+   59          | expr . "*" expr
+   60          | expr . "/" expr
+   61          | expr . "^" expr
+   61          | expr "^" expr .
+
+    "^"  shift, and go to state 73
+    "."  shift, and go to state 74
+
+    $default  reduce using rule 61 (binary-op)
+
+
+State 94
+
+   53 call: expr "." "object-identifier" . "(" args ")"
+
+    "("  shift, and go to state 107
+
+
+State 95
+
+   53 call: expr . "." "object-identifier" "(" args ")"
+   54 binary-op: expr . "=" expr
+   54          | expr "=" expr .
+   55          | expr . "<" expr
+   56          | expr . "<=" expr
+   57          | expr . "+" expr
+   58          | expr . "-" expr
+   59          | expr . "*" expr
+   60          | expr . "/" expr
+   61          | expr . "^" expr
+
+    "+"  shift, and go to state 69
+    "-"  shift, and go to state 70
+    "*"  shift, and go to state 71
+    "/"  shift, and go to state 72
+    "^"  shift, and go to state 73
+    "."  shift, and go to state 74
+
+    "="   error (nonassociative)
+    "<"   error (nonassociative)
+    "<="  error (nonassociative)
+
+    $default  reduce using rule 54 (binary-op)
+
+
+State 96
+
+   53 call: expr . "." "object-identifier" "(" args ")"
+   54 binary-op: expr . "=" expr
+   55          | expr . "<" expr
+   55          | expr "<" expr .
+   56          | expr . "<=" expr
+   57          | expr . "+" expr
+   58          | expr . "-" expr
+   59          | expr . "*" expr
+   60          | expr . "/" expr
+   61          | expr . "^" expr
+
+    "+"  shift, and go to state 69
+    "-"  shift, and go to state 70
+    "*"  shift, and go to state 71
+    "/"  shift, and go to state 72
+    "^"  shift, and go to state 73
+    "."  shift, and go to state 74
+
+    "="   error (nonassociative)
+    "<"   error (nonassociative)
+    "<="  error (nonassociative)
+
+    $default  reduce using rule 55 (binary-op)
+
+
+State 97
+
+   53 call: expr . "." "object-identifier" "(" args ")"
+   54 binary-op: expr . "=" expr
+   55          | expr . "<" expr
+   56          | expr . "<=" expr
+   56          | expr "<=" expr .
+   57          | expr . "+" expr
+   58          | expr . "-" expr
+   59          | expr . "*" expr
+   60          | expr . "/" expr
+   61          | expr . "^" expr
+
+    "+"  shift, and go to state 69
+    "-"  shift, and go to state 70
+    "*"  shift, and go to state 71
+    "/"  shift, and go to state 72
+    "^"  shift, and go to state 73
+    "."  shift, and go to state 74
+
+    "="   error (nonassociative)
+    "<"   error (nonassociative)
+    "<="  error (nonassociative)
+
+    $default  reduce using rule 56 (binary-op)
+
+
+State 98
 
    13 method: "object-identifier" "(" formals ")" ":" type . block
 
-    "{"  shift, and go to state 31
+    "{"  shift, and go to state 43
 
-    block  go to state 48
+    block  go to state 108
 
 
-State 46
+State 99
+
+   51 args-supp: "," . arg
+
+    "integer-literal"    shift, and go to state 31
+    "string-literal"     shift, and go to state 32
+    "object-identifier"  shift, and go to state 33
+    "false"              shift, and go to state 34
+    "if"                 shift, and go to state 35
+    "isnull"             shift, and go to state 36
+    "let"                shift, and go to state 37
+    "new"                shift, and go to state 38
+    "not"                shift, and go to state 39
+    "self"               shift, and go to state 40
+    "true"               shift, and go to state 41
+    "while"              shift, and go to state 42
+    "{"                  shift, and go to state 43
+    "("                  shift, and go to state 44
+    "-"                  shift, and go to state 45
+
+    block            go to state 46
+    expr             go to state 80
+    literal          go to state 48
+    boolean-literal  go to state 49
+    arg              go to state 109
+    call             go to state 50
+    binary-op        go to state 51
+    unary-op         go to state 52
+
+
+State 100
+
+   49 arg: expr args-supp .
+
+    $default  reduce using rule 49 (arg)
+
+
+State 101
+
+   52 call: "object-identifier" "(" args ")" .
+
+    $default  reduce using rule 52 (call)
+
+
+State 102
+
+   27 expr: "if" expr "then" expr .
+   28     | "if" expr "then" expr . "else" expr
+   53 call: expr . "." "object-identifier" "(" args ")"
+   54 binary-op: expr . "=" expr
+   55          | expr . "<" expr
+   56          | expr . "<=" expr
+   57          | expr . "+" expr
+   58          | expr . "-" expr
+   59          | expr . "*" expr
+   60          | expr . "/" expr
+   61          | expr . "^" expr
+
+    "else"  shift, and go to state 110
+    "+"     shift, and go to state 69
+    "-"     shift, and go to state 70
+    "*"     shift, and go to state 71
+    "/"     shift, and go to state 72
+    "^"     shift, and go to state 73
+    "."     shift, and go to state 74
+    "="     shift, and go to state 75
+    "<"     shift, and go to state 76
+    "<="    shift, and go to state 77
+
+    $default  reduce using rule 27 (expr)
+
+
+State 103
+
+   30 expr: "let" "object-identifier" ":" type . opt-assignment "in" expr
+
+    "<-"  shift, and go to state 19
+
+    $default  reduce using rule 10 (opt-assignment)
+
+    opt-assignment  go to state 111
+    assignment      go to state 21
+
+
+State 104
+
+   29 expr: "while" expr "do" expr .
+   53 call: expr . "." "object-identifier" "(" args ")"
+   54 binary-op: expr . "=" expr
+   55          | expr . "<" expr
+   56          | expr . "<=" expr
+   57          | expr . "+" expr
+   58          | expr . "-" expr
+   59          | expr . "*" expr
+   60          | expr . "/" expr
+   61          | expr . "^" expr
+
+    "+"   shift, and go to state 69
+    "-"   shift, and go to state 70
+    "*"   shift, and go to state 71
+    "/"   shift, and go to state 72
+    "^"   shift, and go to state 73
+    "."   shift, and go to state 74
+    "="   shift, and go to state 75
+    "<"   shift, and go to state 76
+    "<="  shift, and go to state 77
+
+    $default  reduce using rule 29 (expr)
+
+
+State 105
 
    26 block-supp: ";" expr . block-supp
+   53 call: expr . "." "object-identifier" "(" args ")"
+   54 binary-op: expr . "=" expr
+   55          | expr . "<" expr
+   56          | expr . "<=" expr
+   57          | expr . "+" expr
+   58          | expr . "-" expr
+   59          | expr . "*" expr
+   60          | expr . "/" expr
+   61          | expr . "^" expr
 
-    ";"  shift, and go to state 43
+    ";"   shift, and go to state 86
+    "+"   shift, and go to state 69
+    "-"   shift, and go to state 70
+    "*"   shift, and go to state 71
+    "/"   shift, and go to state 72
+    "^"   shift, and go to state 73
+    "."   shift, and go to state 74
+    "="   shift, and go to state 75
+    "<"   shift, and go to state 76
+    "<="  shift, and go to state 77
 
     $default  reduce using rule 25 (block-supp)
 
-    block-supp  go to state 49
+    block-supp  go to state 112
 
 
-State 47
+State 106
 
    24 block: "{" expr block-supp "}" .
 
     $default  reduce using rule 24 (block)
 
 
-State 48
+State 107
+
+   53 call: expr "." "object-identifier" "(" . args ")"
+
+    "integer-literal"    shift, and go to state 31
+    "string-literal"     shift, and go to state 32
+    "object-identifier"  shift, and go to state 33
+    "false"              shift, and go to state 34
+    "if"                 shift, and go to state 35
+    "isnull"             shift, and go to state 36
+    "let"                shift, and go to state 37
+    "new"                shift, and go to state 38
+    "not"                shift, and go to state 39
+    "self"               shift, and go to state 40
+    "true"               shift, and go to state 41
+    "while"              shift, and go to state 42
+    "{"                  shift, and go to state 43
+    "("                  shift, and go to state 44
+    "-"                  shift, and go to state 45
+
+    $default  reduce using rule 47 (args)
+
+    block            go to state 46
+    expr             go to state 80
+    literal          go to state 48
+    boolean-literal  go to state 49
+    args             go to state 113
+    arg              go to state 82
+    call             go to state 50
+    binary-op        go to state 51
+    unary-op         go to state 52
+
+
+State 108
 
    13 method: "object-identifier" "(" formals ")" ":" type block .
 
     $default  reduce using rule 13 (method)
 
 
-State 49
+State 109
+
+   51 args-supp: "," arg .
+
+    $default  reduce using rule 51 (args-supp)
+
+
+State 110
+
+   28 expr: "if" expr "then" expr "else" . expr
+
+    "integer-literal"    shift, and go to state 31
+    "string-literal"     shift, and go to state 32
+    "object-identifier"  shift, and go to state 33
+    "false"              shift, and go to state 34
+    "if"                 shift, and go to state 35
+    "isnull"             shift, and go to state 36
+    "let"                shift, and go to state 37
+    "new"                shift, and go to state 38
+    "not"                shift, and go to state 39
+    "self"               shift, and go to state 40
+    "true"               shift, and go to state 41
+    "while"              shift, and go to state 42
+    "{"                  shift, and go to state 43
+    "("                  shift, and go to state 44
+    "-"                  shift, and go to state 45
+
+    block            go to state 46
+    expr             go to state 114
+    literal          go to state 48
+    boolean-literal  go to state 49
+    call             go to state 50
+    binary-op        go to state 51
+    unary-op         go to state 52
+
+
+State 111
+
+   30 expr: "let" "object-identifier" ":" type opt-assignment . "in" expr
+
+    "in"  shift, and go to state 115
+
+
+State 112
 
    26 block-supp: ";" expr block-supp .
 
     $default  reduce using rule 26 (block-supp)
+
+
+State 113
+
+   53 call: expr "." "object-identifier" "(" args . ")"
+
+    ")"  shift, and go to state 116
+
+
+State 114
+
+   28 expr: "if" expr "then" expr "else" expr .
+   53 call: expr . "." "object-identifier" "(" args ")"
+   54 binary-op: expr . "=" expr
+   55          | expr . "<" expr
+   56          | expr . "<=" expr
+   57          | expr . "+" expr
+   58          | expr . "-" expr
+   59          | expr . "*" expr
+   60          | expr . "/" expr
+   61          | expr . "^" expr
+
+    "+"   shift, and go to state 69
+    "-"   shift, and go to state 70
+    "*"   shift, and go to state 71
+    "/"   shift, and go to state 72
+    "^"   shift, and go to state 73
+    "."   shift, and go to state 74
+    "="   shift, and go to state 75
+    "<"   shift, and go to state 76
+    "<="  shift, and go to state 77
+
+    $default  reduce using rule 28 (expr)
+
+
+State 115
+
+   30 expr: "let" "object-identifier" ":" type opt-assignment "in" . expr
+
+    "integer-literal"    shift, and go to state 31
+    "string-literal"     shift, and go to state 32
+    "object-identifier"  shift, and go to state 33
+    "false"              shift, and go to state 34
+    "if"                 shift, and go to state 35
+    "isnull"             shift, and go to state 36
+    "let"                shift, and go to state 37
+    "new"                shift, and go to state 38
+    "not"                shift, and go to state 39
+    "self"               shift, and go to state 40
+    "true"               shift, and go to state 41
+    "while"              shift, and go to state 42
+    "{"                  shift, and go to state 43
+    "("                  shift, and go to state 44
+    "-"                  shift, and go to state 45
+
+    block            go to state 46
+    expr             go to state 117
+    literal          go to state 48
+    boolean-literal  go to state 49
+    call             go to state 50
+    binary-op        go to state 51
+    unary-op         go to state 52
+
+
+State 116
+
+   53 call: expr "." "object-identifier" "(" args ")" .
+
+    $default  reduce using rule 53 (call)
+
+
+State 117
+
+   30 expr: "let" "object-identifier" ":" type opt-assignment "in" expr .
+   53 call: expr . "." "object-identifier" "(" args ")"
+   54 binary-op: expr . "=" expr
+   55          | expr . "<" expr
+   56          | expr . "<=" expr
+   57          | expr . "+" expr
+   58          | expr . "-" expr
+   59          | expr . "*" expr
+   60          | expr . "/" expr
+   61          | expr . "^" expr
+
+    "+"   shift, and go to state 69
+    "-"   shift, and go to state 70
+    "*"   shift, and go to state 71
+    "/"   shift, and go to state 72
+    "^"   shift, and go to state 73
+    "."   shift, and go to state 74
+    "="   shift, and go to state 75
+    "<"   shift, and go to state 76
+    "<="  shift, and go to state 77
+
+    $default  reduce using rule 30 (expr)

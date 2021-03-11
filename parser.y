@@ -20,7 +20,7 @@ using namespace std;
 
 %token END 0 "end-of-file"
 
-%token <int32> INTEGER_LITERAL "integer-literal"
+%token <int32> INT_LITERAL "integer-literal"
 %token <doubl> REAL_LITERAL "real-literal" // /!\ tweak lexer to support
 %token <id> STRING_LITERAL "string-literal"
 %token <id> TYPE_IDENTIFIER "type-identifier"
@@ -79,6 +79,9 @@ using namespace std;
 
 %start program;
 
+%precedence IF THEN WHILE DO LET IN
+%precedence ELSE
+
 %right ASSIGN
 %left AND
 %right NOT
@@ -91,7 +94,8 @@ using namespace std;
 
 %%
 
-program: /*epsilon*/ | class program;
+program: /*epsilon*/ 
+		| class program ;
 
 class: CLASS TYPE_IDENTIFIER class-parent LBRACE class-body RBRACE;
 
@@ -125,23 +129,23 @@ block: LBRACE expr block-supp RBRACE; // To verify
 
 block-supp: /* epsilon */ | SEMICOLON expr block-supp ;
 
-expr: 	//IF expr THEN expr 
-		//| IF expr THEN expr ELSE expr
-		//| WHILE expr DO expr
-        //| LET OBJECT_IDENTIFIER COLON type opt-assignment IN expr
-        //| OBJECT_IDENTIFIER assignment
-		//| unary-op
-        //| expr binary-op expr 
-        //| call
-        //| NEW TYPE_IDENTIFIER
-		//| OBJECT_IDENTIFIER
-		//| SELF
-		//| literal
+expr: 	IF expr THEN expr 
+		| IF expr THEN expr ELSE expr
+		| WHILE expr DO expr
+        | LET OBJECT_IDENTIFIER COLON type opt-assignment IN expr
+        | OBJECT_IDENTIFIER assignment
+		| unary-op
+        | binary-op
+        | call
+        | NEW TYPE_IDENTIFIER
+		| OBJECT_IDENTIFIER
+		| SELF
+		| literal
 		| LPAR RPAR
 		| LPAR expr RPAR
         | block;
 
-literal: INTEGER_LITERAL | STRING_LITERAL | boolean-literal ;
+literal: INT_LITERAL | STRING_LITERAL | boolean-literal ;
 boolean-literal: TRUE | FALSE ;
 
 args: 	/* epsilon */ 
@@ -155,14 +159,14 @@ args-supp: 	/* epsilon */
 call:	OBJECT_IDENTIFIER LPAR args RPAR
 		| expr DOT OBJECT_IDENTIFIER LPAR args RPAR ;
 
-binary-op: 	EQUAL 
-		   	| LOWER 
-		  	| LOWER_EQUAL
-			| PLUS 
-			| MINUS
-			| TIMES
-			| DIV
-			| POW;
+binary-op: 	expr EQUAL expr
+		   	| expr LOWER expr
+		  	| expr LOWER_EQUAL expr
+			| expr PLUS expr
+			| expr MINUS expr
+			| expr TIMES expr
+			| expr DIV expr
+			| expr POW expr;
 
 unary-op: NOT expr
 		| MINUS expr

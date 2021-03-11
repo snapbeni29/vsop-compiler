@@ -50,7 +50,7 @@ extern int yydebug;
   enum yytokentype
   {
     END = 0,
-    INTEGER_LITERAL = 258,
+    INT_LITERAL = 258,
     REAL_LITERAL = 259,
     STRING_LITERAL = 260,
     TYPE_IDENTIFIER = 261,
