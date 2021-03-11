@@ -104,15 +104,27 @@ extern int yydebug;
     GREATER = 309,
     GREATER_EQUAL = 310,
     ASSIGN = 311,
-    START_LEXER = 312,
-    START_PARSER = 313,
-    START_EXT_LEXER = 314,
-    START_EXT_PARSER = 315,
-    UMINUS = 316
+    UMINUS = 312
   };
 #endif
 
 /* Value type.  */
+#if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
+union YYSTYPE
+{
+#line 15 "parser.y"
+
+	int int32;
+	double doubl;
+	char* id;
+
+#line 122 "parser.tab.h"
+
+};
+typedef union YYSTYPE YYSTYPE;
+# define YYSTYPE_IS_TRIVIAL 1
+# define YYSTYPE_IS_DECLARED 1
+#endif
 
 
 extern YYSTYPE yylval;

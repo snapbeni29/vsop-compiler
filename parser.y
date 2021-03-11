@@ -11,6 +11,13 @@ extern FILE *yyin;
 using namespace std;
 %}
 
+%union // yylval
+{
+	int int32;
+	double doubl;
+	char* id;
+}
+
 %token END 0 "end-of-file"
 
 %token <int32> INTEGER_LITERAL "integer-literal"
@@ -70,11 +77,7 @@ using namespace std;
 %token <id> GREATER_EQUAL ">=" // -ext
 %token <id> ASSIGN "<-"
 
-
-%token START_LEXER START_PARSER START_EXT_LEXER START_EXT_PARSER;
 %start program;
-
-%right THEN ELSE
 
 %right ASSIGN
 %left AND
@@ -88,8 +91,7 @@ using namespace std;
 
 %%
 
-program: 	/* epsilon */
-			| class program ;
+program: /*epsilon*/ | class program;
 
 class: CLASS TYPE_IDENTIFIER class-parent LBRACE class-body RBRACE;
 
@@ -100,57 +102,71 @@ class-body:  	/* epsilon */
 				| class-body field
 				| class-body method;
 
-field: formal assignment SEMICOLON ;
+field: formal opt-assignment SEMICOLON ;
 
-assignment: /* epsilon */
-			| ASSIGN expr;
+
+
+opt-assignment: /* epsilon */
+			| assignment;
+
+assignment: ASSIGN expr;
 
 method: OBJECT_IDENTIFIER LPAR formals RPAR COLON type block;
 
 type: TYPE_IDENTIFIER | "int32" | "bool" | "string" | "unit";
 
-formals: /*epsilon*/ | formal {COMMA, formal};
+formals: /*epsilon*/ | formal;
 
-formal: OBJECT_IDENTIFIER COLON type;
+formal: OBJECT_IDENTIFIER COLON type formal-supp;
 
-block: LBRACE expr second-instr RBRACE; // To verify
+formal-supp: /*epsilon*/ | COMMA formal;
 
-second-instr: /*epsilon*/ | SEMICOLON expr ;
+block: LBRACE expr block-supp RBRACE; // To verify
 
-expr:	IF expr THEN expr else
-		| WHILE expr DO expr
-		| LET OBJECT_IDENTIFIER COLON type assignment IN expr
-		| OBJECT_IDENTIFIER ASSIGN expr
-		| NOT expr
-		| expr bin-operator expr
-		| MINUS expr
-		| ISNULL expr
-		| OBJECT_IDENTIFIER LPAR args RPAR
-		| expr DOT OBJECT_IDENTIFIER LPAR args RPAR
-		| NEW TYPE_IDENTIFIER
-		| OBJECT_IDENTIFIER
-		| SELF 
-		| literal
-		| LPAR RPAR 
+block-supp: /* epsilon */ | SEMICOLON expr block-supp ;
+
+expr: 	//IF expr THEN expr 
+		//| IF expr THEN expr ELSE expr
+		//| WHILE expr DO expr
+        //| LET OBJECT_IDENTIFIER COLON type opt-assignment IN expr
+        //| OBJECT_IDENTIFIER assignment
+		//| unary-op
+        //| expr binary-op expr 
+        //| call
+        //| NEW TYPE_IDENTIFIER
+		//| OBJECT_IDENTIFIER
+		//| SELF
+		//| literal
+		| LPAR RPAR
 		| LPAR expr RPAR
-		| block;
+        | block;
 
-else: 	/* epsilon */
-		| ELSE expr ;
-
-bin-operator: 	EQUAL 
-				| LOWER 
-				| LOWER_EQUAL
-				| PLUS 
-				| MINUS
-				| TIMES
-				| DIV
-				| POW 
-				| AND;
-
-args: /*epsilon*/ | expr { "," expr};
 literal: INTEGER_LITERAL | STRING_LITERAL | boolean-literal ;
-boolean-literal: "true" | "false" ;
+boolean-literal: TRUE | FALSE ;
+
+args: 	/* epsilon */ 
+		| arg;
+
+arg: expr args-supp;
+
+args-supp: 	/* epsilon */ 
+			| COMMA arg ;
+
+call:	OBJECT_IDENTIFIER LPAR args RPAR
+		| expr DOT OBJECT_IDENTIFIER LPAR args RPAR ;
+
+binary-op: 	EQUAL 
+		   	| LOWER 
+		  	| LOWER_EQUAL
+			| PLUS 
+			| MINUS
+			| TIMES
+			| DIV
+			| POW;
+
+unary-op: NOT expr
+		| MINUS expr
+		| ISNULL expr;
 
 %%
 
