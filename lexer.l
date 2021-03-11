@@ -232,7 +232,7 @@ invalid-character			.
 
 {integer-literal}			{text = toDecimal(yytext); return INT_LITERAL;}
 {invalid-integer}			{text = string(yytext);
-							yyerror(text + string(" is an invalid integer"));}
+							save_pos(); yyerror(text + string(" is an invalid integer"));}
 
 {double-quote}             	{text = string(yytext); save_pos(); BEGIN(STRING);}
 <STRING>{double-quote}		{text += string(yytext); BEGIN(INITIAL); return STRING_LITERAL;}
@@ -240,9 +240,9 @@ invalid-character			.
 <STRING>{regular-char}+ 	{text += string(yytext);}
 <STRING>{escaped-char}		{text += stringToHex(getEscapeChar(string(yytext)));} 
 <STRING><<EOF>>				{yyerror(string("unexpected end of file"));} 
-<STRING>\n					{yyerror(string("unexpected line feed"));} 
+<STRING>\n					{save_pos(); yyerror(string("unexpected line feed"));} 
 <STRING>{invalid-esc-seq}	{text = yytext;
-							yyerror(text + string(" is an invalid escape sequence"));} 
+							save_pos(); yyerror(text + string(" is an invalid escape sequence"));} 
 
 {comment-one-line}			{}
 {comment-begin}				{commentStack.push({currentLine, currentColumn}); BEGIN(COMMENT);}
@@ -252,7 +252,7 @@ invalid-character			.
 							yyerror(string("unexpected end of file"));}
 <COMMENT>{comment-end}		{commentStack.pop(); if(commentStack.empty()) BEGIN(INITIAL);}
 
-{invalid-character}			{text = yytext; yyerror(text + string(" is not a VSOP valid character"));}
+{invalid-character}			{text = yytext; save_pos(); yyerror(text + string(" is not a VSOP valid character"));}
 %%
 
 /* User subroutines */

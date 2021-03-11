@@ -95,11 +95,10 @@ extern string filename;
 extern stack<pair<int, int>> commentStack;
 
 int yyerror(string s) {
-	// On doit gérer colonne et ligne pour UNEXPECTED_EOF qui utilise stringRow et stringCol
-	cerr << filename << ":" << currentLine << ":" << currentColumn << ": lexical error: " + s + "\n";
+	cerr << filename << ":" << stringRow << ":" << stringCol << ": lexical error: " + s + "\n";
 }
 
-#line 103 "parser.tab.c"
+#line 102 "parser.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -210,13 +209,13 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 35 "parser.y"
+#line 34 "parser.y"
 
 	int int32;
 	double doubl;
 	char* id;
 
-#line 220 "parser.tab.c"
+#line 219 "parser.tab.c"
 
 };
 typedef union YYSTYPE YYSTYPE;
@@ -597,13 +596,13 @@ static const yytype_int8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,   117,   117,   118,   120,   122,   123,   125,   126,   127,
-     129,   133,   134,   136,   138,   140,   140,   140,   140,   140,
-     142,   142,   144,   146,   146,   148,   150,   150,   152,   153,
-     154,   155,   156,   157,   158,   159,   160,   161,   162,   163,
-     164,   165,   166,   168,   168,   168,   169,   169,   171,   172,
-     174,   176,   177,   179,   180,   182,   183,   184,   185,   186,
-     187,   188,   189,   191,   192,   193
+       0,   116,   116,   117,   119,   121,   122,   124,   125,   126,
+     128,   132,   133,   135,   137,   139,   139,   139,   139,   139,
+     141,   141,   143,   145,   145,   147,   149,   149,   151,   152,
+     153,   154,   155,   156,   157,   158,   159,   160,   161,   162,
+     163,   164,   165,   167,   167,   167,   168,   168,   170,   171,
+     173,   175,   176,   178,   179,   181,   182,   183,   184,   185,
+     186,   187,   188,   190,   191,   192
 };
 #endif
 
@@ -1495,7 +1494,7 @@ yyreduce:
   switch (yyn)
     {
 
-#line 1499 "parser.tab.c"
+#line 1498 "parser.tab.c"
 
       default: break;
     }
@@ -1727,7 +1726,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 195 "parser.y"
+#line 194 "parser.y"
 
 
 

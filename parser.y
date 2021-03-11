@@ -26,8 +26,7 @@ extern string filename;
 extern stack<pair<int, int>> commentStack;
 
 int yyerror(string s) {
-	// On doit gérer colonne et ligne pour UNEXPECTED_EOF qui utilise stringRow et stringCol
-	cerr << filename << ":" << currentLine << ":" << currentColumn << ": lexical error: " + s + "\n";
+	cerr << filename << ":" << stringRow << ":" << stringCol << ": lexical error: " + s + "\n";
 }
 %}
 

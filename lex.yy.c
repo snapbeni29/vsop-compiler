@@ -1030,7 +1030,7 @@ case 6:
 YY_RULE_SETUP
 #line 234 "lexer.l"
 {text = string(yytext);
-							yyerror(text + string(" is an invalid integer"));}
+							save_pos(); yyerror(text + string(" is an invalid integer"));}
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
@@ -1067,13 +1067,13 @@ case 12:
 /* rule 12 can match eol */
 YY_RULE_SETUP
 #line 243 "lexer.l"
-{yyerror(string("unexpected line feed"));} 
+{save_pos(); yyerror(string("unexpected line feed"));} 
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
 #line 244 "lexer.l"
 {text = yytext;
-							yyerror(text + string(" is an invalid escape sequence"));} 
+							save_pos(); yyerror(text + string(" is an invalid escape sequence"));} 
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
@@ -1109,7 +1109,7 @@ YY_RULE_SETUP
 case 19:
 YY_RULE_SETUP
 #line 255 "lexer.l"
-{text = yytext; yyerror(text + string(" is not a VSOP valid character"));}
+{text = yytext; save_pos(); yyerror(text + string(" is not a VSOP valid character"));}
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
