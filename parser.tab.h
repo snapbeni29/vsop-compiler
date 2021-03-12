@@ -51,60 +51,53 @@ extern int yydebug;
   {
     END = 0,
     INT_LITERAL = 258,
-    REAL_LITERAL = 259,
-    STRING_LITERAL = 260,
-    TYPE_IDENTIFIER = 261,
-    OBJECT_IDENTIFIER = 262,
-    AND = 263,
-    BOOL = 264,
-    BREAK = 265,
-    CLASS = 266,
-    DO = 267,
-    DOUBLE = 268,
-    ELSE = 269,
-    EXTENDS = 270,
-    EXTERN = 271,
-    FALSE = 272,
-    FOR = 273,
-    IF = 274,
-    IN = 275,
-    INT32 = 276,
-    ISNULL = 277,
-    LET = 278,
-    LETS = 279,
-    NEW = 280,
-    NOT = 281,
-    MOD = 282,
-    OR = 283,
-    SELF = 284,
-    SSTRING = 285,
-    THEN = 286,
-    TO = 287,
-    TRUE = 288,
-    UNIT = 289,
-    WHILE = 290,
-    VARARG = 291,
-    LBRACE = 292,
-    RBRACE = 293,
-    LPAR = 294,
-    RPAR = 295,
-    COLON = 296,
-    SEMICOLON = 297,
-    COMMA = 298,
-    PLUS = 299,
-    MINUS = 300,
-    TIMES = 301,
-    DIV = 302,
-    POW = 303,
-    DOT = 304,
-    EQUAL = 305,
-    NEQUAL = 306,
-    LOWER = 307,
-    LOWER_EQUAL = 308,
-    GREATER = 309,
-    GREATER_EQUAL = 310,
-    ASSIGN = 311,
-    UMINUS = 312
+    STRING_LITERAL = 259,
+    TYPE_IDENTIFIER = 260,
+    OBJECT_IDENTIFIER = 261,
+    AND = 262,
+    BOOL = 263,
+    BREAK = 264,
+    CLASS = 265,
+    DO = 266,
+    DOUBLE = 267,
+    ELSE = 268,
+    EXTENDS = 269,
+    EXTERN = 270,
+    FALSE = 271,
+    FOR = 272,
+    IF = 273,
+    IN = 274,
+    INT32 = 275,
+    ISNULL = 276,
+    LET = 277,
+    NEW = 278,
+    NOT = 279,
+    SELF = 280,
+    SSTRING = 281,
+    THEN = 282,
+    TRUE = 283,
+    UNIT = 284,
+    WHILE = 285,
+    VARARG = 286,
+    LBRACE = 287,
+    RBRACE = 288,
+    LPAR = 289,
+    RPAR = 290,
+    COLON = 291,
+    SEMICOLON = 292,
+    COMMA = 293,
+    PLUS = 294,
+    MINUS = 295,
+    TIMES = 296,
+    DIV = 297,
+    POW = 298,
+    DOT = 299,
+    EQUAL = 300,
+    LOWER = 301,
+    LOWER_EQUAL = 302,
+    ASSIGN = 303,
+    UMINUS = 304,
+    MOD = 305
   };
 #endif
 
@@ -112,13 +105,12 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 34 "parser.y"
+#line 33 "parser.y"
 
-	int int32;
-	double doubl;
-	char* id;
+	int integer;
+	char* str;
 
-#line 122 "parser.tab.h"
+#line 114 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

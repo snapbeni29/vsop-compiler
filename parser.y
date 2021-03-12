@@ -7,7 +7,6 @@
 #include <algorithm> 
 #include <cstring>
 #include <stack> 
-#define YYSTYPE double /* Define main semantic type */
 using namespace std;
 
 int yylex(void);
@@ -32,69 +31,60 @@ int yyerror(string s) {
 
 %union // yylval
 {
-	int int32;
-	double doubl;
-	char* id;
+	int integer;
+	char* str;
 }
 
 %token END 0 "end-of-file"
 
-%token <int32> INT_LITERAL "integer-literal"
-%token <doubl> REAL_LITERAL "real-literal" // /!\ tweak lexer to support
-%token <id> STRING_LITERAL "string-literal"
-%token <id> TYPE_IDENTIFIER "type-identifier"
-%token <id> OBJECT_IDENTIFIER "object-identifier"
+%token <integer> INT_LITERAL "integer-literal"
+%token <str> STRING_LITERAL "string-literal"
+%token <str> TYPE_IDENTIFIER "type-identifier"
+%token <str> OBJECT_IDENTIFIER "object-identifier"
 
-%token <id> AND "and"
-%token <id> BOOL "bool"
-%token <id> BREAK "break" // -ext
-%token <id> CLASS "class"
-%token <id> DO "do"
-%token <id> DOUBLE "double" // -ext
-%token <id> ELSE "else"
-%token <id> EXTENDS "extends"
-%token <id> EXTERN "extern" // -ext
-%token <id> FALSE "false"
-%token <id> FOR "for" // -ext
-%token <id> IF "if"
-%token <id> IN "in"
-%token <id> INT32 "int32"
-%token <id> ISNULL "isnull"
-%token <id> LET "let"
-%token <id> LETS "lets" // -ext
-%token <id> NEW "new"
-%token <id> NOT "not"
-%token <id> MOD "mod" // -ext
-%token <id> OR "or" // -ext
-%token <id> SELF "self"
-%token <id> SSTRING "string"
-%token <id> THEN "then"
-%token <id> TO "to" // -ext
-%token <id> TRUE "true"
-%token <id> UNIT "unit"
-%token <id> WHILE "while"
-%token <id> VARARG "vararg"
+%token <str> AND "and"
+%token <str> BOOL "bool"
+%token <str> BREAK "break" // -ext
+%token <str> CLASS "class"
+%token <str> DO "do"
+%token <str> DOUBLE "double" // -ext
+%token <str> ELSE "else"
+%token <str> EXTENDS "extends"
+%token <str> EXTERN "extern" // -ext
+%token <str> FALSE "false"
+%token <str> FOR "for" // -ext
+%token <str> IF "if"
+%token <str> IN "in"
+%token <str> INT32 "int32"
+%token <str> ISNULL "isnull"
+%token <str> LET "let"
+%token <str> NEW "new"
+%token <str> NOT "not"
+%token <str> SELF "self"
+%token <str> SSTRING "string"
+%token <str> THEN "then"
+%token <str> TRUE "true"
+%token <str> UNIT "unit"
+%token <str> WHILE "while"
+%token <str> VARARG "vararg"
 
-%token <id> LBRACE "{"
-%token <id> RBRACE "}"
-%token <id> LPAR "("
-%token <id> RPAR ")"
-%token <id> COLON ":"
-%token <id> SEMICOLON ";"
-%token <id> COMMA ","
-%token <id> PLUS "+"
-%token <id> MINUS "-"
-%token <id> TIMES "*"
-%token <id> DIV "/"
-%token <id> POW "^"
-%token <id> DOT "."
-%token <id> EQUAL "="
-%token <id> NEQUAL "!=" // -ext
-%token <id> LOWER "<"
-%token <id> LOWER_EQUAL "<="
-%token <id> GREATER ">" // -ext
-%token <id> GREATER_EQUAL ">=" // -ext
-%token <id> ASSIGN "<-"
+%token <str> LBRACE "{"
+%token <str> RBRACE "}"
+%token <str> LPAR "("
+%token <str> RPAR ")"
+%token <str> COLON ":"
+%token <str> SEMICOLON ";"
+%token <str> COMMA ","
+%token <str> PLUS "+"
+%token <str> MINUS "-"
+%token <str> TIMES "*"
+%token <str> DIV "/"
+%token <str> POW "^"
+%token <str> DOT "."
+%token <str> EQUAL "="
+%token <str> LOWER "<"
+%token <str> LOWER_EQUAL "<="
+%token <str> ASSIGN "<-"
 
 %start program;
 
@@ -113,8 +103,8 @@ int yyerror(string s) {
 
 %%
 
-program: /*epsilon*/ 
-		| class program ;
+program: /* epsilon */
+		| class program;
 
 class: CLASS TYPE_IDENTIFIER class-parent LBRACE class-body RBRACE;
 
@@ -126,8 +116,6 @@ class-body:  	/* epsilon */
 				| class-body method;
 
 field: formal opt-assignment SEMICOLON ;
-
-
 
 opt-assignment: /* epsilon */
 			| assignment;
@@ -164,7 +152,7 @@ expr: 	IF expr THEN expr
 		| LPAR expr RPAR
         | block;
 
-literal: INT_LITERAL | STRING_LITERAL | boolean-literal ;
+literal: INT_LITERAL | STRING_LITERAL | boolean-literal;
 boolean-literal: TRUE | FALSE ;
 
 args: 	/* epsilon */ 
@@ -203,10 +191,11 @@ int yywrap(void) {
   return 1;
 }
 
-/*
+
 int main(int argc, char **argv) {
   if (argc >= 2) {
     yyin = fopen(argv[1], "r");
+	filename = string(argv[1]);
     if (!yyin) {
       fprintf(stderr, "Failed to open input file\n");
       return EXIT_FAILURE;
@@ -221,8 +210,8 @@ int main(int argc, char **argv) {
   fprintf(stdout, "End of processing\n");
   return EXIT_SUCCESS;
 }
-*/
 
+/*
 int main(int argc, char* argv[])
 {
 	if(string(argv[1]) != "-lex" || argc < 3){
@@ -371,5 +360,5 @@ int main(int argc, char* argv[])
 	fclose(yyin);
 	return 0;
 }
-
+*/
 

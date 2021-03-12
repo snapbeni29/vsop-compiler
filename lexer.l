@@ -215,8 +215,10 @@ invalid-character			.
 {whitespace} 				{/* do nothing */}
 
 {type-identifier}			{text = string(yytext);
+							yylval.str = strdup(yytext);
 							return TYPE_IDENTIFIER;}
 {object-identifier}			{text = string(yytext);
+							yylval.str = strdup(yytext);
 							auto iterator = keywords.find(text);
 							if (iterator != keywords.end()){
 								return iterator->second;
@@ -226,16 +228,21 @@ invalid-character			.
 {operator}					{auto op = operators.find(string(yytext));
 							if (op != operators.end()){
 								text = op->second.val;
+								yylval.str = strdup(op->second.val.c_str());
 								return op->second.code;
 							}
 							return -1;}
 
-{integer-literal}			{text = toDecimal(yytext); return INT_LITERAL;}
+{integer-literal}			{text = toDecimal(yytext);
+							yylval.integer = stoi(toDecimal(yytext));
+							return INT_LITERAL;}
 {invalid-integer}			{text = string(yytext);
 							save_pos(); yyerror(text + string(" is an invalid integer"));}
 
 {double-quote}             	{text = string(yytext); save_pos(); BEGIN(STRING);}
-<STRING>{double-quote}		{text += string(yytext); BEGIN(INITIAL); return STRING_LITERAL;}
+<STRING>{double-quote}		{text += string(yytext); 
+							yylval.str = strdup(text.c_str());
+							BEGIN(INITIAL); return STRING_LITERAL;}
 <STRING>\\{lf-followed}		{}
 <STRING>{regular-char}+ 	{text += string(yytext);}
 <STRING>{escaped-char}		{text += stringToHex(getEscapeChar(string(yytext)));} 

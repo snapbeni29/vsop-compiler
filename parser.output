@@ -1,20 +1,13 @@
 Terminals unused in grammar
 
-    "real-literal"
     "and"
     "break"
     "double"
     "extern"
     "for"
-    "lets"
-    "mod"
-    "or"
-    "to"
     "vararg"
-    "!="
-    ">"
-    ">="
     UMINUS
+    MOD
 
 
 Grammar
@@ -113,134 +106,127 @@ Terminals, with rules where they appear
 
     "end-of-file" (0) 0
     error (256)
-    "integer-literal" <int32> (258) 42
-    "real-literal" <doubl> (259)
-    "string-literal" <id> (260) 43
-    "type-identifier" <id> (261) 3 5 14 35
-    "object-identifier" <id> (262) 13 21 30 31 36 52 53
-    "and" <id> (263)
-    "bool" <id> (264) 16
-    "break" <id> (265)
-    "class" <id> (266) 3
-    "do" <id> (267) 29
-    "double" <id> (268)
-    "else" <id> (269) 28
-    "extends" <id> (270) 5
-    "extern" <id> (271)
-    "false" <id> (272) 46
-    "for" <id> (273)
-    "if" <id> (274) 27 28
-    "in" <id> (275) 30
-    "int32" <id> (276) 15
-    "isnull" <id> (277) 64
-    "let" <id> (278) 30
-    "lets" <id> (279)
-    "new" <id> (280) 35
-    "not" <id> (281) 62
-    "mod" <id> (282)
-    "or" <id> (283)
-    "self" <id> (284) 37
-    "string" <id> (285) 17
-    "then" <id> (286) 27 28
-    "to" <id> (287)
-    "true" <id> (288) 45
-    "unit" <id> (289) 18
-    "while" <id> (290) 29
-    "vararg" <id> (291)
-    "{" <id> (292) 3 24
-    "}" <id> (293) 3 24
-    "(" <id> (294) 13 39 40 52 53
-    ")" <id> (295) 13 39 40 52 53
-    ":" <id> (296) 13 21 30
-    ";" <id> (297) 9 26
-    "," <id> (298) 23 51
-    "+" <id> (299) 57
-    "-" <id> (300) 58 63
-    "*" <id> (301) 59
-    "/" <id> (302) 60
-    "^" <id> (303) 61
-    "." <id> (304) 53
-    "=" <id> (305) 54
-    "!=" <id> (306)
-    "<" <id> (307) 55
-    "<=" <id> (308) 56
-    ">" <id> (309)
-    ">=" <id> (310)
-    "<-" <id> (311) 12
-    UMINUS (312)
+    "integer-literal" <integer> (258) 42
+    "string-literal" <str> (259) 43
+    "type-identifier" <str> (260) 3 5 14 35
+    "object-identifier" <str> (261) 13 21 30 31 36 52 53
+    "and" <str> (262)
+    "bool" <str> (263) 16
+    "break" <str> (264)
+    "class" <str> (265) 3
+    "do" <str> (266) 29
+    "double" <str> (267)
+    "else" <str> (268) 28
+    "extends" <str> (269) 5
+    "extern" <str> (270)
+    "false" <str> (271) 46
+    "for" <str> (272)
+    "if" <str> (273) 27 28
+    "in" <str> (274) 30
+    "int32" <str> (275) 15
+    "isnull" <str> (276) 64
+    "let" <str> (277) 30
+    "new" <str> (278) 35
+    "not" <str> (279) 62
+    "self" <str> (280) 37
+    "string" <str> (281) 17
+    "then" <str> (282) 27 28
+    "true" <str> (283) 45
+    "unit" <str> (284) 18
+    "while" <str> (285) 29
+    "vararg" <str> (286)
+    "{" <str> (287) 3 24
+    "}" <str> (288) 3 24
+    "(" <str> (289) 13 39 40 52 53
+    ")" <str> (290) 13 39 40 52 53
+    ":" <str> (291) 13 21 30
+    ";" <str> (292) 9 26
+    "," <str> (293) 23 51
+    "+" <str> (294) 57
+    "-" <str> (295) 58 63
+    "*" <str> (296) 59
+    "/" <str> (297) 60
+    "^" <str> (298) 61
+    "." <str> (299) 53
+    "=" <str> (300) 54
+    "<" <str> (301) 55
+    "<=" <str> (302) 56
+    "<-" <str> (303) 12
+    UMINUS (304)
+    MOD (305)
 
 
 Nonterminals, with rules where they appear
 
-    $accept (58)
+    $accept (51)
         on left: 0
-    program (59)
+    program (52)
         on left: 1 2
         on right: 0 2
-    class (60)
+    class (53)
         on left: 3
         on right: 2
-    class-parent (61)
+    class-parent (54)
         on left: 4 5
         on right: 3
-    class-body (62)
+    class-body (55)
         on left: 6 7 8
         on right: 3 7 8
-    field (63)
+    field (56)
         on left: 9
         on right: 7
-    opt-assignment (64)
+    opt-assignment (57)
         on left: 10 11
         on right: 9 30
-    assignment (65)
+    assignment (58)
         on left: 12
         on right: 11 31
-    method (66)
+    method (59)
         on left: 13
         on right: 8
-    type (67)
+    type (60)
         on left: 14 15 16 17 18
         on right: 13 21 30
-    formals (68)
+    formals (61)
         on left: 19 20
         on right: 13
-    formal (69)
+    formal (62)
         on left: 21
         on right: 9 20 23
-    formal-supp (70)
+    formal-supp (63)
         on left: 22 23
         on right: 21
-    block (71)
+    block (64)
         on left: 24
         on right: 13 41
-    block-supp (72)
+    block-supp (65)
         on left: 25 26
         on right: 24 26
-    expr (73)
+    expr (66)
         on left: 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41
         on right: 12 24 26 27 28 29 30 40 49 53 54 55 56 57 58 59 60 61 62 63 64
-    literal (74)
+    literal (67)
         on left: 42 43 44
         on right: 38
-    boolean-literal (75)
+    boolean-literal (68)
         on left: 45 46
         on right: 44
-    args (76)
+    args (69)
         on left: 47 48
         on right: 52 53
-    arg (77)
+    arg (70)
         on left: 49
         on right: 48 51
-    args-supp (78)
+    args-supp (71)
         on left: 50 51
         on right: 49
-    call (79)
+    call (72)
         on left: 52 53
         on right: 34
-    binary-op (80)
+    binary-op (73)
         on left: 54 55 56 57 58 59 60 61
         on right: 33
-    unary-op (81)
+    unary-op (74)
         on left: 62 63 64
         on right: 32
 
