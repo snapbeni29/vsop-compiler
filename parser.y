@@ -7,6 +7,7 @@
 #include <algorithm> 
 #include <cstring>
 #include <stack> 
+#include "tree.hh"
 using namespace std;
 
 int yylex(void);
@@ -104,7 +105,7 @@ int yyerror(string s) {
 %%
 
 program: /* epsilon */
-		| class program;
+		| class program ;
 
 class: CLASS TYPE_IDENTIFIER class-parent LBRACE class-body RBRACE;
 

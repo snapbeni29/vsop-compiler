@@ -8,40 +8,38 @@ class Expression {
     public:
         Expression(){}
         virtual ~Expression(){}
-        virtual string toString(){
-            return "";
-        }
+        virtual string toString() = 0;
 };
 
 class UnaryOperator : public Expression{
     public:
         string op;
-        Expression expr;
+        Expression* expr;
         UnaryOperator(){}
-        UnaryOperator(string _operator, Expression _expr){
+        UnaryOperator(string _operator, Expression* _expr){
             op = _operator;
             expr = _expr;
         }
         string toString(){
-            return "UnOp(" + op + ", " + expr.toString() + ")";
+            return "UnOp(" + op + ", " + expr->toString() + ")";
         }
 };
 
 class Block : public Expression{
     public:
-        list<Expression> exprList;
+        list<Expression*> exprList;
         Block(){}
-        Block(list<Expression> _exprList){
+        Block(list<Expression*> _exprList){
             exprList = _exprList;
         }
 
         string toString() {
             if (exprList.size() == 1) {
-                return exprList.back().toString();
+                return exprList.back()->toString();
             }
-            string exprsToStr = "["; list<Expression>::iterator f_it;
+            string exprsToStr = "["; list<Expression*>::iterator f_it;
             for (f_it = exprList.begin(); f_it != exprList.end(); f_it++) {
-                exprsToStr += f_it->toString() + ", ";
+                exprsToStr += (*f_it)->toString() + ", ";
             }
             if (exprsToStr.length() > 1 && exprsToStr.substr(exprsToStr.length()-2) == ", ") {
                 exprsToStr = exprsToStr.substr(0, exprsToStr.length()-2);
@@ -68,11 +66,11 @@ class Formal {
 class Method {
     public:
         string name;
-        list<Formal> formals;
+        list<Formal*> formals;
         string returnType;
-        Block block;
+        Block* block;
         Method(){}
-        Method(string _name, list<Formal> _formals, string _returnType, Block _block) {
+        Method(string _name, list<Formal*> _formals, string _returnType, Block* _block) {
             name = _name;
             formals = _formals;
             returnType = _returnType;
@@ -81,15 +79,15 @@ class Method {
 
         string toString() {
             // Method(init, [hd : int32, tl : List], Cons,[Assign(head, hd), Assign(tail, tl), self])
-            string formalsToStr = "["; list<Formal>::iterator f_it;
+            string formalsToStr = "["; list<Formal*>::iterator f_it;
             for (f_it = formals.begin(); f_it != formals.end(); f_it++) {
-                formalsToStr += f_it->toString() + ", ";
+                formalsToStr += (*f_it)->toString() + ", ";
             }
             if (formalsToStr.length() > 1 && formalsToStr.substr(formalsToStr.length()-2) == ", ") {
                 formalsToStr = formalsToStr.substr(0, formalsToStr.length()-2);
             }
             formalsToStr += "]";
-            return "Method(" + name + ", " + formalsToStr + ","  + returnType + block.toString() + ")";
+            return "Method(" + name + ", " + formalsToStr + ","  + returnType + block->toString() + ")";
         }
 };
 
@@ -97,9 +95,9 @@ class Field : public Expression{
     public:
         string name;
         string type;
-        Expression initExpr;
+        Expression* initExpr;
         Field(){}
-        Field(string _name, string _type, Expression _initExpr){
+        Field(string _name, string _type, Expression* _initExpr){
             name = _name;
             type = _type;
             initExpr = _initExpr;
@@ -110,8 +108,8 @@ class Field : public Expression{
         }
         string toString() {
             string fieldStr = "Field(" + name + ", " + type;
-            if (initExpr.toString() != "") {
-                fieldStr += ", " + initExpr.toString();
+            if (initExpr->toString() != "") {
+                fieldStr += ", " + initExpr->toString();
             }
             fieldStr += ")";
             return fieldStr;
@@ -122,23 +120,23 @@ class Class {
     public:
         string name;
         string parent;
-        list<Field> fields;
-        list<Method> methods;
+        list<Field*> fields;
+        list<Method*> methods;
         Class(){}
-        Class(string _name, string _parent, list<Field> _fields, list<Method> _methods) {
+        Class(string _name, string _parent, list<Field*> _fields, list<Method*> _methods) {
             name = _name;
             parent = _parent;
             fields = _fields;
             methods = _methods;
         }
         string toString() {
-            string fieldsToStr = "["; list<Field>::iterator f_it;
-            string methodsToStr = "[";list<Method>::iterator m_it;
+            string fieldsToStr = "["; list<Field*>::iterator f_it;
+            string methodsToStr = "[";list<Method*>::iterator m_it;
             for (f_it = fields.begin(); f_it != fields.end(); f_it++) {
-                fieldsToStr += f_it->toString() + ", ";
+                fieldsToStr += (*f_it)->toString() + ", ";
             }
             for (m_it = methods.begin(); m_it != methods.end(); m_it++) {
-                methodsToStr += m_it->toString() + ", ";
+                methodsToStr += (*m_it)->toString() + ", ";
             }
             if (fieldsToStr.length() > 1 && fieldsToStr.substr(fieldsToStr.length()-2) == ", ") {
                 fieldsToStr = fieldsToStr.substr(0, fieldsToStr.length()-2);
@@ -154,15 +152,15 @@ class Class {
 
 class Program{
     public:
-        list<Class> classes;
+        list<Class*> classes;
         Program(){}
-        Program(list<Class> classList) {
+        Program(list<Class*> classList) {
             classes = classList;
         }
         string toString() {
-            string classesToStr = "["; list<Class>::iterator f_it;
+            string classesToStr = "["; list<Class*>::iterator f_it;
             for (f_it = classes.begin(); f_it != classes.end(); f_it++) {
-                classesToStr += f_it->toString() + ", ";
+                classesToStr += (*f_it)->toString() + ", ";
             }
             if (classesToStr.length() > 1 && classesToStr.substr(classesToStr.length()-2) == ", ") {
                 classesToStr = classesToStr.substr(0, classesToStr.length()-2);
@@ -174,23 +172,23 @@ class Program{
 
 class If : public Expression {
     public:
-        Expression conditionExpr;
-        Expression thenExpr;
-        Expression elseExpr;
+        Expression* conditionExpr;
+        Expression* thenExpr;
+        Expression* elseExpr;
         If(){}
-        If(Expression _conditionExpr, Expression _thenExpr, Expression _elseExpr){
+        If(Expression* _conditionExpr, Expression* _thenExpr, Expression* _elseExpr){
             conditionExpr = _conditionExpr;
             thenExpr = _thenExpr;
             elseExpr = _elseExpr;
         }
-        If(Expression _conditionExpr, Expression _thenExpr){
+        If(Expression* _conditionExpr, Expression* _thenExpr){
             conditionExpr = _conditionExpr;
             thenExpr = _thenExpr;
         }
         string toString() {
-            string content = "If(" + conditionExpr.toString() + ", " + thenExpr.toString();
-            if (elseExpr.toString() != "") {
-                content += ", " + elseExpr.toString();
+            string content = "If(" + conditionExpr->toString() + ", " + thenExpr->toString();
+            if (elseExpr->toString() != "") {
+                content += ", " + elseExpr->toString();
             }
             content += ")";
             return content;
@@ -199,68 +197,68 @@ class If : public Expression {
 
 class While : public Expression {
     public:
-        Expression conditionExpr;
-        Expression bodyExpr;
+        Expression* conditionExpr;
+        Expression* bodyExpr;
         While(){}
-        While(Expression _conditionExpr, Expression _bodyExpr){
+        While(Expression* _conditionExpr, Expression* _bodyExpr){
             conditionExpr = _conditionExpr;
             bodyExpr = _bodyExpr;
         }
         string toString() {
-            return "While(" + conditionExpr.toString() + ", " + bodyExpr.toString() + ")";
+            return "While(" + conditionExpr->toString() + ", " + bodyExpr->toString() + ")";
         }
 };
 
 class Assign : public Expression{
     public:
         string name;
-        Expression expr;
+        Expression* expr;
         Assign(){}
-        Assign(string _name, Expression _expr){
+        Assign(string _name, Expression* _expr){
             name = _name;
             expr = _expr;
         }
         string toString() {
-            return "Assign(" + name + ", " + expr.toString() + ")";;
+            return "Assign(" + name + ", " + expr->toString() + ")";;
         }
 };
 
 class BinOp : public Expression{
     public:
         string op;
-        Expression left;
-        Expression right;
+        Expression* left;
+        Expression* right;
         BinOp(){}
-        BinOp(string _op, Expression _left, Expression _right){
+        BinOp(string _op, Expression* _left, Expression* _right){
             op = _op;
             left = _left;
             right = _right;
         }
         string toString() {
-            return "BinOp(" + op + ", " + left.toString() + ", " + right.toString() + ")";
+            return "BinOp(" + op + ", " + left->toString() + ", " + right->toString() + ")";
         }
 };
 
 
 class Call : public Expression{
     public:
-        Expression objExpr;
+        Expression* objExpr;
         string methodName;
-        list<Expression> args;
+        list<Expression*> args;
         Call(){}
-        Call(Expression _objExpr, string _methodName, list<Expression> _args){
+        Call(Expression* _objExpr, string _methodName, list<Expression*> _args){
             objExpr = _objExpr;
             methodName = _methodName;
             args = _args;
         }
         string toString() {
             string obj = "self";
-            if (objExpr.toString() != "") {
-                obj = objExpr.toString();
+            if (objExpr->toString() != "") {
+                obj = objExpr->toString();
             }
-            string argsStr = "["; list<Expression>::iterator e_it;
+            string argsStr = "["; list<Expression*>::iterator e_it;
             for (e_it = args.begin(); e_it != args.end(); e_it++) {
-                argsStr += e_it->toString() + ", ";
+                argsStr += (*e_it)->toString() + ", ";
             }
             if (argsStr.length() > 1 && argsStr.substr(argsStr.length()-2) == ", ") {
                 argsStr = argsStr.substr(0, argsStr.length()-2);
@@ -274,16 +272,16 @@ class Let : public Expression{
     public:
         string name;
         string type;
-        Expression init;
-        Expression scope;
+        Expression* init;
+        Expression* scope;
         Let(){}
-        Let(string _name, string _type, Expression _init, Expression _scope){
+        Let(string _name, string _type, Expression* _init, Expression* _scope){
             name = _name;
             type = _type;
             init = _init;
             scope = _scope;
         }
-        Let(string _name, string _type, Expression _scope){
+        Let(string _name, string _type, Expression* _scope){
             name = _name;
             type = _type;
             scope = _scope;
@@ -291,10 +289,10 @@ class Let : public Expression{
         string toString() {
             string firstPart = "Let(" + name + ", " + type + ", ";
             string lastPart = "";
-            if (init.toString() != "") {
-                lastPart += init.toString() + ", ";
+            if (init != NULL) {
+                lastPart += init->toString() + ", ";
             }
-            lastPart += scope.toString() + ")";
+            lastPart += scope->toString() + ")";
             return firstPart + lastPart;   
         }
 };

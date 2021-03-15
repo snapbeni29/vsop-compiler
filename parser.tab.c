@@ -76,6 +76,7 @@
 #include <algorithm> 
 #include <cstring>
 #include <stack> 
+#include "tree.hh"
 using namespace std;
 
 int yylex(void);
@@ -97,7 +98,7 @@ int yyerror(string s) {
 	cerr << filename << ":" << stringRow << ":" << stringCol << ": lexical error: " + s + "\n";
 }
 
-#line 101 "parser.tab.c"
+#line 102 "parser.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -201,12 +202,12 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 33 "parser.y"
+#line 34 "parser.y"
 
 	int integer;
 	char* str;
 
-#line 210 "parser.tab.c"
+#line 211 "parser.tab.c"
 
 };
 typedef union YYSTYPE YYSTYPE;
@@ -586,13 +587,13 @@ static const yytype_int8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,   106,   106,   107,   109,   111,   112,   114,   115,   116,
-     118,   120,   121,   123,   125,   127,   127,   127,   127,   127,
-     129,   129,   131,   133,   133,   135,   137,   137,   139,   140,
-     141,   142,   143,   144,   145,   146,   147,   148,   149,   150,
-     151,   152,   153,   155,   155,   155,   156,   156,   158,   159,
-     161,   163,   164,   166,   167,   169,   170,   171,   172,   173,
-     174,   175,   176,   178,   179,   180
+       0,   107,   107,   108,   110,   112,   113,   115,   116,   117,
+     119,   121,   122,   124,   126,   128,   128,   128,   128,   128,
+     130,   130,   132,   134,   134,   136,   138,   138,   140,   141,
+     142,   143,   144,   145,   146,   147,   148,   149,   150,   151,
+     152,   153,   154,   156,   156,   156,   157,   157,   159,   160,
+     162,   164,   165,   167,   168,   170,   171,   172,   173,   174,
+     175,   176,   177,   179,   180,   181
 };
 #endif
 
@@ -1479,7 +1480,7 @@ yyreduce:
   switch (yyn)
     {
 
-#line 1483 "parser.tab.c"
+#line 1484 "parser.tab.c"
 
       default: break;
     }
@@ -1711,7 +1712,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 182 "parser.y"
+#line 183 "parser.y"
 
 
 

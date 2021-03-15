@@ -21,10 +21,10 @@ class B: public A {
 
 int main(int argc, char **argv){
     
-    New init = New("init");
-    New scope = New("scope");
-    Let c = Let("name", "type", init, scope);
-    cout << c.toString();
+    New* init = new New("init");
+    New* scope = new New("scope");
+    Let* c = new Let("name", "type", scope);
+    cout << c->toString();
     
     
     
