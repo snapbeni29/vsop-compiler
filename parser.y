@@ -26,12 +26,6 @@
 	Formals* formals;
 	Expression* expr;
 	Block* block;
-	Call* call;
-	BinaryOperator* bin_op;
-	UnaryOperator* un_op;
-	BooleanExpression* boolExp;
-	StringLitExpression* strExp;
-	IntegerExpression* intExp;
 }
 
 %{
@@ -42,14 +36,11 @@ extern char *yytext;   /* Flex global variables */
 extern int yylineno;
 extern FILE *yyin;
 
-extern int previousColumn;
 extern int currentLine, currentColumn;
-extern int previousLine;
 extern string text;
 extern int stringRow;
 extern int stringCol;
 extern string filename;
-extern stack<pair<int, int>> commentStack;
 
 list<Class*> classes;
 
