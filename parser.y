@@ -118,14 +118,9 @@ int yyerror(string s) {
 %nterm <body> class-body
 %nterm <field> field
 %nterm <method> method
-%nterm <assign> assignment
 %nterm <formals> formals formal formal-supp
 %nterm <block> block block-supp args arg args-supp
-%nterm <expr> expr literal
-%nterm <call> call
-%nterm <bin_op> binary-op
-%nterm <un_op> unary-op
-%nterm <boolExp> boolean-literal
+%nterm <expr> expr literal boolean-literal unary-op binary-op call assignment
 
 
 %precedence IF THEN WHILE DO LET IN
