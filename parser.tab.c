@@ -2233,7 +2233,7 @@ void lexer(){
 
 int main(int argc, char **argv) {
 
-	if((string(argv[1]) != "-lex" && string(argv[1]) != "-p") || argc < 3){
+	if((string(argv[1]) != "-l" && string(argv[1]) != "-p") || argc < 3){
 		cout << "Error: the executed command is not valid." << endl;
 		return -1;
 	}
@@ -2246,7 +2246,7 @@ int main(int argc, char **argv) {
 		return EXIT_FAILURE;
 	}
 
-	if(string(argv[1]) == "-lex"){
+	if(string(argv[1]) == "-l"){
 		lexer();
 	}
 	else if(string(argv[1]) == "-p"){
