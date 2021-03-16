@@ -1,3 +1,4 @@
+// include C++ needed libraries
 %code top {
 	#include <iostream>
 	#include <cmath>
@@ -9,10 +10,13 @@
 	#include <stack> 
 }
 
+// it's here you define the types referenced in the union
 %code requires {
+	// (in our header file)
 	#include "tree.hh"
 }
 
+// Here define the types that the symbols of our grammar can take
 %union // yylval
 {
 	int integer;
@@ -32,8 +36,6 @@
 using namespace std;
 int yylex(void);
 int yyerror(string s);
-extern char *yytext;   /* Flex global variables */
-extern int yylineno;
 extern FILE *yyin;
 
 extern int currentLine, currentColumn;
@@ -42,32 +44,23 @@ extern int stringRow;
 extern int stringCol;
 extern string filename;
 
+// declare the list of classes of the input program
 list<Class*> classes;
 
 int yyerror(string s) {
 	cerr << filename << ":" << stringRow << ":" << stringCol << ": lexical error: " + s + "\n";
 }
 %}
-
-%token END 0 "end-of-file"
-
-%token <integer> INT_LITERAL "integer-literal"
-%token <str> STRING_LITERAL "string-literal"
-%token <str> TYPE_IDENTIFIER "type-identifier"
-%token <str> OBJECT_IDENTIFIER "object-identifier"
-
+// Keywords
+%token <str> CLASS "class"
 %token <str> AND "and"
 %token <str> BOOL "bool"
-%token <str> BREAK "break" // -ext
-%token <str> CLASS "class"
 %token <str> DO "do"
-%token <str> DOUBLE "double" // -ext
-%token <str> ELSE "else"
-%token <str> EXTENDS "extends"
-%token <str> EXTERN "extern" // -ext
-%token <str> FALSE "false"
-%token <str> FOR "for" // -ext
 %token <str> IF "if"
+%token <str> ELSE "else"
+%token <str> THEN "then"
+%token <str> EXTENDS "extends"
+%token <str> FALSE "false"
 %token <str> IN "in"
 %token <str> INT32 "int32"
 %token <str> ISNULL "isnull"
@@ -75,13 +68,12 @@ int yyerror(string s) {
 %token <str> NEW "new"
 %token <str> NOT "not"
 %token <str> SELF "self"
-%token <str> SSTRING "string"
-%token <str> THEN "then"
+%token <str> _STRING "string"
 %token <str> TRUE "true"
 %token <str> UNIT "unit"
 %token <str> WHILE "while"
-%token <str> VARARG "vararg"
 
+// Operators
 %token <str> LBRACE "{"
 %token <str> RBRACE "}"
 %token <str> LPAR "("
@@ -100,10 +92,18 @@ int yyerror(string s) {
 %token <str> LOWER_EQUAL "<="
 %token <str> ASSIGN "<-"
 
+// Literals
+%token <integer> INT_LITERAL "integer-literal"
+%token <str> STRING_LITERAL "string-literal"
 
+// Identifiers
+%token <str> TYPE_IDENTIFIER "type-identifier"
+%token <str> OBJECT_IDENTIFIER "object-identifier"
 
+// program is the start symbol
 %start program;
 
+// Define the types of the non-terminal symbols
 %nterm <_class> class
 %nterm <str> class-parent type 
 %nterm <body> class-body
@@ -123,14 +123,16 @@ int yyerror(string s) {
 %nonassoc LOWER LOWER_EQUAL EQUAL
 %left PLUS MINUS
 %left TIMES DIV
-%right UMINUS ISNULL
+%right ISNULL
 %right MOD POW
 %left DOT
 
 %%
 
+// Rule definitions of our grammar
+
 program: /* epsilon */
-		| class program { classes.push_back($1); };
+		| class program { classes.push_front($1); };
 
 class: CLASS TYPE_IDENTIFIER class-parent LBRACE class-body RBRACE
 		{ $$ = new Class($2, $3, $5); };
@@ -140,8 +142,8 @@ class-parent:	/* epsilon */ { $$ = strdup("Object"); }
 				{ $$ = $2; };
 
 class-body:  	/* epsilon */ { $$ = new ClassBody(); }
-				| class-body field { ($1)->addField($2); $$ = $1; }
-				| class-body method { ($1)->addMethod($2); $$ = $1; };
+				| field class-body { ($2)->addField($1); $$ = $2; }
+				| method class-body { ($2)->addMethod($1); $$ = $2; };
 
 field: OBJECT_IDENTIFIER COLON type ASSIGN expr SEMICOLON { $$ = new Field($1, $3, $5); }
 		| OBJECT_IDENTIFIER COLON type SEMICOLON { $$ = new Field($1, $3); };
@@ -163,7 +165,7 @@ formal-supp: /*epsilon*/ { list<Formal*> formals; $$ = new Formals(formals); }
 block: LBRACE expr block-supp RBRACE { ($3)->addExpression($2); $$ = $3; }; // To verify
 
 block-supp: /* epsilon */ { $$ = new Block(); }
-			| SEMICOLON expr block-supp { ($3)->addExpression($2); };
+			| SEMICOLON expr block-supp { ($3)->addExpression($2); $$ = $3; };
 
 expr: 	IF expr THEN expr { $$ = new If($2, $4); }
 		| IF expr THEN expr ELSE expr { $$ = new If($2, $4, $6); }
@@ -186,8 +188,8 @@ literal: INT_LITERAL { $$ = new IntegerExpression($1); }
 		| STRING_LITERAL { $$ = new StringLitExpression($1); }
 		| boolean-literal { $$ = $1; };
 
-boolean-literal: TRUE { $$ = new BooleanExpression($1); }
-				| FALSE { $$ = new BooleanExpression($1); };
+boolean-literal: TRUE { $$ = new StringLitExpression($1); }
+				| FALSE { $$ = new StringLitExpression($1); };
 
 args: 	/* epsilon */ { list<Expression*> exprs; $$ = new Block(exprs); }
 		| arg { $$ = $1; };
@@ -215,37 +217,30 @@ unary-op: NOT expr { $$ = new UnaryOperator($1, $2); }
 
 %%
 
-
-int yyerror(char *s) {
-  printf("%s on line %d - %s\n", s, yylineno, yytext);
-}
-
-int yywrap(void) {
-  fprintf(stdout, "End of input reached\n");
-  return 1;
-}
-
-
 int main(int argc, char **argv) {
+	// Open input file 
 	if (argc >= 2) {
 		yyin = fopen(argv[1], "r");
 		filename = string(argv[1]);
+		// Stop if error
 		if (!yyin) {
 			fprintf(stderr, "Failed to open input file\n");
 			return EXIT_FAILURE;
 		}
 	}
-
-	if (!yyparse()) {
-		fprintf(stdout, "Successful parsing\n");
+	
+	// Parse the file, exit if error occurs
+	if (yyparse()) {
+		cerr << "Error while parsing the file.\n";
+		return EXIT_FAILURE;
 	}
 	
+	// Create and print the program 
 	Program* p = new Program(classes);
-
 	cout << p->toString();
 
+	// Close the file and exit
 	fclose(yyin);
-	fprintf(stdout, "\nEnd of processing\n");
 	return EXIT_SUCCESS;
 }
 
@@ -314,7 +309,7 @@ int main(int argc, char* argv[])
 			case SELF:
 				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
 				break;
-			case SSTRING:
+			case _STRING:
 				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
 				break;
 			case TRUE:

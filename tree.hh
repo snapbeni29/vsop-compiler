@@ -60,6 +60,7 @@ class Formal {
         Formal(){}
         Formal(string _name, string _type){
             name = _name;
+            type = _type;
         }
         string toString(){
             return name + " : " + type;
@@ -107,16 +108,10 @@ class Method {
         string toString() {
             string exprsToStr;
             if (block->exprList.size() == 1) {
-                exprsToStr = block->exprList.front()->toString();
-            } else {
-                string exprsToStr = "["; list<Expression*>::iterator f_it;
-                for (f_it = block->exprList.begin(); f_it != block->exprList.end(); f_it++) {
-                    exprsToStr += (*f_it)->toString() + ", ";
-                }
-                if (exprsToStr.length() > 1 && exprsToStr.substr(exprsToStr.length()-2) == ", ") {
-                    exprsToStr = exprsToStr.substr(0, exprsToStr.length()-2);
-                }
-                exprsToStr += "]";
+                exprsToStr = block->toString();
+            } 
+            else {
+                exprsToStr = "[" + block->toString() + "]";
             }
             return "Method(" + name + ", " + formals->toString() + ", "  + returnType + ", " + exprsToStr + ")";
         }
@@ -144,7 +139,7 @@ class Methods {
             return methodsToStr;
         }
         void addMethod(Method* method) {
-            methods.push_back(method);
+            methods.push_front(method);
         }
 };
 
@@ -165,7 +160,7 @@ class Field : public Expression{
         }
         string toString() {
             string fieldStr = "Field(" + name + ", " + type;
-            if (initExpr->toString() != "") {
+            if (initExpr != NULL) {
                 fieldStr += ", " + initExpr->toString();
             }
             fieldStr += ")";
@@ -196,7 +191,7 @@ class Fields {
             return fieldsToStr;
         }
         void addField(Field* field) {
-            fields.push_back(field);
+            fields.push_front(field);
         }
 };
 
@@ -284,17 +279,6 @@ class IntegerExpression : public Expression {
     public:
         int value;
         IntegerExpression(int val) {
-            value = val;
-        }
-        string toString() {
-            return to_string(value);
-        }
-};
-
-class BooleanExpression : public Expression {
-    public:
-        bool value;
-        BooleanExpression(bool val) {
             value = val;
         }
         string toString() {

@@ -44,66 +44,60 @@
 extern int yydebug;
 #endif
 /* "%code requires" blocks.  */
-#line 12 "parser.y"
+#line 14 "parser.y"
 
+	// (in our header file)
 	#include "tree.hh"
 
-#line 52 "parser.tab.h"
+#line 53 "parser.tab.h"
 
 /* Token type.  */
 #ifndef YYTOKENTYPE
 # define YYTOKENTYPE
   enum yytokentype
   {
-    END = 0,
-    INT_LITERAL = 258,
-    STRING_LITERAL = 259,
-    TYPE_IDENTIFIER = 260,
-    OBJECT_IDENTIFIER = 261,
-    AND = 262,
-    BOOL = 263,
-    BREAK = 264,
-    CLASS = 265,
-    DO = 266,
-    DOUBLE = 267,
-    ELSE = 268,
-    EXTENDS = 269,
-    EXTERN = 270,
-    FALSE = 271,
-    FOR = 272,
-    IF = 273,
-    IN = 274,
-    INT32 = 275,
-    ISNULL = 276,
-    LET = 277,
-    NEW = 278,
-    NOT = 279,
-    SELF = 280,
-    SSTRING = 281,
-    THEN = 282,
-    TRUE = 283,
-    UNIT = 284,
-    WHILE = 285,
-    VARARG = 286,
-    LBRACE = 287,
-    RBRACE = 288,
-    LPAR = 289,
-    RPAR = 290,
-    COLON = 291,
-    SEMICOLON = 292,
-    COMMA = 293,
-    PLUS = 294,
-    MINUS = 295,
-    TIMES = 296,
-    DIV = 297,
-    POW = 298,
-    DOT = 299,
-    EQUAL = 300,
-    LOWER = 301,
-    LOWER_EQUAL = 302,
-    ASSIGN = 303,
-    UMINUS = 304,
-    MOD = 305
+    CLASS = 258,
+    AND = 259,
+    BOOL = 260,
+    DO = 261,
+    IF = 262,
+    ELSE = 263,
+    THEN = 264,
+    EXTENDS = 265,
+    FALSE = 266,
+    IN = 267,
+    INT32 = 268,
+    ISNULL = 269,
+    LET = 270,
+    NEW = 271,
+    NOT = 272,
+    SELF = 273,
+    _STRING = 274,
+    TRUE = 275,
+    UNIT = 276,
+    WHILE = 277,
+    LBRACE = 278,
+    RBRACE = 279,
+    LPAR = 280,
+    RPAR = 281,
+    COLON = 282,
+    SEMICOLON = 283,
+    COMMA = 284,
+    PLUS = 285,
+    MINUS = 286,
+    TIMES = 287,
+    DIV = 288,
+    POW = 289,
+    DOT = 290,
+    EQUAL = 291,
+    LOWER = 292,
+    LOWER_EQUAL = 293,
+    ASSIGN = 294,
+    INT_LITERAL = 295,
+    STRING_LITERAL = 296,
+    TYPE_IDENTIFIER = 297,
+    OBJECT_IDENTIFIER = 298,
+    MOD = 299
   };
 #endif
 
@@ -111,7 +105,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 17 "parser.y"
+#line 21 "parser.y"
 
 	int integer;
 	char* str;
@@ -125,7 +119,7 @@ union YYSTYPE
 	Expression* expr;
 	Block* block;
 
-#line 129 "parser.tab.h"
+#line 123 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

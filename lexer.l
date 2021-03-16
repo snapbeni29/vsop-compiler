@@ -144,7 +144,7 @@ map<string, int> keywords{
 	{"new", NEW},
 	{"not", NOT},
 	{"self", SELF},
-	{"string", SSTRING},
+	{"string", _STRING},
 	{"true", TRUE},
 	{"unit", UNIT},
 	{"while", WHILE}
@@ -168,6 +168,7 @@ map<string, op> operators = {
 	{"^", {POW, "pow"}},
 	{".", {DOT, "dot"}},
 	{"=", {EQUAL, "equal"}},
+	{"<", {LOWER, "lower"}},
 	{"<=", {LOWER_EQUAL, "lower-equal"}},
 	{"<-", {ASSIGN, "assign"}}
 };
@@ -228,7 +229,7 @@ invalid-character			.
 {operator}					{auto op = operators.find(string(yytext));
 							if (op != operators.end()){
 								text = op->second.val;
-								yylval.str = strdup(op->second.val.c_str());
+								yylval.str = strdup(yytext);
 								return op->second.code;
 							}
 							return -1;}
