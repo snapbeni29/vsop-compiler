@@ -238,7 +238,7 @@ invalid-character			.
 							yylval.integer = stoi(toDecimal(yytext));
 							return INT_LITERAL;}
 {invalid-integer}			{text = string(yytext);
-							save_pos(); yyerror(text + string(" is an invalid integer"));}
+							save_pos(); yyerror("lexical error: " + text + string(" is an invalid integer"));}
 
 {double-quote}             	{text = string(yytext); save_pos(); BEGIN(STRING);}
 <STRING>{double-quote}		{text += string(yytext); 
@@ -247,20 +247,20 @@ invalid-character			.
 <STRING>\\{lf-followed}		{}
 <STRING>{regular-char}+ 	{text += string(yytext);}
 <STRING>{escaped-char}		{text += stringToHex(getEscapeChar(string(yytext)));} 
-<STRING><<EOF>>				{yyerror(string("unexpected end of file"));} 
-<STRING>\n					{save_pos(); yyerror(string("unexpected line feed"));} 
+<STRING><<EOF>>				{yyerror("lexical error: " + string("unexpected end of file"));} 
+<STRING>\n					{save_pos(); yyerror("lexical error: " + string("unexpected line feed"));} 
 <STRING>{invalid-esc-seq}	{text = yytext;
-							save_pos(); yyerror(text + string(" is an invalid escape sequence"));} 
+							save_pos(); yyerror("lexical error: " + text + string(" is an invalid escape sequence"));} 
 
 {comment-one-line}			{}
 {comment-begin}				{commentStack.push({currentLine, currentColumn}); BEGIN(COMMENT);}
 <COMMENT>[^\0]				{}
 <COMMENT>{comment-begin}	{commentStack.push({currentLine, currentColumn});}
 <COMMENT><<EOF>>			{auto row_col = commentStack.top(); setPos(row_col.first, row_col.second);
-							yyerror(string("unexpected end of file"));}
+							yyerror("lexical error: " + string("unexpected end of file"));}
 <COMMENT>{comment-end}		{commentStack.pop(); if(commentStack.empty()) BEGIN(INITIAL);}
 
-{invalid-character}			{text = yytext; save_pos(); yyerror(text + string(" is not a VSOP valid character"));}
+{invalid-character}			{text = yytext; save_pos(); yyerror("lexical error: " + text + string(" is not a VSOP valid character"));}
 %%
 
 /* User subroutines */

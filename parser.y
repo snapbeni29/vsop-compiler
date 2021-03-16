@@ -48,7 +48,7 @@ extern string filename;
 list<Class*> classes;
 
 int yyerror(string s) {
-	cerr << filename << ":" << stringRow << ":" << stringCol << ": lexical error: " + s + "\n";
+	cerr << filename << ":" << stringRow << ":" << stringCol << ": " + s + "\n";
 }
 %}
 // Keywords
@@ -217,43 +217,16 @@ unary-op: NOT expr { $$ = new UnaryOperator($1, $2); }
 
 %%
 
-int main(int argc, char **argv) {
-	// Open input file 
-	if (argc >= 2) {
-		yyin = fopen(argv[1], "r");
-		filename = string(argv[1]);
-		// Stop if error
-		if (!yyin) {
-			fprintf(stderr, "Failed to open input file\n");
-			return EXIT_FAILURE;
-		}
-	}
-	
-	// Parse the file, exit if error occurs
-	if (yyparse()) {
-		cerr << "Error while parsing the file.\n";
-		return EXIT_FAILURE;
-	}
+
+void parser(){
+	yyparse();
 	
 	// Create and print the program 
 	Program* p = new Program(classes);
 	cout << p->toString();
-
-	// Close the file and exit
-	fclose(yyin);
-	return EXIT_SUCCESS;
 }
 
-/*
-int main(int argc, char* argv[])
-{
-	if(string(argv[1]) != "-lex" || argc < 3){
-		cout << "Error: the executed command is not valid." << endl;
-		return -1;
-	}
-
-	yyin = fopen(argv[2], "r");
-	filename = string(argv[2]);
+void lexer(){
 	int token;
 
 	token = yylex();
@@ -372,6 +345,9 @@ int main(int argc, char* argv[])
 			case EQUAL:
 				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
 				break;
+			case LOWER:
+				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				break;	
 			case LOWER_EQUAL:
 				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
 				break;				
@@ -389,9 +365,34 @@ int main(int argc, char* argv[])
 				break;
 		}
 		token = yylex();
-	}
-	fclose(yyin);
-	return 0;
+	};
 }
-*/
+
+int main(int argc, char **argv) {
+
+	if((string(argv[1]) != "-lex" && string(argv[1]) != "-p") || argc < 3){
+		cout << "Error: the executed command is not valid." << endl;
+		return -1;
+	}
+
+	yyin = fopen(argv[2], "r");
+	filename = string(argv[2]);
+	// Stop if error
+	if (!yyin) {
+		fprintf(stderr, "Failed to open input file\n");
+		return EXIT_FAILURE;
+	}
+
+	if(string(argv[1]) == "-lex"){
+		lexer();
+	}
+	else if(string(argv[1]) == "-p"){
+		parser();
+	}
+
+
+	// Close the file and exit
+	fclose(yyin);
+	return EXIT_SUCCESS;
+}
 

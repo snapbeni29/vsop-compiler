@@ -1036,7 +1036,7 @@ case 6:
 YY_RULE_SETUP
 #line 240 "lexer.l"
 {text = string(yytext);
-							save_pos(); yyerror(text + string(" is an invalid integer"));}
+							save_pos(); yyerror("lexical error: " + text + string(" is an invalid integer"));}
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
@@ -1069,19 +1069,19 @@ YY_RULE_SETUP
 	YY_BREAK
 case YY_STATE_EOF(STRING):
 #line 250 "lexer.l"
-{yyerror(string("unexpected end of file"));} 
+{yyerror("lexical error: " + string("unexpected end of file"));} 
 	YY_BREAK
 case 12:
 /* rule 12 can match eol */
 YY_RULE_SETUP
 #line 251 "lexer.l"
-{save_pos(); yyerror(string("unexpected line feed"));} 
+{save_pos(); yyerror("lexical error: " + string("unexpected line feed"));} 
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
 #line 252 "lexer.l"
 {text = yytext;
-							save_pos(); yyerror(text + string(" is an invalid escape sequence"));} 
+							save_pos(); yyerror("lexical error: " + text + string(" is an invalid escape sequence"));} 
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
@@ -1107,7 +1107,7 @@ YY_RULE_SETUP
 case YY_STATE_EOF(COMMENT):
 #line 259 "lexer.l"
 {auto row_col = commentStack.top(); setPos(row_col.first, row_col.second);
-							yyerror(string("unexpected end of file"));}
+							yyerror("lexical error: " + string("unexpected end of file"));}
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
@@ -1117,7 +1117,7 @@ YY_RULE_SETUP
 case 19:
 YY_RULE_SETUP
 #line 263 "lexer.l"
-{text = yytext; save_pos(); yyerror(text + string(" is not a VSOP valid character"));}
+{text = yytext; save_pos(); yyerror("lexical error: " + text + string(" is not a VSOP valid character"));}
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
