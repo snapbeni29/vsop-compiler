@@ -1,15 +1,41 @@
-%{
-#include <iostream>
-#include <cmath>
-#include <cstdlib>
-#include <map>
-#include <vector>
-#include <algorithm> 
-#include <cstring>
-#include <stack> 
-#include "tree.hh"
-using namespace std;
+%code top {
+	#include <iostream>
+	#include <cmath>
+	#include <cstdlib>
+	#include <map>
+	#include <vector>
+	#include <algorithm> 
+	#include <cstring>
+	#include <stack> 
+}
 
+%code requires {
+	#include "tree.hh"
+}
+
+%union // yylval
+{
+	int integer;
+	char* str;
+	Class* _class;
+	ClassBody* body;
+	Field* field;
+	Method* method;
+	Assign* assign;
+	Formal* formal;
+	Formals* formals;
+	Expression* expr;
+	Block* block;
+	Call* call;
+	BinaryOperator* bin_op;
+	UnaryOperator* un_op;
+	BooleanExpression* boolExp;
+	StringLitExpression* strExp;
+	IntegerExpression* intExp;
+}
+
+%{
+using namespace std;
 int yylex(void);
 int yyerror(string s);
 extern char *yytext;   /* Flex global variables */
@@ -25,16 +51,12 @@ extern int stringCol;
 extern string filename;
 extern stack<pair<int, int>> commentStack;
 
+list<Class*> classes;
+
 int yyerror(string s) {
 	cerr << filename << ":" << stringRow << ":" << stringCol << ": lexical error: " + s + "\n";
 }
 %}
-
-%union // yylval
-{
-	int integer;
-	char* str;
-}
 
 %token END 0 "end-of-file"
 
@@ -87,7 +109,24 @@ int yyerror(string s) {
 %token <str> LOWER_EQUAL "<="
 %token <str> ASSIGN "<-"
 
+
+
 %start program;
+
+%nterm <_class> class
+%nterm <str> class-parent type 
+%nterm <body> class-body
+%nterm <field> field
+%nterm <method> method
+%nterm <assign> assignment
+%nterm <formals> formals formal formal-supp
+%nterm <block> block block-supp args arg args-supp
+%nterm <expr> expr literal
+%nterm <call> call
+%nterm <bin_op> binary-op
+%nterm <un_op> unary-op
+%nterm <boolExp> boolean-literal
+
 
 %precedence IF THEN WHILE DO LET IN
 %precedence ELSE
@@ -105,80 +144,88 @@ int yyerror(string s) {
 %%
 
 program: /* epsilon */
-		| class program ;
+		| class program { classes.push_back($1); };
 
-class: CLASS TYPE_IDENTIFIER class-parent LBRACE class-body RBRACE;
+class: CLASS TYPE_IDENTIFIER class-parent LBRACE class-body RBRACE
+		{ $$ = new Class($2, $3, $5); };
 
-class-parent:	/* epsilon */
-				| EXTENDS TYPE_IDENTIFIER ;
+class-parent:	/* epsilon */ { $$ = strdup("Object"); }
+				| EXTENDS TYPE_IDENTIFIER
+				{ $$ = $2; };
 
-class-body:  	/* epsilon */
-				| class-body field
-				| class-body method;
+class-body:  	/* epsilon */ { $$ = new ClassBody(); }
+				| class-body field { ($1)->addField($2); $$ = $1; }
+				| class-body method { ($1)->addMethod($2); $$ = $1; };
 
-field: formal opt-assignment SEMICOLON ;
+field: OBJECT_IDENTIFIER COLON type ASSIGN expr SEMICOLON { $$ = new Field($1, $3, $5); }
+		| OBJECT_IDENTIFIER COLON type SEMICOLON { $$ = new Field($1, $3); };
 
-opt-assignment: /* epsilon */
-			| assignment;
+assignment: OBJECT_IDENTIFIER ASSIGN expr { $$ = new Assign($1, $3); };
 
-assignment: ASSIGN expr;
-
-method: OBJECT_IDENTIFIER LPAR formals RPAR COLON type block;
+method: OBJECT_IDENTIFIER LPAR formals RPAR COLON type block { $$ = new Method($1, $3, $6, $7); };
 
 type: TYPE_IDENTIFIER | "int32" | "bool" | "string" | "unit";
 
-formals: /*epsilon*/ | formal;
+formals: /*epsilon*/ { list<Formal*> formals; $$ = new Formals(formals); }
+		| formal { $$ = $1; };
 
-formal: OBJECT_IDENTIFIER COLON type formal-supp;
+formal: OBJECT_IDENTIFIER COLON type formal-supp { ($4)->addFormal(new Formal($1, $3)); $$ = $4; };
 
-formal-supp: /*epsilon*/ | COMMA formal;
+formal-supp: /*epsilon*/ { list<Formal*> formals; $$ = new Formals(formals); }
+			| COMMA formal { $$ = $2; };
 
-block: LBRACE expr block-supp RBRACE; // To verify
+block: LBRACE expr block-supp RBRACE { ($3)->addExpression($2); $$ = $3; }; // To verify
 
-block-supp: /* epsilon */ | SEMICOLON expr block-supp ;
+block-supp: /* epsilon */ { $$ = new Block(); }
+			| SEMICOLON expr block-supp { ($3)->addExpression($2); };
 
-expr: 	IF expr THEN expr 
-		| IF expr THEN expr ELSE expr
-		| WHILE expr DO expr
-        | LET OBJECT_IDENTIFIER COLON type opt-assignment IN expr
-        | OBJECT_IDENTIFIER assignment
-		| unary-op
-        | binary-op
-        | call
-        | NEW TYPE_IDENTIFIER
-		| OBJECT_IDENTIFIER
-		| SELF
-		| literal
-		| LPAR RPAR
-		| LPAR expr RPAR
-        | block;
+expr: 	IF expr THEN expr { $$ = new If($2, $4); }
+		| IF expr THEN expr ELSE expr { $$ = new If($2, $4, $6); }
+		| WHILE expr DO expr { $$ = new While($2, $4); }
+        | LET OBJECT_IDENTIFIER COLON type IN expr { $$ = new Let($2, $4, $6); }
+        | LET OBJECT_IDENTIFIER COLON type ASSIGN expr IN expr { $$ = new Let($2, $4, $6, $8); }
+        | assignment { $$ = $1; }
+		| unary-op { $$ = $1; }
+        | binary-op { $$ = $1; }
+        | call { $$ = $1; }
+        | NEW TYPE_IDENTIFIER { $$ = new New($2); }
+		| OBJECT_IDENTIFIER { $$ = new StringLitExpression($1); }
+		| SELF { $$ = new StringLitExpression($1); }
+		| literal { $$ = $1; }
+		| LPAR RPAR { $$ = new StringLitExpression(strcat($1, $2)); }
+		| LPAR expr RPAR { $$ = $2; }
+        | block { $$ = $1; };
 
-literal: INT_LITERAL | STRING_LITERAL | boolean-literal;
-boolean-literal: TRUE | FALSE ;
+literal: INT_LITERAL { $$ = new IntegerExpression($1); }
+		| STRING_LITERAL { $$ = new StringLitExpression($1); }
+		| boolean-literal { $$ = $1; };
 
-args: 	/* epsilon */ 
-		| arg;
+boolean-literal: TRUE { $$ = new BooleanExpression($1); }
+				| FALSE { $$ = new BooleanExpression($1); };
 
-arg: expr args-supp;
+args: 	/* epsilon */ { list<Expression*> exprs; $$ = new Block(exprs); }
+		| arg { $$ = $1; };
 
-args-supp: 	/* epsilon */ 
-			| COMMA arg ;
+arg: expr args-supp { ($2)->addExpression($1); $$ = $2; };
 
-call:	OBJECT_IDENTIFIER LPAR args RPAR
-		| expr DOT OBJECT_IDENTIFIER LPAR args RPAR ;
+args-supp: 	/* epsilon */ { list<Expression*> exprs; $$ = new Block(exprs); }
+			| COMMA arg { $$ = $2; };
 
-binary-op: 	expr EQUAL expr
-		   	| expr LOWER expr
-		  	| expr LOWER_EQUAL expr
-			| expr PLUS expr
-			| expr MINUS expr
-			| expr TIMES expr
-			| expr DIV expr
-			| expr POW expr;
+call:	OBJECT_IDENTIFIER LPAR args RPAR { $$ = new Call($1, $3); }
+		| expr DOT OBJECT_IDENTIFIER LPAR args RPAR { $$ = new Call($1, $3, $5); };
 
-unary-op: NOT expr
-		| MINUS expr
-		| ISNULL expr;
+binary-op: 	expr EQUAL expr { $$ = new BinaryOperator($2, $1, $3); }
+		   	| expr LOWER expr { $$ = new BinaryOperator($2, $1, $3); }
+		  	| expr LOWER_EQUAL expr { $$ = new BinaryOperator($2, $1, $3); }
+			| expr PLUS expr { $$ = new BinaryOperator($2, $1, $3); }
+			| expr MINUS expr { $$ = new BinaryOperator($2, $1, $3); }
+			| expr TIMES expr { $$ = new BinaryOperator($2, $1, $3); }
+			| expr DIV expr { $$ = new BinaryOperator($2, $1, $3); }
+			| expr POW expr { $$ = new BinaryOperator($2, $1, $3); };
+
+unary-op: NOT expr { $$ = new UnaryOperator($1, $2); }
+		| MINUS expr { $$ = new UnaryOperator($1, $2); }
+		| ISNULL expr { $$ = new UnaryOperator($1, $2); };
 
 %%
 
@@ -194,22 +241,26 @@ int yywrap(void) {
 
 
 int main(int argc, char **argv) {
-  if (argc >= 2) {
-    yyin = fopen(argv[1], "r");
-	filename = string(argv[1]);
-    if (!yyin) {
-      fprintf(stderr, "Failed to open input file\n");
-      return EXIT_FAILURE;
-    }
-  }
-  
-  if (!yyparse()) {
-    fprintf(stdout, "Successful parsing\n");
-  }
-  
-  fclose(yyin);
-  fprintf(stdout, "End of processing\n");
-  return EXIT_SUCCESS;
+	if (argc >= 2) {
+		yyin = fopen(argv[1], "r");
+		filename = string(argv[1]);
+		if (!yyin) {
+			fprintf(stderr, "Failed to open input file\n");
+			return EXIT_FAILURE;
+		}
+	}
+
+	if (!yyparse()) {
+		fprintf(stdout, "Successful parsing\n");
+	}
+	
+	Program* p = new Program(classes);
+
+	cout << p->toString();
+
+	fclose(yyin);
+	fprintf(stdout, "\nEnd of processing\n");
+	return EXIT_SUCCESS;
 }
 
 /*
