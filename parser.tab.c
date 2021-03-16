@@ -2208,6 +2208,9 @@ void lexer(){
 			case EQUAL:
 				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
 				break;
+			case LOWER:
+				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				break;	
 			case LOWER_EQUAL:
 				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
 				break;				
