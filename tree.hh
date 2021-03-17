@@ -38,9 +38,6 @@ class Block : public Expression{
         }
 
         string toString() {
-            if (exprList.size() == 1) {
-                return exprList.back()->toString();
-            }
             string exprsToStr; list<Expression*>::iterator f_it;
             for (f_it = exprList.begin(); f_it != exprList.end(); f_it++) {
                 exprsToStr += (*f_it)->toString() + ", ";
@@ -106,14 +103,7 @@ class Method {
         }
 
         string toString() {
-            string exprsToStr;
-            if (block->exprList.size() == 1) {
-                exprsToStr = block->toString();
-            } 
-            else {
-                exprsToStr = "[" + block->toString() + "]";
-            }
-            return "Method(" + name + ", " + formals->toString() + ", "  + returnType + ", " + exprsToStr + ")";
+            return "Method(" + name + ", " + formals->toString() + ", "  + returnType + ", " + "[" + block->toString() + "]" + ")";
         }
 };
 
@@ -254,7 +244,7 @@ class If : public Expression {
     public:
         Expression* conditionExpr;
         Expression* thenExpr;
-        Expression* elseExpr;
+        Expression* elseExpr = NULL;
         If(){}
         If(Expression* _conditionExpr, Expression* _thenExpr, Expression* _elseExpr){
             conditionExpr = _conditionExpr;
@@ -267,7 +257,7 @@ class If : public Expression {
         }
         string toString() {
             string content = "If(" + conditionExpr->toString() + ", " + thenExpr->toString();
-            if (elseExpr->toString() != "") {
+            if (elseExpr != NULL) {
                 content += ", " + elseExpr->toString();
             }
             content += ")";
