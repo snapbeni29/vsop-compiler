@@ -210,6 +210,7 @@ binary-op: 	expr EQUAL expr { $$ = new BinaryOperator($2, $1, $3); }
 			| expr TIMES expr { $$ = new BinaryOperator($2, $1, $3); }
 			| expr DIV expr { $$ = new BinaryOperator($2, $1, $3); }
 			| expr POW expr { $$ = new BinaryOperator($2, $1, $3); };
+			| expr AND expr { $$ = new BinaryOperator($2, $1, $3); };
 
 unary-op: NOT expr { $$ = new UnaryOperator($1, $2); }
 		| MINUS expr { $$ = new UnaryOperator($1, $2); }

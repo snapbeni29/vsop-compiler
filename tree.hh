@@ -38,13 +38,14 @@ class Block : public Expression{
         }
 
         string toString() {
-            string exprsToStr; list<Expression*>::iterator f_it;
+            string exprsToStr = "["; list<Expression*>::iterator f_it;
             for (f_it = exprList.begin(); f_it != exprList.end(); f_it++) {
                 exprsToStr += (*f_it)->toString() + ", ";
             }
             if (exprsToStr.length() > 1 && exprsToStr.substr(exprsToStr.length()-2) == ", ") {
                 exprsToStr = exprsToStr.substr(0, exprsToStr.length()-2);
             }
+            exprsToStr += "]";
             return exprsToStr;
         }
 };
@@ -103,7 +104,7 @@ class Method {
         }
 
         string toString() {
-            return "Method(" + name + ", " + formals->toString() + ", "  + returnType + ", " + "[" + block->toString() + "]" + ")";
+            return "Method(" + name + ", " + formals->toString() + ", "  + returnType + ", " + block->toString() + ")";
         }
 };
 
@@ -352,8 +353,7 @@ class Call : public Expression{
             if (objExpr != NULL) {
                 obj = objExpr->toString();
             }
-            string argsStr = "[" + args->toString() + "]";
-            return "Call(" + obj + ", " + methodName + ", " + argsStr + ")";
+            return "Call(" + obj + ", " + methodName + ", " + args->toString() + ")";
         }
 };
 
