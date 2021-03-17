@@ -20,7 +20,7 @@
 %union // yylval
 {
 	int integer;
-	char* str;
+	string* str;
 	Class* _class;
 	ClassBody* body;
 	Field* field;
@@ -45,7 +45,7 @@ extern int stringCol;
 extern string filename;
 
 // declare the list of classes of the input program
-list<Class*> classes;
+list<unique_ptr<Class>> classes;
 
 int yyerror(string s) {
 	cerr << filename << ":" << stringRow << ":" << stringCol << ": " + s + "\n";
@@ -132,18 +132,18 @@ int yyerror(string s) {
 // Rule definitions of our grammar
 
 program: /* epsilon */
-		| class program { classes.push_front($1); };
+		| class program { classes.push_front(unique_ptr<Class>($1)); };
 
 class: CLASS TYPE_IDENTIFIER class-parent LBRACE class-body RBRACE
 		{ $$ = new Class($2, $3, $5); };
 
-class-parent:	/* epsilon */ { $$ = strdup("Object"); }
+class-parent:	/* epsilon */ { $$ = new string("Object"); }
 				| EXTENDS TYPE_IDENTIFIER
 				{ $$ = $2; };
 
 class-body:  	/* epsilon */ { $$ = new ClassBody(); }
-				| field class-body { ($2)->addField($1); $$ = $2; }
-				| method class-body { ($2)->addMethod($1); $$ = $2; };
+				| field class-body { ($2)->addField(unique_ptr<Field>($1)); $$ = $2; }
+				| method class-body { ($2)->addMethod(unique_ptr<Method>($1)); $$ = $2; };
 
 field: OBJECT_IDENTIFIER COLON type ASSIGN expr SEMICOLON { $$ = new Field($1, $3, $5); }
 		| OBJECT_IDENTIFIER COLON type SEMICOLON { $$ = new Field($1, $3); };
@@ -152,20 +152,24 @@ assignment: OBJECT_IDENTIFIER ASSIGN expr { $$ = new Assign($1, $3); };
 
 method: OBJECT_IDENTIFIER LPAR formals RPAR COLON type block { $$ = new Method($1, $3, $6, $7); };
 
-type: TYPE_IDENTIFIER | "int32" | "bool" | "string" | "unit";
+type: TYPE_IDENTIFIER { $$ = $1; } 
+		| "int32" { $$ = new string("int32"); }
+		| "bool" { $$ = new string("bool"); }
+		| "string" { $$ = new string("string"); }
+		| "unit" { $$ = new string("unit"); };
 
-formals: /*epsilon*/ { list<Formal*> formals; $$ = new Formals(formals); }
+formals: /*epsilon*/ { $$ = new Formals(); }
 		| formal { $$ = $1; };
 
-formal: OBJECT_IDENTIFIER COLON type formal-supp { ($4)->addFormal(new Formal($1, $3)); $$ = $4; };
+formal: OBJECT_IDENTIFIER COLON type formal-supp { ($4)->addFormal(unique_ptr<Formal>(new Formal($1, $3))); $$ = $4; };
 
-formal-supp: /*epsilon*/ { list<Formal*> formals; $$ = new Formals(formals); }
+formal-supp: /*epsilon*/ { $$ = new Formals(); }
 			| COMMA formal { $$ = $2; };
 
-block: LBRACE expr block-supp RBRACE { ($3)->addExpression($2); $$ = $3; }; // To verify
+block: LBRACE expr block-supp RBRACE { ($3)->addExpression(unique_ptr<Expression>($2)); $$ = $3; }; // To verify
 
 block-supp: /* epsilon */ { $$ = new Block(); }
-			| SEMICOLON expr block-supp { ($3)->addExpression($2); $$ = $3; };
+			| SEMICOLON expr block-supp { ($3)->addExpression(unique_ptr<Expression>($2)); $$ = $3; };
 
 expr: 	IF expr THEN expr { $$ = new If($2, $4); }
 		| IF expr THEN expr ELSE expr { $$ = new If($2, $4, $6); }
@@ -180,7 +184,7 @@ expr: 	IF expr THEN expr { $$ = new If($2, $4); }
 		| OBJECT_IDENTIFIER { $$ = new StringLitExpression($1); }
 		| SELF { $$ = new StringLitExpression($1); }
 		| literal { $$ = $1; }
-		| LPAR RPAR { $$ = new StringLitExpression(strcat($1, $2)); }
+		| LPAR RPAR { $$ = new StringLitExpression(new string(*$1 + *$2)); }
 		| LPAR expr RPAR { $$ = $2; }
         | block { $$ = $1; };
 
@@ -191,12 +195,12 @@ literal: INT_LITERAL { $$ = new IntegerExpression($1); }
 boolean-literal: TRUE { $$ = new StringLitExpression($1); }
 				| FALSE { $$ = new StringLitExpression($1); };
 
-args: 	/* epsilon */ { list<Expression*> exprs; $$ = new Block(exprs); }
+args: 	/* epsilon */ { $$ = new Block(); }
 		| arg { $$ = $1; };
 
-arg: expr args-supp { ($2)->addExpression($1); $$ = $2; };
+arg: expr args-supp { ($2)->addExpression(unique_ptr<Expression>($1)); $$ = $2; };
 
-args-supp: 	/* epsilon */ { list<Expression*> exprs; $$ = new Block(exprs); }
+args-supp: 	/* epsilon */ { $$ = new Block(); }
 			| COMMA arg { $$ = $2; };
 
 call:	OBJECT_IDENTIFIER LPAR args RPAR { $$ = new Call($1, $3); }
@@ -223,7 +227,7 @@ void parser(){
 	yyparse();
 	
 	// Create and print the program 
-	Program* p = new Program(classes);
+	unique_ptr<Program> p(new Program(move(classes)));
 	cout << p->toString();
 }
 
@@ -390,7 +394,6 @@ int main(int argc, char **argv) {
 	else if(string(argv[1]) == "-p"){
 		parser();
 	}
-
 
 	// Close the file and exit
 	fclose(yyin);

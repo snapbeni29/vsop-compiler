@@ -1,7 +1,8 @@
 #include <iostream>
 #include <list> 
 #include <string>
-#include <iterator> 
+#include <iterator>
+#include <memory>
 using namespace std;
 
 class Expression {
@@ -13,32 +14,27 @@ class Expression {
 
 class UnaryOperator : public Expression{
     public:
-        string op;
-        Expression* expr;
+        unique_ptr<string> op;
+        unique_ptr<Expression> expr;
         UnaryOperator(){}
-        UnaryOperator(string _operator, Expression* _expr){
-            op = _operator;
-            expr = _expr;
-        }
+        UnaryOperator(string* _operator, Expression* _expr) : op(_operator), expr(_expr) {}
         string toString(){
-            return "UnOp(" + op + ", " + expr->toString() + ")";
+            return "UnOp(" + *op + ", " + expr->toString() + ")";
         }
 };
 
 class Block : public Expression{
     public:
-        list<Expression*> exprList;
-        Block(){}
-        Block(list<Expression*> _exprList){
-            exprList = _exprList;
+        list<unique_ptr<Expression>> exprList;
+        Block(){
         }
 
-        void addExpression(Expression* e) {
-            exprList.push_front(e);
+        void addExpression(unique_ptr<Expression> e) {
+            exprList.push_front(move(e));
         }
 
         string toString() {
-            string exprsToStr = "["; list<Expression*>::iterator f_it;
+            string exprsToStr = "["; list<unique_ptr<Expression>>::iterator f_it;
             for (f_it = exprList.begin(); f_it != exprList.end(); f_it++) {
                 exprsToStr += (*f_it)->toString() + ", ";
             }
@@ -53,27 +49,21 @@ class Block : public Expression{
 
 class Formal {
     public:
-        string name;
-        string type;
+        unique_ptr<string> name;
+        unique_ptr<string> type;
         Formal(){}
-        Formal(string _name, string _type){
-            name = _name;
-            type = _type;
-        }
+        Formal(string* _name, string* _type) : name(_name), type(_type) {}
         string toString(){
-            return name + " : " + type;
+            return *name + " : " + *type;
         }
 };
 
 class Formals {
     public:
-        list<Formal*> formals;
+        list<unique_ptr<Formal>> formals;
         Formals(){}
-        Formals(list<Formal*> _formals) {
-            formals = _formals;
-        }
         string toString() {
-            string formalsToStr = "["; list<Formal*>::iterator f_it;
+            string formalsToStr = "["; list<unique_ptr<Formal>>::iterator f_it;
             for (f_it = formals.begin(); f_it != formals.end(); f_it++) {
                 formalsToStr += (*f_it)->toString() + ", ";
             }
@@ -83,43 +73,34 @@ class Formals {
             formalsToStr += "]";
             return formalsToStr;
         }
-        void addFormal(Formal* formal) {
-            formals.push_front(formal);
+        void addFormal(unique_ptr<Formal> f) {
+            formals.push_front(move(f));
         }
 
 };
 
 class Method {
     public:
-        string name;
-        Formals* formals;
-        string returnType;
-        Block* block;
+        unique_ptr<string> name;
+        unique_ptr<Formals> formals;
+        unique_ptr<string> returnType;
+        unique_ptr<Block> block;
         Method(){}
-        Method(string _name, Formals* _formals, string _returnType, Block* _block) {
-            name = _name;
-            formals = _formals;
-            returnType = _returnType;
-            block = _block;
-        }
+        Method(string* _name, Formals* _formals, string* _returnType, Block* _block) : name(_name), formals(_formals), returnType(_returnType), block(_block) {}
 
         string toString() {
-            return "Method(" + name + ", " + formals->toString() + ", "  + returnType + ", " + block->toString() + ")";
+            return "Method(" + *name + ", " + formals->toString() + ", "  + *returnType + ", " + block->toString() + ")";
         }
 };
 
 class Methods {
     public:
-        list<Method*> methods;
-        Methods(){
-            list<Method*> _methods;
-            methods = _methods;
+        list<unique_ptr<Method>> methods;
+        Methods() {
         }
-        Methods(list<Method*> _methods) {
-            methods = _methods;
-        }
+
         string toString() {
-            string methodsToStr = "[";list<Method*>::iterator m_it;
+            string methodsToStr = "["; list<unique_ptr<Method>>::iterator m_it;
             for (m_it = methods.begin(); m_it != methods.end(); m_it++) {
                 methodsToStr += (*m_it)->toString() + ", ";
             }
@@ -129,29 +110,23 @@ class Methods {
             methodsToStr += "]";
             return methodsToStr;
         }
-        void addMethod(Method* method) {
-            methods.push_front(method);
+        void addMethod(unique_ptr<Method> m) {
+            methods.push_front(move(m));
         }
 };
 
 class Field : public Expression{
     public:
-        string name;
-        string type;
-        Expression* initExpr;
+        unique_ptr<string> name;
+        unique_ptr<string> type;
+        unique_ptr<Expression> initExpr = nullptr;
         Field(){}
-        Field(string _name, string _type, Expression* _initExpr){
-            name = _name;
-            type = _type;
-            initExpr = _initExpr;
-        }
-        Field(string _name, string _type){
-            name = _name;
-            type = _type;
-        }
+        Field(string* _name, string* _type, Expression* _initExpr) : name(_name), type(_type), initExpr(_initExpr) {}
+        Field(string* _name, string* _type) : name(_name), type(_type) {}
+
         string toString() {
-            string fieldStr = "Field(" + name + ", " + type;
-            if (initExpr != NULL) {
+            string fieldStr = "Field(" + *name + ", " + *type;
+            if (initExpr != nullptr) {
                 fieldStr += ", " + initExpr->toString();
             }
             fieldStr += ")";
@@ -162,16 +137,11 @@ class Field : public Expression{
 
 class Fields {
     public:
-        list<Field*> fields;
-        Fields(){
-            list<Field*> _fields;
-            fields = _fields;
-        }
-        Fields(list<Field*> _fields) {
-            fields = _fields;
-        }
+        list<unique_ptr<Field>> fields;
+        Fields(){}
+
         string toString() {
-            string fieldsToStr = "["; list<Field*>::iterator f_it;
+            string fieldsToStr = "["; list<unique_ptr<Field>>::iterator f_it;
             for (f_it = fields.begin(); f_it != fields.end(); f_it++) {
                 fieldsToStr += (*f_it)->toString() + ", ";
             }
@@ -181,55 +151,55 @@ class Fields {
             fieldsToStr += "]";
             return fieldsToStr;
         }
-        void addField(Field* field) {
-            fields.push_front(field);
+        void addField(unique_ptr<Field> f) {
+            fields.push_front(move(f));
         }
 };
 
 class ClassBody {
     public:
-        Fields* fields;
-        Methods* methods;
+        unique_ptr<Fields> fields;
+        unique_ptr<Methods> methods;
         ClassBody() {
-            fields = new Fields();
-            methods = new Methods();
+            unique_ptr<Fields> _fields(new Fields());
+            fields = move(_fields);
+            unique_ptr<Methods> _methods(new Methods());
+            methods = move(_methods);
         }
-        ClassBody(Fields* _fields, Methods* _methods) {
-            fields = _fields;
-            methods = _methods;
+        ClassBody(Fields* _fields, Methods* _methods) : fields(_fields), methods(_methods) {}
+
+        void addField(unique_ptr<Field> field) {
+            fields->addField(move(field));
         }
-        void addField(Field* field) {
-            fields->addField(field);
-        }
-        void addMethod(Method* method) {
-            methods->addMethod(method);
+        void addMethod(unique_ptr<Method> method) {
+            methods->addMethod(move(method));
         }
 };
 
 class Class {
     public:
-        string name;
-        string parent;
-        ClassBody* classBody;
+        unique_ptr<string> name;
+        unique_ptr<string> parent;
+        unique_ptr<ClassBody> classBody;
         Class(){}
-        Class(string _name, string _parent, ClassBody* _classBody) {
-            name = _name;
-            parent = _parent;
-            classBody = _classBody;
-        }
+        Class(string* _name, string* _parent, ClassBody* _classBody) : name(_name), parent(_parent), classBody(_classBody) {}
+
         string toString() {
-            return "Class(" + name + ", " + parent + ", " + classBody->fields->toString() + ", " + classBody->methods->toString() + ")";
+            return "Class(" + *name + ", " + *parent + ", " + classBody->fields->toString() + ", " + classBody->methods->toString() + ")";
         }
 };
 
 class Program{
     public:
-        list<Class*> classes;
-        Program(list<Class*> classList) {
-            classes = classList;
+        list<unique_ptr<Class>> classes;
+        Program(list<unique_ptr<Class>> classList) {
+            for(auto& c : classList) {
+                classes.push_back(move(c));
+            }
         }
+
         string toString() {
-            string classesToStr = "["; list<Class*>::iterator f_it;
+            string classesToStr = "["; list<unique_ptr<Class>>::iterator f_it;
             for (f_it = classes.begin(); f_it != classes.end(); f_it++) {
                 classesToStr += (*f_it)->toString() + ", ";
             }
@@ -243,22 +213,17 @@ class Program{
 
 class If : public Expression {
     public:
-        Expression* conditionExpr;
-        Expression* thenExpr;
-        Expression* elseExpr = NULL;
+        unique_ptr<Expression> conditionExpr;
+        unique_ptr<Expression> thenExpr;
+        unique_ptr<Expression> elseExpr = nullptr;
         If(){}
-        If(Expression* _conditionExpr, Expression* _thenExpr, Expression* _elseExpr){
-            conditionExpr = _conditionExpr;
-            thenExpr = _thenExpr;
-            elseExpr = _elseExpr;
-        }
-        If(Expression* _conditionExpr, Expression* _thenExpr){
-            conditionExpr = _conditionExpr;
-            thenExpr = _thenExpr;
-        }
+        If(Expression* _conditionExpr, Expression* _thenExpr, Expression* _elseExpr) : conditionExpr(_conditionExpr), thenExpr(_thenExpr), elseExpr(_elseExpr) {}
+
+        If(Expression* _conditionExpr, Expression* _thenExpr) : conditionExpr(_conditionExpr), thenExpr(_thenExpr) {}
+
         string toString() {
             string content = "If(" + conditionExpr->toString() + ", " + thenExpr->toString();
-            if (elseExpr != NULL) {
+            if (elseExpr != nullptr) {
                 content += ", " + elseExpr->toString();
             }
             content += ")";
@@ -269,9 +234,8 @@ class If : public Expression {
 class IntegerExpression : public Expression {
     public:
         int value;
-        IntegerExpression(int val) {
-            value = val;
-        }
+        IntegerExpression(int val) : value(val) {}
+
         string toString() {
             return to_string(value);
         }
@@ -279,24 +243,21 @@ class IntegerExpression : public Expression {
 
 class StringLitExpression : public Expression {
     public:
-        string value;
-        StringLitExpression(string val) {
-            value = val;
-        }
+        unique_ptr<string> value;
+        StringLitExpression(string* val) : value(val) {}
+
         string toString() {
-            return value;
+            return *value;
         }
 };
 
 class While : public Expression {
     public:
-        Expression* conditionExpr;
-        Expression* bodyExpr;
+        unique_ptr<Expression> conditionExpr;
+        unique_ptr<Expression> bodyExpr;
         While(){}
-        While(Expression* _conditionExpr, Expression* _bodyExpr){
-            conditionExpr = _conditionExpr;
-            bodyExpr = _bodyExpr;
-        }
+        While(Expression* _conditionExpr, Expression* _bodyExpr) : conditionExpr(_conditionExpr), bodyExpr(_bodyExpr) {}
+
         string toString() {
             return "While(" + conditionExpr->toString() + ", " + bodyExpr->toString() + ")";
         }
@@ -304,81 +265,62 @@ class While : public Expression {
 
 class Assign : public Expression{
     public:
-        string name;
-        Expression* expr;
+        unique_ptr<string> name;
+        unique_ptr<Expression> expr;
         Assign(){}
-        Assign(string _name, Expression* _expr){
-            name = _name;
-            expr = _expr;
-        }
+        Assign(string* _name, Expression* _expr) : name(_name), expr(_expr) {}
+
         string toString() {
-            return "Assign(" + name + ", " + expr->toString() + ")";;
+            return "Assign(" + *name + ", " + expr->toString() + ")";;
         }
 };
 
 class BinaryOperator : public Expression{
     public:
-        string op;
-        Expression* left;
-        Expression* right;
+        unique_ptr<string> op;
+        unique_ptr<Expression> left;
+        unique_ptr<Expression> right;
         BinaryOperator(){}
-        BinaryOperator(string _op, Expression* _left, Expression* _right){
-            op = _op;
-            left = _left;
-            right = _right;
-        }
+        BinaryOperator(string* _op, Expression* _left, Expression* _right) : op(_op), left(_left), right(_right) {}
+
         string toString() {
-            return "BinOp(" + op + ", " + left->toString() + ", " + right->toString() + ")";
+            return "BinOp(" + *op + ", " + left->toString() + ", " + right->toString() + ")";
         }
 };
 
 
 class Call : public Expression{
     public:
-        Expression* objExpr;
-        string methodName;
-        Block* args;
+        unique_ptr<Expression> objExpr = nullptr;
+        unique_ptr<string> methodName;
+        unique_ptr<Block> args;
         Call(){}
-        Call(Expression* _objExpr, string _methodName, Block* _args){
-            objExpr = _objExpr;
-            methodName = _methodName;
-            args = _args;
-        }
-        Call(string _methodName, Block* _args){
-            methodName = _methodName;
-            args = _args;
-        }
+        Call(Expression* _objExpr, string* _methodName, Block* _args) : objExpr(_objExpr), methodName(_methodName), args(_args) {}
+        Call(string* _methodName, Block* _args) : methodName(_methodName), args(_args) {}
+
         string toString() {
             string obj = "self";
-            if (objExpr != NULL) {
+            if (objExpr != nullptr) {
                 obj = objExpr->toString();
             }
-            return "Call(" + obj + ", " + methodName + ", " + args->toString() + ")";
+            return "Call(" + obj + ", " + *methodName + ", " + args->toString() + ")";
         }
 };
 
 class Let : public Expression{
     public:
-        string name;
-        string type;
-        Expression* init;
-        Expression* scope;
+        unique_ptr<string> name;
+        unique_ptr<string> type;
+        unique_ptr<Expression> init = nullptr;
+        unique_ptr<Expression> scope;
         Let(){}
-        Let(string _name, string _type, Expression* _init, Expression* _scope){
-            name = _name;
-            type = _type;
-            init = _init;
-            scope = _scope;
-        }
-        Let(string _name, string _type, Expression* _scope){
-            name = _name;
-            type = _type;
-            scope = _scope;
-        }
+        Let(string* _name, string* _type, Expression* _init, Expression* _scope) : name(_name), type(_type), init(_init), scope(_scope) {}
+        Let(string* _name, string* _type, Expression* _scope) : name(_name), type(_type), scope(_scope) {}
+
         string toString() {
-            string firstPart = "Let(" + name + ", " + type + ", ";
+            string firstPart = "Let(" + *name + ", " + *type + ", ";
             string lastPart = "";
-            if (init != NULL) {
+            if (init != nullptr) {
                 lastPart += init->toString() + ", ";
             }
             lastPart += scope->toString() + ")";
@@ -388,12 +330,10 @@ class Let : public Expression{
 
 class New : public Expression{
     public:
-        string type;
+        unique_ptr<string> type;
         New(){}
-        New(string _type){
-            type = _type;
-        }
+        New(string* _type) : type(_type) {}
         string toString() {
-            return "New(" + type + ")";
+            return "New(" + *type + ")";
         }
 };

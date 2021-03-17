@@ -108,7 +108,7 @@ union YYSTYPE
 #line 21 "parser.y"
 
 	int integer;
-	char* str;
+	string* str;
 	Class* _class;
 	ClassBody* body;
 	Field* field;

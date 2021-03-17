@@ -6,7 +6,8 @@
 #include <vector>
 #include <algorithm> 
 #include <cstring>
-#include <stack> 
+#include <stack>
+#include <memory>
 #include "parser.tab.h"
 
 using namespace std;
@@ -216,10 +217,12 @@ invalid-character			.
 {whitespace} 				{/* do nothing */}
 
 {type-identifier}			{text = string(yytext);
-							yylval.str = strdup(yytext);
+							string* tmp = new string(yytext);
+							yylval.str = tmp;
 							return TYPE_IDENTIFIER;}
 {object-identifier}			{text = string(yytext);
-							yylval.str = strdup(yytext);
+							string* tmp = new string(yytext);
+							yylval.str = tmp;
 							auto iterator = keywords.find(text);
 							if (iterator != keywords.end()){
 								return iterator->second;
@@ -229,7 +232,8 @@ invalid-character			.
 {operator}					{auto op = operators.find(string(yytext));
 							if (op != operators.end()){
 								text = op->second.val;
-								yylval.str = strdup(yytext);
+								string* tmp = new string(yytext);
+								yylval.str = tmp;
 								return op->second.code;
 							}
 							return -1;}
@@ -241,8 +245,9 @@ invalid-character			.
 							save_pos(); yyerror("lexical error: " + text + string(" is an invalid integer"));}
 
 {double-quote}             	{text = string(yytext); save_pos(); BEGIN(STRING);}
-<STRING>{double-quote}		{text += string(yytext); 
-							yylval.str = strdup(text.c_str());
+<STRING>{double-quote}		{text += string(yytext);
+							string* tmp = new string(yytext);
+							yylval.str = tmp;
 							BEGIN(INITIAL); return STRING_LITERAL;}
 <STRING>\\{lf-followed}		{}
 <STRING>{regular-char}+ 	{text += string(yytext);}

@@ -1,13 +1,1 @@
-class C {
-    indirectCall(other : Other) : int32 {
-        other.getInstance().get()
-    }
-}
-
-class Other {
-    i : int32;
-
-    getInstance() : Other { self }
-
-    get() : int32 { i }
-}
+class C {}
