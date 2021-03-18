@@ -12,14 +12,12 @@
 
 using namespace std;
 
-int previousColumn = 1;
-int currentLine, currentColumn;
-int previousLine = yylineno;
 string text = "";
 int stringRow;
 int stringCol;
 string filename;
 stack<pair<int, int>> commentStack;
+stack<pair<int, int>> stringStack;
 
 // Executed before every action.
 #define YY_USER_ACTION	update();
@@ -29,7 +27,6 @@ string charToHex(char c);
 string stringToHex(string escaped);
 string toDecimal(string value);
 void save_pos();
-void printLexicalError(int row, int col, string message);
 extern int yyerror(string s);
 
 
@@ -37,11 +34,16 @@ extern int yyerror(string s);
 Updates the token position in the file.
 */
 void update() {
-	currentLine = previousLine; // update line pos
-	currentColumn = previousColumn; // update column pos
-	for (int i = 0; i < yyleng; i++){ // if line feed, increase the line and set column to 1, otherwise increase the column
-		yytext[i] == '\n' ? previousLine++, previousColumn = 1 : previousColumn++;
-	}
+	yylloc.first_line = yylloc.last_line; 
+    yylloc.first_column = yylloc.last_column; 
+    for(int i = 0; yytext[i] != '\0'; i++) { 
+        if(yytext[i] == '\n') { 
+            yylloc.last_line++; 
+            yylloc.last_column = 1; 
+        } else { 
+            yylloc.last_column++; 
+        } 
+    }
 }
 
 /*
@@ -105,26 +107,11 @@ string toDecimal(string value) {
 }
 
 /*
-Saves the current position of the token.
-*/
-void save_pos() {
-	stringCol = currentColumn;
-	stringRow = currentLine;
-}
-
-/*
 Sets a new position.
 */
 void setPos(int line, int col) {
-	stringCol = col;
-	stringRow = line;
-}
-
-/*
-Prints an error message and the position of the error.
-*/
-void printLexicalError(int row, int col, string message) {
-	cerr << filename << ":" << row << ":" << col << ": lexical error: " + message + "\n";
+	yylloc.first_column = col;
+	yylloc.first_line = line;
 }
 
 // Keywords vector
@@ -242,94 +229,34 @@ invalid-character			.
 							yylval.integer = stoi(toDecimal(yytext));
 							return INT_LITERAL;}
 {invalid-integer}			{text = string(yytext);
-							save_pos(); yyerror("lexical error: " + text + string(" is an invalid integer"));}
+							yyerror("lexical error: " + text + string(" is an invalid integer"));}
 
-{double-quote}             	{text = string(yytext); save_pos(); BEGIN(STRING);}
+{double-quote}             	{text = string(yytext);
+							stringStack.push({yylloc.first_line, yylloc.first_column});
+							BEGIN(STRING);}
 <STRING>{double-quote}		{text += string(yytext);
 							string* tmp = new string(text.c_str());
 							yylval.str = tmp;
+							auto row_col = stringStack.top(); 
+							stringStack.pop(); setPos(row_col.first, row_col.second);
 							BEGIN(INITIAL); return STRING_LITERAL;}
 <STRING>\\{lf-followed}		{}
 <STRING>{regular-char}+ 	{text += string(yytext);}
 <STRING>{escaped-char}		{text += stringToHex(getEscapeChar(string(yytext)));} 
-<STRING><<EOF>>				{yyerror("lexical error: " + string("unexpected end of file"));} 
-<STRING>\n					{save_pos(); yyerror("lexical error: " + string("unexpected line feed"));} 
+<STRING><<EOF>>				{auto row_col = stringStack.top(); 
+							stringStack.pop(); setPos(row_col.first, row_col.second); 
+							yyerror("lexical error: " + string("unexpected end of file"));} 
+<STRING>\n					{yyerror("lexical error: " + string("unexpected line feed"));} 
 <STRING>{invalid-esc-seq}	{text = yytext;
-							save_pos(); yyerror("lexical error: " + text + string(" is an invalid escape sequence"));} 
+							yyerror("lexical error: " + text + string(" is an invalid escape sequence"));} 
 
 {comment-one-line}			{}
-{comment-begin}				{commentStack.push({currentLine, currentColumn}); BEGIN(COMMENT);}
+{comment-begin}				{commentStack.push({yylloc.first_line, yylloc.first_column}); BEGIN(COMMENT);}
 <COMMENT>[^\0]				{}
-<COMMENT>{comment-begin}	{commentStack.push({currentLine, currentColumn});}
+<COMMENT>{comment-begin}	{commentStack.push({yylloc.first_line, yylloc.first_column});}
 <COMMENT><<EOF>>			{auto row_col = commentStack.top(); setPos(row_col.first, row_col.second);
 							yyerror("lexical error: " + string("unexpected end of file"));}
 <COMMENT>{comment-end}		{commentStack.pop(); if(commentStack.empty()) BEGIN(INITIAL);}
 
-{invalid-character}			{text = yytext; save_pos(); yyerror("lexical error: " + text + string(" is not a VSOP valid character"));}
+{invalid-character}			{text = yytext; yyerror("lexical error: " + text + string(" is not a VSOP valid character"));}
 %%
-
-/* User subroutines */
-/*
-int main(int argc, char* argv[])
-{
-	if(string(argv[1]) != "-lex" || argc < 3){
-		cout << "Error: the executed command is not valid." << endl;
-		return -1;
-	}
-
-	yyin = fopen(argv[2], "r");
-	filename = string(argv[2]);
-	int token;
-
-	token = yylex();
-
-	while(token){
-		switch (token){
-			case KEYWORD:
-				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
-				break;
-			case OBJECT_IDENTIFIER:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + "object-identifier," + text + "\n";
-				break;
-			case TYPE_IDENTIFIER:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + "type-identifier," + text + "\n";
-				break;
-			case OPERATOR:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
-				break;
-			case BEGIN_STRING_LITERAL:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + "string-literal" + "," + text ;
-				break;
-			case REGULAR_CHAR:
-				cout << text;
-				break;
-			case END_STRING_LITERAL:
-				cout << text + "\n";
-				break;
-			case INT_LITERAL:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + "integer-literal" + "," + text + "\n";
-				break;
-			case UNEXPECTED_EOF:
-				printLexicalError(stringRow, stringCol, string("unexpected end of file"));
-				exit(-1);
-			case STRING_ERR_EOL:
-				printLexicalError(currentLine, currentColumn, string("unexpected line feed"));
-				exit(-1);
-			case INVALID_ESC_SEQ:
-				printLexicalError(currentLine, currentColumn, text + string(" is an invalid escape sequence"));
-				exit(-1);
-			case INVALID_CHARACTER:
-				printLexicalError(currentLine, currentColumn, text + string(" is not a VSOP valid character"));
-				exit(-1);
-			case INVALID_INTEGER:
-				printLexicalError(currentLine, currentColumn, text + string(" is an invalid integer"));
-				exit(-1);
-			default:
-				break;
-		}
-		token = yylex();
-	}
-	fclose(yyin);
-	return 0;
-}
-*/

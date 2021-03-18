@@ -38,7 +38,6 @@ int yylex(void);
 int yyerror(string s);
 extern FILE *yyin;
 
-extern int currentLine, currentColumn;
 extern string text;
 extern int stringRow;
 extern int stringCol;
@@ -48,9 +47,11 @@ extern string filename;
 list<unique_ptr<Class>> classes;
 
 int yyerror(string s) {
-	cerr << filename << ":" << stringRow << ":" << stringCol << ": " + s + "\n";
+	cerr << filename << ":" << yylloc.first_line << ":" << yylloc.first_column << ": " + s + "\n";
 }
 %}
+
+%locations
 // Keywords
 %token <str> CLASS "class"
 %token <str> AND "and"
@@ -241,131 +242,131 @@ void lexer(){
 		switch (token){
 			// Keywords
 			case CLASS:
-				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," +  to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case AND:
-				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," +  to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case BOOL:
-				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," +  to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case DO:
-				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," +  to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case IF:
-				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," +  to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case ELSE:
-				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," +  to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case THEN:
-				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," +  to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case EXTENDS:
-				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," +  to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case FALSE:
-				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," +  to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case IN:
-				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," +  to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case INT32:
-				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," +  to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case ISNULL:
-				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," +  to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case LET:
-				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," +  to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case NEW:
-				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," +  to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case NOT:
-				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," +  to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case SELF:
-				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," +  to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case _STRING:
-				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," +  to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case TRUE:
-				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," +  to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case UNIT:
-				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," +  to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case WHILE:
-				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," +  to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 
 			case OBJECT_IDENTIFIER:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + "object-identifier," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," + to_string(yylloc.first_column) + "," + "object-identifier," + text + "\n";
 				break;
 			case TYPE_IDENTIFIER:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + "type-identifier," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," + to_string(yylloc.first_column) + "," + "type-identifier," + text + "\n";
 				break;
 
 			// Operators
 			case LBRACE:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," + to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case RBRACE:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," + to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case LPAR:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," + to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case RPAR:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," + to_string(yylloc.first_column) + "," + text + "\n";
 				break;	
 			case COLON:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," + to_string(yylloc.first_column) + "," + text + "\n";
 				break;	
 			case SEMICOLON:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," + to_string(yylloc.first_column) + "," + text + "\n";
 				break;	
 			case COMMA:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," + to_string(yylloc.first_column) + "," + text + "\n";
 				break;	
 			case PLUS:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," + to_string(yylloc.first_column) + "," + text + "\n";
 				break;	
 			case MINUS:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," + to_string(yylloc.first_column) + "," + text + "\n";
 				break;	
 			case TIMES:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," + to_string(yylloc.first_column) + "," + text + "\n";
 				break;	
 			case DIV:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," + to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case POW:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," + to_string(yylloc.first_column) + "," + text + "\n";
 				break;	
 			case DOT:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," + to_string(yylloc.first_column) + "," + text + "\n";
 				break;	
 			case EQUAL:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," + to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case LOWER:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," + to_string(yylloc.first_column) + "," + text + "\n";
 				break;	
 			case LOWER_EQUAL:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," + to_string(yylloc.first_column) + "," + text + "\n";
 				break;				
 			case ASSIGN:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," + to_string(yylloc.first_column) + "," + text + "\n";
 				break;	
 
 			case STRING_LITERAL:
-				cout << to_string(stringRow) + "," + to_string(stringCol) + "," + "string-literal" + "," + text  + "\n";
+				cout << to_string(yylloc.first_line) + "," + to_string(yylloc.first_column) + "," + "string-literal" + "," + text  + "\n";
 				break;
 			case INT_LITERAL:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + "integer-literal" + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," + to_string(yylloc.first_column) + "," + "integer-literal" + "," + text + "\n";
 				break;
 			default:
 				break;

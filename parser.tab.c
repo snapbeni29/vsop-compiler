@@ -203,9 +203,23 @@ typedef union YYSTYPE YYSTYPE;
 # define YYSTYPE_IS_DECLARED 1
 #endif
 
+/* Location type.  */
+#if ! defined YYLTYPE && ! defined YYLTYPE_IS_DECLARED
+typedef struct YYLTYPE YYLTYPE;
+struct YYLTYPE
+{
+  int first_line;
+  int first_column;
+  int last_line;
+  int last_column;
+};
+# define YYLTYPE_IS_DECLARED 1
+# define YYLTYPE_IS_TRIVIAL 1
+#endif
+
 
 extern YYSTYPE yylval;
-
+extern YYLTYPE yylloc;
 int yyparse (void);
 
 #endif /* !YY_YY_PARSER_TAB_H_INCLUDED  */
@@ -218,7 +232,6 @@ int yylex(void);
 int yyerror(string s);
 extern FILE *yyin;
 
-extern int currentLine, currentColumn;
 extern string text;
 extern int stringRow;
 extern int stringCol;
@@ -228,10 +241,10 @@ extern string filename;
 list<unique_ptr<Class>> classes;
 
 int yyerror(string s) {
-	cerr << filename << ":" << stringRow << ":" << stringCol << ": " + s + "\n";
+	cerr << filename << ":" << yylloc.first_line << ":" << yylloc.first_column << ": " + s + "\n";
 }
 
-#line 235 "parser.tab.c"
+#line 248 "parser.tab.c"
 
 
 #ifdef short
@@ -475,13 +488,15 @@ void free (void *); /* INFRINGES ON USER NAME SPACE */
 
 #if (! defined yyoverflow \
      && (! defined __cplusplus \
-         || (defined YYSTYPE_IS_TRIVIAL && YYSTYPE_IS_TRIVIAL)))
+         || (defined YYLTYPE_IS_TRIVIAL && YYLTYPE_IS_TRIVIAL \
+             && defined YYSTYPE_IS_TRIVIAL && YYSTYPE_IS_TRIVIAL)))
 
 /* A type that is properly aligned for any stack member.  */
 union yyalloc
 {
   yy_state_t yyss_alloc;
   YYSTYPE yyvs_alloc;
+  YYLTYPE yyls_alloc;
 };
 
 /* The size of the maximum gap between one aligned stack and the next.  */
@@ -490,8 +505,9 @@ union yyalloc
 /* The size of an array large to enough to hold all stacks, each with
    N elements.  */
 # define YYSTACK_BYTES(N) \
-     ((N) * (YYSIZEOF (yy_state_t) + YYSIZEOF (YYSTYPE)) \
-      + YYSTACK_GAP_MAXIMUM)
+     ((N) * (YYSIZEOF (yy_state_t) + YYSIZEOF (YYSTYPE) \
+             + YYSIZEOF (YYLTYPE)) \
+      + 2 * YYSTACK_GAP_MAXIMUM)
 
 # define YYCOPY_NEEDED 1
 
@@ -596,13 +612,13 @@ static const yytype_int8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,   135,   135,   136,   138,   141,   142,   145,   146,   147,
-     149,   150,   152,   154,   156,   157,   158,   159,   160,   162,
-     163,   165,   167,   168,   170,   172,   173,   175,   176,   177,
-     178,   179,   180,   181,   182,   183,   184,   185,   186,   187,
-     188,   189,   190,   192,   193,   194,   196,   197,   199,   200,
-     202,   204,   205,   207,   208,   210,   211,   212,   213,   214,
-     215,   216,   217,   218,   220,   221,   222
+       0,   136,   136,   137,   139,   142,   143,   146,   147,   148,
+     150,   151,   153,   155,   157,   158,   159,   160,   161,   163,
+     164,   166,   168,   169,   171,   173,   174,   176,   177,   178,
+     179,   180,   181,   182,   183,   184,   185,   186,   187,   188,
+     189,   190,   191,   193,   194,   195,   197,   198,   200,   201,
+     203,   205,   206,   208,   209,   211,   212,   213,   214,   215,
+     216,   217,   218,   219,   221,   222,   223
 };
 #endif
 
@@ -845,6 +861,32 @@ static const yytype_int8 yyr2[] =
 #define YYERRCODE       256
 
 
+/* YYLLOC_DEFAULT -- Set CURRENT to span from RHS[1] to RHS[N].
+   If N is 0, then set CURRENT to the empty location which ends
+   the previous symbol: RHS[0] (always defined).  */
+
+#ifndef YYLLOC_DEFAULT
+# define YYLLOC_DEFAULT(Current, Rhs, N)                                \
+    do                                                                  \
+      if (N)                                                            \
+        {                                                               \
+          (Current).first_line   = YYRHSLOC (Rhs, 1).first_line;        \
+          (Current).first_column = YYRHSLOC (Rhs, 1).first_column;      \
+          (Current).last_line    = YYRHSLOC (Rhs, N).last_line;         \
+          (Current).last_column  = YYRHSLOC (Rhs, N).last_column;       \
+        }                                                               \
+      else                                                              \
+        {                                                               \
+          (Current).first_line   = (Current).last_line   =              \
+            YYRHSLOC (Rhs, 0).last_line;                                \
+          (Current).first_column = (Current).last_column =              \
+            YYRHSLOC (Rhs, 0).last_column;                              \
+        }                                                               \
+    while (0)
+#endif
+
+#define YYRHSLOC(Rhs, K) ((Rhs)[K])
+
 
 /* Enable debugging if requested.  */
 #if YYDEBUG
@@ -860,9 +902,48 @@ do {                                            \
     YYFPRINTF Args;                             \
 } while (0)
 
-/* This macro is provided for backward compatibility. */
+
+/* YY_LOCATION_PRINT -- Print the location on the stream.
+   This macro was not mandated originally: define only if we know
+   we won't break user code: when these are the locations we know.  */
+
 #ifndef YY_LOCATION_PRINT
-# define YY_LOCATION_PRINT(File, Loc) ((void) 0)
+# if defined YYLTYPE_IS_TRIVIAL && YYLTYPE_IS_TRIVIAL
+
+/* Print *YYLOCP on YYO.  Private, do not rely on its existence. */
+
+YY_ATTRIBUTE_UNUSED
+static int
+yy_location_print_ (FILE *yyo, YYLTYPE const * const yylocp)
+{
+  int res = 0;
+  int end_col = 0 != yylocp->last_column ? yylocp->last_column - 1 : 0;
+  if (0 <= yylocp->first_line)
+    {
+      res += YYFPRINTF (yyo, "%d", yylocp->first_line);
+      if (0 <= yylocp->first_column)
+        res += YYFPRINTF (yyo, ".%d", yylocp->first_column);
+    }
+  if (0 <= yylocp->last_line)
+    {
+      if (yylocp->first_line < yylocp->last_line)
+        {
+          res += YYFPRINTF (yyo, "-%d", yylocp->last_line);
+          if (0 <= end_col)
+            res += YYFPRINTF (yyo, ".%d", end_col);
+        }
+      else if (0 <= end_col && yylocp->first_column < end_col)
+        res += YYFPRINTF (yyo, "-%d", end_col);
+    }
+  return res;
+ }
+
+#  define YY_LOCATION_PRINT(File, Loc)          \
+  yy_location_print_ (File, &(Loc))
+
+# else
+#  define YY_LOCATION_PRINT(File, Loc) ((void) 0)
+# endif
 #endif
 
 
@@ -872,7 +953,7 @@ do {                                                                      \
     {                                                                     \
       YYFPRINTF (stderr, "%s ", Title);                                   \
       yy_symbol_print (stderr,                                            \
-                  Type, Value); \
+                  Type, Value, Location); \
       YYFPRINTF (stderr, "\n");                                           \
     }                                                                     \
 } while (0)
@@ -883,10 +964,11 @@ do {                                                                      \
 `-----------------------------------*/
 
 static void
-yy_symbol_value_print (FILE *yyo, int yytype, YYSTYPE const * const yyvaluep)
+yy_symbol_value_print (FILE *yyo, int yytype, YYSTYPE const * const yyvaluep, YYLTYPE const * const yylocationp)
 {
   FILE *yyoutput = yyo;
   YYUSE (yyoutput);
+  YYUSE (yylocationp);
   if (!yyvaluep)
     return;
 # ifdef YYPRINT
@@ -904,12 +986,14 @@ yy_symbol_value_print (FILE *yyo, int yytype, YYSTYPE const * const yyvaluep)
 `---------------------------*/
 
 static void
-yy_symbol_print (FILE *yyo, int yytype, YYSTYPE const * const yyvaluep)
+yy_symbol_print (FILE *yyo, int yytype, YYSTYPE const * const yyvaluep, YYLTYPE const * const yylocationp)
 {
   YYFPRINTF (yyo, "%s %s (",
              yytype < YYNTOKENS ? "token" : "nterm", yytname[yytype]);
 
-  yy_symbol_value_print (yyo, yytype, yyvaluep);
+  YY_LOCATION_PRINT (yyo, *yylocationp);
+  YYFPRINTF (yyo, ": ");
+  yy_symbol_value_print (yyo, yytype, yyvaluep, yylocationp);
   YYFPRINTF (yyo, ")");
 }
 
@@ -942,7 +1026,7 @@ do {                                                            \
 `------------------------------------------------*/
 
 static void
-yy_reduce_print (yy_state_t *yyssp, YYSTYPE *yyvsp, int yyrule)
+yy_reduce_print (yy_state_t *yyssp, YYSTYPE *yyvsp, YYLTYPE *yylsp, int yyrule)
 {
   int yylno = yyrline[yyrule];
   int yynrhs = yyr2[yyrule];
@@ -956,7 +1040,7 @@ yy_reduce_print (yy_state_t *yyssp, YYSTYPE *yyvsp, int yyrule)
       yy_symbol_print (stderr,
                        yystos[+yyssp[yyi + 1 - yynrhs]],
                        &yyvsp[(yyi + 1) - (yynrhs)]
-                                              );
+                       , &(yylsp[(yyi + 1) - (yynrhs)])                       );
       YYFPRINTF (stderr, "\n");
     }
 }
@@ -964,7 +1048,7 @@ yy_reduce_print (yy_state_t *yyssp, YYSTYPE *yyvsp, int yyrule)
 # define YY_REDUCE_PRINT(Rule)          \
 do {                                    \
   if (yydebug)                          \
-    yy_reduce_print (yyssp, yyvsp, Rule); \
+    yy_reduce_print (yyssp, yyvsp, yylsp, Rule); \
 } while (0)
 
 /* Nonzero means print parse trace.  It is left uninitialized so that
@@ -1232,9 +1316,10 @@ yysyntax_error (YYPTRDIFF_T *yymsg_alloc, char **yymsg,
 `-----------------------------------------------*/
 
 static void
-yydestruct (const char *yymsg, int yytype, YYSTYPE *yyvaluep)
+yydestruct (const char *yymsg, int yytype, YYSTYPE *yyvaluep, YYLTYPE *yylocationp)
 {
   YYUSE (yyvaluep);
+  YYUSE (yylocationp);
   if (!yymsg)
     yymsg = "Deleting";
   YY_SYMBOL_PRINT (yymsg, yytype, yyvaluep, yylocationp);
@@ -1252,6 +1337,12 @@ int yychar;
 
 /* The semantic value of the lookahead symbol.  */
 YYSTYPE yylval;
+/* Location data for the lookahead symbol.  */
+YYLTYPE yylloc
+# if defined YYLTYPE_IS_TRIVIAL && YYLTYPE_IS_TRIVIAL
+  = { 1, 1, 1, 1 }
+# endif
+;
 /* Number of syntax errors so far.  */
 int yynerrs;
 
@@ -1270,6 +1361,7 @@ yyparse (void)
     /* The stacks and their tools:
        'yyss': related to states.
        'yyvs': related to semantic values.
+       'yyls': related to locations.
 
        Refer to the stacks through separate pointers, to allow yyoverflow
        to reallocate them elsewhere.  */
@@ -1284,6 +1376,14 @@ yyparse (void)
     YYSTYPE *yyvs;
     YYSTYPE *yyvsp;
 
+    /* The location stack.  */
+    YYLTYPE yylsa[YYINITDEPTH];
+    YYLTYPE *yyls;
+    YYLTYPE *yylsp;
+
+    /* The locations where the error started and ended.  */
+    YYLTYPE yyerror_range[3];
+
     YYPTRDIFF_T yystacksize;
 
   int yyn;
@@ -1293,6 +1393,7 @@ yyparse (void)
   /* The variables used to return semantic value and location from the
      action routines.  */
   YYSTYPE yyval;
+  YYLTYPE yyloc;
 
 #if YYERROR_VERBOSE
   /* Buffer for error messages, and its allocated size.  */
@@ -1301,7 +1402,7 @@ yyparse (void)
   YYPTRDIFF_T yymsg_alloc = sizeof yymsgbuf;
 #endif
 
-#define YYPOPSTACK(N)   (yyvsp -= (N), yyssp -= (N))
+#define YYPOPSTACK(N)   (yyvsp -= (N), yyssp -= (N), yylsp -= (N))
 
   /* The number of symbols on the RHS of the reduced rule.
      Keep to zero when no symbol should be popped.  */
@@ -1309,6 +1410,7 @@ yyparse (void)
 
   yyssp = yyss = yyssa;
   yyvsp = yyvs = yyvsa;
+  yylsp = yyls = yylsa;
   yystacksize = YYINITDEPTH;
 
   YYDPRINTF ((stderr, "Starting parse\n"));
@@ -1317,6 +1419,7 @@ yyparse (void)
   yyerrstatus = 0;
   yynerrs = 0;
   yychar = YYEMPTY; /* Cause a token to be read.  */
+  yylsp[0] = yylloc;
   goto yysetstate;
 
 
@@ -1354,6 +1457,7 @@ yysetstate:
            memory.  */
         yy_state_t *yyss1 = yyss;
         YYSTYPE *yyvs1 = yyvs;
+        YYLTYPE *yyls1 = yyls;
 
         /* Each stack pointer address is followed by the size of the
            data in use in that stack, in bytes.  This used to be a
@@ -1362,9 +1466,11 @@ yysetstate:
         yyoverflow (YY_("memory exhausted"),
                     &yyss1, yysize * YYSIZEOF (*yyssp),
                     &yyvs1, yysize * YYSIZEOF (*yyvsp),
+                    &yyls1, yysize * YYSIZEOF (*yylsp),
                     &yystacksize);
         yyss = yyss1;
         yyvs = yyvs1;
+        yyls = yyls1;
       }
 # else /* defined YYSTACK_RELOCATE */
       /* Extend the stack our own way.  */
@@ -1383,6 +1489,7 @@ yysetstate:
           goto yyexhaustedlab;
         YYSTACK_RELOCATE (yyss_alloc, yyss);
         YYSTACK_RELOCATE (yyvs_alloc, yyvs);
+        YYSTACK_RELOCATE (yyls_alloc, yyls);
 # undef YYSTACK_RELOCATE
         if (yyss1 != yyssa)
           YYSTACK_FREE (yyss1);
@@ -1391,6 +1498,7 @@ yysetstate:
 
       yyssp = yyss + yysize - 1;
       yyvsp = yyvs + yysize - 1;
+      yylsp = yyls + yysize - 1;
 
       YY_IGNORE_USELESS_CAST_BEGIN
       YYDPRINTF ((stderr, "Stack size increased to %ld\n",
@@ -1465,6 +1573,7 @@ yybackup:
   YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
   *++yyvsp = yylval;
   YY_IGNORE_MAYBE_UNINITIALIZED_END
+  *++yylsp = yylloc;
 
   /* Discard the shifted token.  */
   yychar = YYEMPTY;
@@ -1498,396 +1607,398 @@ yyreduce:
      GCC warning that YYVAL may be used uninitialized.  */
   yyval = yyvsp[1-yylen];
 
-
+  /* Default location. */
+  YYLLOC_DEFAULT (yyloc, (yylsp - yylen), yylen);
+  yyerror_range[1] = yyloc;
   YY_REDUCE_PRINT (yyn);
   switch (yyn)
     {
   case 3:
-#line 136 "parser.y"
+#line 137 "parser.y"
                                 { classes.push_front(unique_ptr<Class>((yyvsp[-1]._class))); }
-#line 1509 "parser.tab.c"
+#line 1620 "parser.tab.c"
     break;
 
   case 4:
-#line 139 "parser.y"
+#line 140 "parser.y"
                 { (yyval._class) = new Class((yyvsp[-4].str), (yyvsp[-3].str), (yyvsp[-1].body)); delete (yyvsp[-5].str); delete (yyvsp[-2].str); delete (yyvsp[0].str); }
-#line 1515 "parser.tab.c"
+#line 1626 "parser.tab.c"
     break;
 
   case 5:
-#line 141 "parser.y"
+#line 142 "parser.y"
                               { (yyval.str) = new string("Object"); }
-#line 1521 "parser.tab.c"
+#line 1632 "parser.tab.c"
     break;
 
   case 6:
-#line 143 "parser.y"
+#line 144 "parser.y"
                                 { (yyval.str) = (yyvsp[0].str); delete (yyvsp[-1].str); }
-#line 1527 "parser.tab.c"
+#line 1638 "parser.tab.c"
     break;
 
   case 7:
-#line 145 "parser.y"
+#line 146 "parser.y"
                               { (yyval.body) = new ClassBody(); }
-#line 1533 "parser.tab.c"
+#line 1644 "parser.tab.c"
     break;
 
   case 8:
-#line 146 "parser.y"
+#line 147 "parser.y"
                                                    { ((yyvsp[0].body))->addField(unique_ptr<Field>((yyvsp[-1].field))); (yyval.body) = (yyvsp[0].body); }
-#line 1539 "parser.tab.c"
+#line 1650 "parser.tab.c"
     break;
 
   case 9:
-#line 147 "parser.y"
+#line 148 "parser.y"
                                                     { ((yyvsp[0].body))->addMethod(unique_ptr<Method>((yyvsp[-1].method))); (yyval.body) = (yyvsp[0].body); }
-#line 1545 "parser.tab.c"
+#line 1656 "parser.tab.c"
     break;
 
   case 10:
-#line 149 "parser.y"
+#line 150 "parser.y"
                                                           { (yyval.field) = new Field((yyvsp[-5].str), (yyvsp[-3].str), (yyvsp[-1].expr)); delete (yyvsp[-4].str); delete (yyvsp[-2].str); delete (yyvsp[0].str); }
-#line 1551 "parser.tab.c"
+#line 1662 "parser.tab.c"
     break;
 
   case 11:
-#line 150 "parser.y"
+#line 151 "parser.y"
                                                          { (yyval.field) = new Field((yyvsp[-3].str), (yyvsp[-1].str)); delete (yyvsp[-2].str); delete (yyvsp[0].str); }
-#line 1557 "parser.tab.c"
+#line 1668 "parser.tab.c"
     break;
 
   case 12:
-#line 152 "parser.y"
+#line 153 "parser.y"
                                           { (yyval.expr) = new Assign((yyvsp[-2].str), (yyvsp[0].expr)); delete (yyvsp[-1].str); }
-#line 1563 "parser.tab.c"
+#line 1674 "parser.tab.c"
     break;
 
   case 13:
-#line 154 "parser.y"
+#line 155 "parser.y"
                                                              { (yyval.method) = new Method((yyvsp[-6].str), (yyvsp[-4].formals), (yyvsp[-1].str), (yyvsp[0].block)); delete (yyvsp[-5].str); delete (yyvsp[-3].str); delete (yyvsp[-2].str); }
-#line 1569 "parser.tab.c"
+#line 1680 "parser.tab.c"
     break;
 
   case 14:
-#line 156 "parser.y"
+#line 157 "parser.y"
                       { (yyval.str) = (yyvsp[0].str); }
-#line 1575 "parser.tab.c"
+#line 1686 "parser.tab.c"
     break;
 
   case 15:
-#line 157 "parser.y"
+#line 158 "parser.y"
                         { (yyval.str) = (yyvsp[0].str); }
-#line 1581 "parser.tab.c"
+#line 1692 "parser.tab.c"
     break;
 
   case 16:
-#line 158 "parser.y"
+#line 159 "parser.y"
                        { (yyval.str) = (yyvsp[0].str); }
-#line 1587 "parser.tab.c"
+#line 1698 "parser.tab.c"
     break;
 
   case 17:
-#line 159 "parser.y"
+#line 160 "parser.y"
                           { (yyval.str) = (yyvsp[0].str); }
-#line 1593 "parser.tab.c"
+#line 1704 "parser.tab.c"
     break;
 
   case 18:
-#line 160 "parser.y"
+#line 161 "parser.y"
                        { (yyval.str) = (yyvsp[0].str); }
-#line 1599 "parser.tab.c"
+#line 1710 "parser.tab.c"
     break;
 
   case 19:
-#line 162 "parser.y"
+#line 163 "parser.y"
                      { (yyval.formals) = new Formals(); }
-#line 1605 "parser.tab.c"
+#line 1716 "parser.tab.c"
     break;
 
   case 20:
-#line 163 "parser.y"
+#line 164 "parser.y"
                          { (yyval.formals) = (yyvsp[0].formals); }
-#line 1611 "parser.tab.c"
+#line 1722 "parser.tab.c"
     break;
 
   case 21:
-#line 165 "parser.y"
+#line 166 "parser.y"
                                                  { ((yyvsp[0].formals))->addFormal(unique_ptr<Formal>(new Formal((yyvsp[-3].str), (yyvsp[-1].str)))); (yyval.formals) = (yyvsp[0].formals); delete (yyvsp[-2].str); }
-#line 1617 "parser.tab.c"
+#line 1728 "parser.tab.c"
     break;
 
   case 22:
-#line 167 "parser.y"
+#line 168 "parser.y"
                          { (yyval.formals) = new Formals(); }
-#line 1623 "parser.tab.c"
+#line 1734 "parser.tab.c"
     break;
 
   case 23:
-#line 168 "parser.y"
+#line 169 "parser.y"
                                        { (yyval.formals) = (yyvsp[0].formals); delete (yyvsp[-1].str); }
-#line 1629 "parser.tab.c"
+#line 1740 "parser.tab.c"
     break;
 
   case 24:
-#line 170 "parser.y"
+#line 171 "parser.y"
                                      { ((yyvsp[-1].block))->addExpression(unique_ptr<Expression>((yyvsp[-2].expr))); (yyval.block) = (yyvsp[-1].block); delete (yyvsp[-3].str); delete (yyvsp[0].str); }
-#line 1635 "parser.tab.c"
+#line 1746 "parser.tab.c"
     break;
 
   case 25:
-#line 172 "parser.y"
+#line 173 "parser.y"
                           { (yyval.block) = new Block(); }
-#line 1641 "parser.tab.c"
+#line 1752 "parser.tab.c"
     break;
 
   case 26:
-#line 173 "parser.y"
+#line 174 "parser.y"
                                                     { ((yyvsp[0].block))->addExpression(unique_ptr<Expression>((yyvsp[-1].expr))); (yyval.block) = (yyvsp[0].block); delete (yyvsp[-2].str); }
-#line 1647 "parser.tab.c"
+#line 1758 "parser.tab.c"
     break;
 
   case 27:
-#line 175 "parser.y"
+#line 176 "parser.y"
                           { (yyval.expr) = new If((yyvsp[-2].expr), (yyvsp[0].expr)); delete (yyvsp[-3].str); delete (yyvsp[-1].str); }
-#line 1653 "parser.tab.c"
+#line 1764 "parser.tab.c"
     break;
 
   case 28:
-#line 176 "parser.y"
+#line 177 "parser.y"
                                               { (yyval.expr) = new If((yyvsp[-4].expr), (yyvsp[-2].expr), (yyvsp[0].expr)); delete (yyvsp[-5].str); delete (yyvsp[-3].str); delete (yyvsp[-1].str); }
-#line 1659 "parser.tab.c"
+#line 1770 "parser.tab.c"
     break;
 
   case 29:
-#line 177 "parser.y"
+#line 178 "parser.y"
                                      { (yyval.expr) = new While((yyvsp[-2].expr), (yyvsp[0].expr)); delete (yyvsp[-3].str); delete (yyvsp[-1].str); }
-#line 1665 "parser.tab.c"
+#line 1776 "parser.tab.c"
     break;
 
   case 30:
-#line 178 "parser.y"
+#line 179 "parser.y"
                                                    { (yyval.expr) = new Let((yyvsp[-4].str), (yyvsp[-2].str), (yyvsp[0].expr)); delete (yyvsp[-5].str); delete (yyvsp[-3].str); delete (yyvsp[-1].str); }
-#line 1671 "parser.tab.c"
+#line 1782 "parser.tab.c"
     break;
 
   case 31:
-#line 179 "parser.y"
+#line 180 "parser.y"
                                                                { (yyval.expr) = new Let((yyvsp[-6].str), (yyvsp[-4].str), (yyvsp[-2].expr), (yyvsp[0].expr)); delete (yyvsp[-7].str); delete (yyvsp[-5].str); delete (yyvsp[-3].str); delete (yyvsp[-1].str); }
-#line 1677 "parser.tab.c"
+#line 1788 "parser.tab.c"
     break;
 
   case 32:
-#line 180 "parser.y"
+#line 181 "parser.y"
                      { (yyval.expr) = (yyvsp[0].expr); }
-#line 1683 "parser.tab.c"
+#line 1794 "parser.tab.c"
     break;
 
   case 33:
-#line 181 "parser.y"
+#line 182 "parser.y"
                            { (yyval.expr) = (yyvsp[0].expr); }
-#line 1689 "parser.tab.c"
+#line 1800 "parser.tab.c"
     break;
 
   case 34:
-#line 182 "parser.y"
+#line 183 "parser.y"
                     { (yyval.expr) = (yyvsp[0].expr); }
-#line 1695 "parser.tab.c"
+#line 1806 "parser.tab.c"
     break;
 
   case 35:
-#line 183 "parser.y"
+#line 184 "parser.y"
                { (yyval.expr) = (yyvsp[0].expr); }
-#line 1701 "parser.tab.c"
+#line 1812 "parser.tab.c"
     break;
 
   case 36:
-#line 184 "parser.y"
+#line 185 "parser.y"
                               { (yyval.expr) = new New((yyvsp[0].str)); delete (yyvsp[-1].str); }
-#line 1707 "parser.tab.c"
+#line 1818 "parser.tab.c"
     break;
 
   case 37:
-#line 185 "parser.y"
+#line 186 "parser.y"
                                     { (yyval.expr) = new StringLitExpression((yyvsp[0].str)); }
-#line 1713 "parser.tab.c"
+#line 1824 "parser.tab.c"
     break;
 
   case 38:
-#line 186 "parser.y"
+#line 187 "parser.y"
                        { (yyval.expr) = new StringLitExpression((yyvsp[0].str)); }
-#line 1719 "parser.tab.c"
+#line 1830 "parser.tab.c"
     break;
 
   case 39:
-#line 187 "parser.y"
+#line 188 "parser.y"
                           { (yyval.expr) = (yyvsp[0].expr); }
-#line 1725 "parser.tab.c"
+#line 1836 "parser.tab.c"
     break;
 
   case 40:
-#line 188 "parser.y"
+#line 189 "parser.y"
                             { (yyval.expr) = new StringLitExpression(new string(*(yyvsp[-1].str) + *(yyvsp[0].str))); delete (yyvsp[-1].str); delete (yyvsp[0].str);  }
-#line 1731 "parser.tab.c"
+#line 1842 "parser.tab.c"
     break;
 
   case 41:
-#line 189 "parser.y"
+#line 190 "parser.y"
                                  { (yyval.expr) = (yyvsp[-1].expr);  delete (yyvsp[-2].str); delete (yyvsp[0].str); }
-#line 1737 "parser.tab.c"
+#line 1848 "parser.tab.c"
     break;
 
   case 42:
-#line 190 "parser.y"
+#line 191 "parser.y"
                 { (yyval.expr) = (yyvsp[0].block); }
-#line 1743 "parser.tab.c"
+#line 1854 "parser.tab.c"
     break;
 
   case 43:
-#line 192 "parser.y"
+#line 193 "parser.y"
                      { (yyval.expr) = new IntegerExpression((yyvsp[0].integer)); }
-#line 1749 "parser.tab.c"
+#line 1860 "parser.tab.c"
     break;
 
   case 44:
-#line 193 "parser.y"
+#line 194 "parser.y"
                                  { (yyval.expr) = new StringLitExpression((yyvsp[0].str)); }
-#line 1755 "parser.tab.c"
+#line 1866 "parser.tab.c"
     break;
 
   case 45:
-#line 194 "parser.y"
+#line 195 "parser.y"
                                   { (yyval.expr) = (yyvsp[0].expr); }
-#line 1761 "parser.tab.c"
+#line 1872 "parser.tab.c"
     break;
 
   case 46:
-#line 196 "parser.y"
+#line 197 "parser.y"
                       { (yyval.expr) = new StringLitExpression((yyvsp[0].str)); }
-#line 1767 "parser.tab.c"
+#line 1878 "parser.tab.c"
     break;
 
   case 47:
-#line 197 "parser.y"
+#line 198 "parser.y"
                                         { (yyval.expr) = new StringLitExpression((yyvsp[0].str)); }
-#line 1773 "parser.tab.c"
+#line 1884 "parser.tab.c"
     break;
 
   case 48:
-#line 199 "parser.y"
+#line 200 "parser.y"
                       { (yyval.block) = new Block(); }
-#line 1779 "parser.tab.c"
+#line 1890 "parser.tab.c"
     break;
 
   case 49:
-#line 200 "parser.y"
+#line 201 "parser.y"
                       { (yyval.block) = (yyvsp[0].block); }
-#line 1785 "parser.tab.c"
+#line 1896 "parser.tab.c"
     break;
 
   case 50:
-#line 202 "parser.y"
+#line 203 "parser.y"
                     { ((yyvsp[0].block))->addExpression(unique_ptr<Expression>((yyvsp[-1].expr))); (yyval.block) = (yyvsp[0].block); }
-#line 1791 "parser.tab.c"
+#line 1902 "parser.tab.c"
     break;
 
   case 51:
-#line 204 "parser.y"
+#line 205 "parser.y"
                               { (yyval.block) = new Block(); }
-#line 1797 "parser.tab.c"
+#line 1908 "parser.tab.c"
     break;
 
   case 52:
-#line 205 "parser.y"
+#line 206 "parser.y"
                                     { (yyval.block) = (yyvsp[0].block); delete (yyvsp[-1].str);}
-#line 1803 "parser.tab.c"
+#line 1914 "parser.tab.c"
     break;
 
   case 53:
-#line 207 "parser.y"
+#line 208 "parser.y"
                                          { (yyval.expr) = new Call((yyvsp[-3].str), (yyvsp[-1].block)); delete (yyvsp[-2].str); delete (yyvsp[0].str); }
-#line 1809 "parser.tab.c"
+#line 1920 "parser.tab.c"
     break;
 
   case 54:
-#line 208 "parser.y"
+#line 209 "parser.y"
                                                             { (yyval.expr) = new Call((yyvsp[-5].expr), (yyvsp[-3].str), (yyvsp[-1].block)); delete (yyvsp[-4].str);  delete (yyvsp[-2].str); delete (yyvsp[0].str); }
-#line 1815 "parser.tab.c"
+#line 1926 "parser.tab.c"
     break;
 
   case 55:
-#line 210 "parser.y"
+#line 211 "parser.y"
                                 { (yyval.expr) = new BinaryOperator((yyvsp[-1].str), (yyvsp[-2].expr), (yyvsp[0].expr)); }
-#line 1821 "parser.tab.c"
+#line 1932 "parser.tab.c"
     break;
 
   case 56:
-#line 211 "parser.y"
+#line 212 "parser.y"
                                           { (yyval.expr) = new BinaryOperator((yyvsp[-1].str), (yyvsp[-2].expr), (yyvsp[0].expr)); }
-#line 1827 "parser.tab.c"
+#line 1938 "parser.tab.c"
     break;
 
   case 57:
-#line 212 "parser.y"
+#line 213 "parser.y"
                                                 { (yyval.expr) = new BinaryOperator((yyvsp[-1].str), (yyvsp[-2].expr), (yyvsp[0].expr)); }
-#line 1833 "parser.tab.c"
+#line 1944 "parser.tab.c"
     break;
 
   case 58:
-#line 213 "parser.y"
+#line 214 "parser.y"
                                          { (yyval.expr) = new BinaryOperator((yyvsp[-1].str), (yyvsp[-2].expr), (yyvsp[0].expr)); }
-#line 1839 "parser.tab.c"
+#line 1950 "parser.tab.c"
     break;
 
   case 59:
-#line 214 "parser.y"
+#line 215 "parser.y"
                                           { (yyval.expr) = new BinaryOperator((yyvsp[-1].str), (yyvsp[-2].expr), (yyvsp[0].expr)); }
-#line 1845 "parser.tab.c"
+#line 1956 "parser.tab.c"
     break;
 
   case 60:
-#line 215 "parser.y"
+#line 216 "parser.y"
                                           { (yyval.expr) = new BinaryOperator((yyvsp[-1].str), (yyvsp[-2].expr), (yyvsp[0].expr)); }
-#line 1851 "parser.tab.c"
+#line 1962 "parser.tab.c"
     break;
 
   case 61:
-#line 216 "parser.y"
+#line 217 "parser.y"
                                         { (yyval.expr) = new BinaryOperator((yyvsp[-1].str), (yyvsp[-2].expr), (yyvsp[0].expr)); }
-#line 1857 "parser.tab.c"
+#line 1968 "parser.tab.c"
     break;
 
   case 62:
-#line 217 "parser.y"
+#line 218 "parser.y"
                                         { (yyval.expr) = new BinaryOperator((yyvsp[-1].str), (yyvsp[-2].expr), (yyvsp[0].expr)); }
-#line 1863 "parser.tab.c"
+#line 1974 "parser.tab.c"
     break;
 
   case 63:
-#line 218 "parser.y"
+#line 219 "parser.y"
                                         { (yyval.expr) = new BinaryOperator((yyvsp[-1].str), (yyvsp[-2].expr), (yyvsp[0].expr)); }
-#line 1869 "parser.tab.c"
+#line 1980 "parser.tab.c"
     break;
 
   case 64:
-#line 220 "parser.y"
+#line 221 "parser.y"
                    { (yyval.expr) = new UnaryOperator((yyvsp[-1].str), (yyvsp[0].expr)); }
-#line 1875 "parser.tab.c"
+#line 1986 "parser.tab.c"
     break;
 
   case 65:
-#line 221 "parser.y"
+#line 222 "parser.y"
                              { (yyval.expr) = new UnaryOperator((yyvsp[-1].str), (yyvsp[0].expr)); }
-#line 1881 "parser.tab.c"
+#line 1992 "parser.tab.c"
     break;
 
   case 66:
-#line 222 "parser.y"
+#line 223 "parser.y"
                               { (yyval.expr) = new UnaryOperator((yyvsp[-1].str), (yyvsp[0].expr)); }
-#line 1887 "parser.tab.c"
+#line 1998 "parser.tab.c"
     break;
 
 
-#line 1891 "parser.tab.c"
+#line 2002 "parser.tab.c"
 
       default: break;
     }
@@ -1909,6 +2020,7 @@ yyreduce:
   YY_STACK_PRINT (yyss, yyssp);
 
   *++yyvsp = yyval;
+  *++yylsp = yyloc;
 
   /* Now 'shift' the result of the reduction.  Determine what state
      that goes to, based on the state we popped back to and the rule
@@ -1972,7 +2084,7 @@ yyerrlab:
 #endif
     }
 
-
+  yyerror_range[1] = yylloc;
 
   if (yyerrstatus == 3)
     {
@@ -1988,7 +2100,7 @@ yyerrlab:
       else
         {
           yydestruct ("Error: discarding",
-                      yytoken, &yylval);
+                      yytoken, &yylval, &yylloc);
           yychar = YYEMPTY;
         }
     }
@@ -2040,9 +2152,9 @@ yyerrlab1:
       if (yyssp == yyss)
         YYABORT;
 
-
+      yyerror_range[1] = *yylsp;
       yydestruct ("Error: popping",
-                  yystos[yystate], yyvsp);
+                  yystos[yystate], yyvsp, yylsp);
       YYPOPSTACK (1);
       yystate = *yyssp;
       YY_STACK_PRINT (yyss, yyssp);
@@ -2052,6 +2164,11 @@ yyerrlab1:
   *++yyvsp = yylval;
   YY_IGNORE_MAYBE_UNINITIALIZED_END
 
+  yyerror_range[2] = yylloc;
+  /* Using YYLLOC is tempting, but would change the location of
+     the lookahead.  YYLOC is available though.  */
+  YYLLOC_DEFAULT (yyloc, yyerror_range, 2);
+  *++yylsp = yyloc;
 
   /* Shift the error token.  */
   YY_SYMBOL_PRINT ("Shifting", yystos[yyn], yyvsp, yylsp);
@@ -2097,7 +2214,7 @@ yyreturn:
          user semantic actions for why this is necessary.  */
       yytoken = YYTRANSLATE (yychar);
       yydestruct ("Cleanup: discarding lookahead",
-                  yytoken, &yylval);
+                  yytoken, &yylval, &yylloc);
     }
   /* Do not reclaim the symbols of the rule whose action triggered
      this YYABORT or YYACCEPT.  */
@@ -2106,7 +2223,7 @@ yyreturn:
   while (yyssp != yyss)
     {
       yydestruct ("Cleanup: popping",
-                  yystos[+*yyssp], yyvsp);
+                  yystos[+*yyssp], yyvsp, yylsp);
       YYPOPSTACK (1);
     }
 #ifndef yyoverflow
@@ -2119,7 +2236,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 224 "parser.y"
+#line 225 "parser.y"
 
 
 
@@ -2140,131 +2257,131 @@ void lexer(){
 		switch (token){
 			// Keywords
 			case CLASS:
-				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," +  to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case AND:
-				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," +  to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case BOOL:
-				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," +  to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case DO:
-				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," +  to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case IF:
-				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," +  to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case ELSE:
-				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," +  to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case THEN:
-				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," +  to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case EXTENDS:
-				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," +  to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case FALSE:
-				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," +  to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case IN:
-				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," +  to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case INT32:
-				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," +  to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case ISNULL:
-				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," +  to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case LET:
-				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," +  to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case NEW:
-				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," +  to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case NOT:
-				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," +  to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case SELF:
-				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," +  to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case _STRING:
-				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," +  to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case TRUE:
-				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," +  to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case UNIT:
-				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," +  to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case WHILE:
-				cout << to_string(currentLine) + "," +  to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," +  to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 
 			case OBJECT_IDENTIFIER:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + "object-identifier," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," + to_string(yylloc.first_column) + "," + "object-identifier," + text + "\n";
 				break;
 			case TYPE_IDENTIFIER:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + "type-identifier," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," + to_string(yylloc.first_column) + "," + "type-identifier," + text + "\n";
 				break;
 
 			// Operators
 			case LBRACE:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," + to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case RBRACE:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," + to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case LPAR:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," + to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case RPAR:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," + to_string(yylloc.first_column) + "," + text + "\n";
 				break;	
 			case COLON:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," + to_string(yylloc.first_column) + "," + text + "\n";
 				break;	
 			case SEMICOLON:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," + to_string(yylloc.first_column) + "," + text + "\n";
 				break;	
 			case COMMA:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," + to_string(yylloc.first_column) + "," + text + "\n";
 				break;	
 			case PLUS:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," + to_string(yylloc.first_column) + "," + text + "\n";
 				break;	
 			case MINUS:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," + to_string(yylloc.first_column) + "," + text + "\n";
 				break;	
 			case TIMES:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," + to_string(yylloc.first_column) + "," + text + "\n";
 				break;	
 			case DIV:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," + to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case POW:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," + to_string(yylloc.first_column) + "," + text + "\n";
 				break;	
 			case DOT:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," + to_string(yylloc.first_column) + "," + text + "\n";
 				break;	
 			case EQUAL:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," + to_string(yylloc.first_column) + "," + text + "\n";
 				break;
 			case LOWER:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," + to_string(yylloc.first_column) + "," + text + "\n";
 				break;	
 			case LOWER_EQUAL:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," + to_string(yylloc.first_column) + "," + text + "\n";
 				break;				
 			case ASSIGN:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," + to_string(yylloc.first_column) + "," + text + "\n";
 				break;	
 
 			case STRING_LITERAL:
-				cout << to_string(stringRow) + "," + to_string(stringCol) + "," + "string-literal" + "," + text  + "\n";
+				cout << to_string(yylloc.first_line) + "," + to_string(yylloc.first_column) + "," + "string-literal" + "," + text  + "\n";
 				break;
 			case INT_LITERAL:
-				cout << to_string(currentLine) + "," + to_string(currentColumn) + "," + "integer-literal" + "," + text + "\n";
+				cout << to_string(yylloc.first_line) + "," + to_string(yylloc.first_column) + "," + "integer-literal" + "," + text + "\n";
 				break;
 			default:
 				break;
