@@ -246,7 +246,7 @@ invalid-character			.
 
 {double-quote}             	{text = string(yytext); save_pos(); BEGIN(STRING);}
 <STRING>{double-quote}		{text += string(yytext);
-							string* tmp = new string(yytext);
+							string* tmp = new string(text.c_str());
 							yylval.str = tmp;
 							BEGIN(INITIAL); return STRING_LITERAL;}
 <STRING>\\{lf-followed}		{}

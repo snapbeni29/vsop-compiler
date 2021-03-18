@@ -100,6 +100,7 @@ int yyerror(string s) {
 %token <str> TYPE_IDENTIFIER "type-identifier"
 %token <str> OBJECT_IDENTIFIER "object-identifier"
 
+
 // program is the start symbol
 %start program;
 
@@ -135,57 +136,57 @@ program: /* epsilon */
 		| class program { classes.push_front(unique_ptr<Class>($1)); };
 
 class: CLASS TYPE_IDENTIFIER class-parent LBRACE class-body RBRACE
-		{ $$ = new Class($2, $3, $5); };
+		{ $$ = new Class($2, $3, $5); delete $1; delete $4; delete $6; };
 
 class-parent:	/* epsilon */ { $$ = new string("Object"); }
 				| EXTENDS TYPE_IDENTIFIER
-				{ $$ = $2; };
+				{ $$ = $2; delete $1; };
 
 class-body:  	/* epsilon */ { $$ = new ClassBody(); }
 				| field class-body { ($2)->addField(unique_ptr<Field>($1)); $$ = $2; }
 				| method class-body { ($2)->addMethod(unique_ptr<Method>($1)); $$ = $2; };
 
-field: OBJECT_IDENTIFIER COLON type ASSIGN expr SEMICOLON { $$ = new Field($1, $3, $5); }
-		| OBJECT_IDENTIFIER COLON type SEMICOLON { $$ = new Field($1, $3); };
+field: OBJECT_IDENTIFIER COLON type ASSIGN expr SEMICOLON { $$ = new Field($1, $3, $5); delete $2; delete $4; delete $6; }
+		| OBJECT_IDENTIFIER COLON type SEMICOLON { $$ = new Field($1, $3); delete $2; delete $4; };
 
-assignment: OBJECT_IDENTIFIER ASSIGN expr { $$ = new Assign($1, $3); };
+assignment: OBJECT_IDENTIFIER ASSIGN expr { $$ = new Assign($1, $3); delete $2; };
 
-method: OBJECT_IDENTIFIER LPAR formals RPAR COLON type block { $$ = new Method($1, $3, $6, $7); };
+method: OBJECT_IDENTIFIER LPAR formals RPAR COLON type block { $$ = new Method($1, $3, $6, $7); delete $2; delete $4; delete $5; };
 
 type: TYPE_IDENTIFIER { $$ = $1; } 
-		| "int32" { $$ = new string("int32"); }
-		| "bool" { $$ = new string("bool"); }
-		| "string" { $$ = new string("string"); }
-		| "unit" { $$ = new string("unit"); };
+		| INT32 { $$ = $1; }
+		| BOOL { $$ = $1; }
+		| _STRING { $$ = $1; }
+		| UNIT { $$ = $1; };
 
 formals: /*epsilon*/ { $$ = new Formals(); }
 		| formal { $$ = $1; };
 
-formal: OBJECT_IDENTIFIER COLON type formal-supp { ($4)->addFormal(unique_ptr<Formal>(new Formal($1, $3))); $$ = $4; };
+formal: OBJECT_IDENTIFIER COLON type formal-supp { ($4)->addFormal(unique_ptr<Formal>(new Formal($1, $3))); $$ = $4; delete $2; };
 
 formal-supp: /*epsilon*/ { $$ = new Formals(); }
-			| COMMA formal { $$ = $2; };
+			| COMMA formal { $$ = $2; delete $1; };
 
-block: LBRACE expr block-supp RBRACE { ($3)->addExpression(unique_ptr<Expression>($2)); $$ = $3; }; // To verify
+block: LBRACE expr block-supp RBRACE { ($3)->addExpression(unique_ptr<Expression>($2)); $$ = $3; delete $1; delete $4; }; // To verify
 
 block-supp: /* epsilon */ { $$ = new Block(); }
-			| SEMICOLON expr block-supp { ($3)->addExpression(unique_ptr<Expression>($2)); $$ = $3; };
+			| SEMICOLON expr block-supp { ($3)->addExpression(unique_ptr<Expression>($2)); $$ = $3; delete $1; };
 
-expr: 	IF expr THEN expr { $$ = new If($2, $4); }
-		| IF expr THEN expr ELSE expr { $$ = new If($2, $4, $6); }
-		| WHILE expr DO expr { $$ = new While($2, $4); }
-        | LET OBJECT_IDENTIFIER COLON type IN expr { $$ = new Let($2, $4, $6); }
-        | LET OBJECT_IDENTIFIER COLON type ASSIGN expr IN expr { $$ = new Let($2, $4, $6, $8); }
+expr: 	IF expr THEN expr { $$ = new If($2, $4); delete $1; delete $3; }
+		| IF expr THEN expr ELSE expr { $$ = new If($2, $4, $6); delete $1; delete $3; delete $5; }
+		| WHILE expr DO expr { $$ = new While($2, $4); delete $1; delete $3; }
+        | LET OBJECT_IDENTIFIER COLON type IN expr { $$ = new Let($2, $4, $6); delete $1; delete $3; delete $5; }
+        | LET OBJECT_IDENTIFIER COLON type ASSIGN expr IN expr { $$ = new Let($2, $4, $6, $8); delete $1; delete $3; delete $5; delete $7; }
         | assignment { $$ = $1; }
 		| unary-op { $$ = $1; }
         | binary-op { $$ = $1; }
         | call { $$ = $1; }
-        | NEW TYPE_IDENTIFIER { $$ = new New($2); }
+        | NEW TYPE_IDENTIFIER { $$ = new New($2); delete $1; }
 		| OBJECT_IDENTIFIER { $$ = new StringLitExpression($1); }
 		| SELF { $$ = new StringLitExpression($1); }
 		| literal { $$ = $1; }
-		| LPAR RPAR { $$ = new StringLitExpression(new string(*$1 + *$2)); }
-		| LPAR expr RPAR { $$ = $2; }
+		| LPAR RPAR { $$ = new StringLitExpression(new string(*$1 + *$2)); delete $1; delete $2;  }
+		| LPAR expr RPAR { $$ = $2;  delete $1; delete $3; }
         | block { $$ = $1; };
 
 literal: INT_LITERAL { $$ = new IntegerExpression($1); }
@@ -201,10 +202,10 @@ args: 	/* epsilon */ { $$ = new Block(); }
 arg: expr args-supp { ($2)->addExpression(unique_ptr<Expression>($1)); $$ = $2; };
 
 args-supp: 	/* epsilon */ { $$ = new Block(); }
-			| COMMA arg { $$ = $2; };
+			| COMMA arg { $$ = $2; delete $1;};
 
-call:	OBJECT_IDENTIFIER LPAR args RPAR { $$ = new Call($1, $3); }
-		| expr DOT OBJECT_IDENTIFIER LPAR args RPAR { $$ = new Call($1, $3, $5); };
+call:	OBJECT_IDENTIFIER LPAR args RPAR { $$ = new Call($1, $3); delete $2; delete $4; }
+		| expr DOT OBJECT_IDENTIFIER LPAR args RPAR { $$ = new Call($1, $3, $5); delete $2;  delete $4; delete $6; };
 
 binary-op: 	expr EQUAL expr { $$ = new BinaryOperator($2, $1, $3); }
 		   	| expr LOWER expr { $$ = new BinaryOperator($2, $1, $3); }

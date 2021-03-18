@@ -1051,7 +1051,7 @@ case 8:
 YY_RULE_SETUP
 #line 248 "lexer.l"
 {text += string(yytext);
-							string* tmp = new string(yytext);
+							string* tmp = new string(text.c_str());
 							yylval.str = tmp;
 							BEGIN(INITIAL); return STRING_LITERAL;}
 	YY_BREAK
