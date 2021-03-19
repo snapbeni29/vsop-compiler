@@ -525,7 +525,7 @@ int yy_flex_debug = 0;
 char *yytext;
 #line 1 "lexer.l"
 /* Declarations */
-#line 4 "lexer.l"
+#line 3 "lexer.l"
 #include <iostream>
 #include <map>
 #include <vector>
@@ -538,9 +538,6 @@ char *yytext;
 using namespace std;
 
 string text = "";
-int stringRow;
-int stringCol;
-string filename;
 stack<pair<int, int>> commentStack;
 stack<pair<int, int>> stringStack;
 
@@ -553,7 +550,6 @@ string stringToHex(string escaped);
 string toDecimal(string value);
 void save_pos();
 extern int yyerror(string s);
-
 
 /*
 Updates the token position in the file.
@@ -639,7 +635,7 @@ void setPos(int line, int col) {
 	yylloc.first_line = line;
 }
 
-// Keywords vector
+// Keywords map
 map<string, int> keywords{
 	{"class", CLASS},
 	{"and", AND},
@@ -686,11 +682,11 @@ map<string, op> operators = {
 	{"<-", {ASSIGN, "assign"}}
 };
 
-#line 690 "lex.yy.c"
+#line 686 "lex.yy.c"
 /* Definitions */
 
 /* Rules */
-#line 694 "lex.yy.c"
+#line 690 "lex.yy.c"
 
 #define INITIAL 0
 #define STRING 1
@@ -909,9 +905,9 @@ YY_DECL
 		}
 
 	{
-#line 203 "lexer.l"
+#line 198 "lexer.l"
 
-#line 915 "lex.yy.c"
+#line 911 "lex.yy.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -981,12 +977,12 @@ do_action:	/* This label is used only to access EOF actions. */
 case 1:
 /* rule 1 can match eol */
 YY_RULE_SETUP
-#line 204 "lexer.l"
+#line 199 "lexer.l"
 {/* do nothing */}
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 206 "lexer.l"
+#line 201 "lexer.l"
 {text = string(yytext);
 							string* tmp = new string(yytext);
 							yylval.str = tmp;
@@ -994,7 +990,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 210 "lexer.l"
+#line 205 "lexer.l"
 {text = string(yytext);
 							string* tmp = new string(yytext);
 							yylval.str = tmp;
@@ -1006,7 +1002,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 219 "lexer.l"
+#line 214 "lexer.l"
 {auto op = operators.find(string(yytext));
 							if (op != operators.end()){
 								text = op->second.val;
@@ -1018,27 +1014,27 @@ YY_RULE_SETUP
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 228 "lexer.l"
+#line 223 "lexer.l"
 {text = toDecimal(yytext);
 							yylval.integer = stoi(toDecimal(yytext));
 							return INT_LITERAL;}
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 231 "lexer.l"
+#line 226 "lexer.l"
 {text = string(yytext);
 							yyerror("lexical error: " + text + string(" is an invalid integer"));}
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 234 "lexer.l"
+#line 229 "lexer.l"
 {text = string(yytext);
 							stringStack.push({yylloc.first_line, yylloc.first_column});
 							BEGIN(STRING);}
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 237 "lexer.l"
+#line 232 "lexer.l"
 {text += string(yytext);
 							string* tmp = new string(text.c_str());
 							yylval.str = tmp;
@@ -1049,22 +1045,22 @@ YY_RULE_SETUP
 case 9:
 /* rule 9 can match eol */
 YY_RULE_SETUP
-#line 243 "lexer.l"
+#line 238 "lexer.l"
 {}
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 244 "lexer.l"
+#line 239 "lexer.l"
 {text += string(yytext);}
 	YY_BREAK
 case 11:
 /* rule 11 can match eol */
 YY_RULE_SETUP
-#line 245 "lexer.l"
+#line 240 "lexer.l"
 {text += stringToHex(getEscapeChar(string(yytext)));} 
 	YY_BREAK
 case YY_STATE_EOF(STRING):
-#line 246 "lexer.l"
+#line 241 "lexer.l"
 {auto row_col = stringStack.top(); 
 							stringStack.pop(); setPos(row_col.first, row_col.second); 
 							yyerror("lexical error: " + string("unexpected end of file"));} 
@@ -1072,57 +1068,57 @@ case YY_STATE_EOF(STRING):
 case 12:
 /* rule 12 can match eol */
 YY_RULE_SETUP
-#line 249 "lexer.l"
+#line 244 "lexer.l"
 {yyerror("lexical error: " + string("unexpected line feed"));} 
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 250 "lexer.l"
+#line 245 "lexer.l"
 {text = yytext;
 							yyerror("lexical error: " + text + string(" is an invalid escape sequence"));} 
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 253 "lexer.l"
+#line 248 "lexer.l"
 {}
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 254 "lexer.l"
+#line 249 "lexer.l"
 {commentStack.push({yylloc.first_line, yylloc.first_column}); BEGIN(COMMENT);}
 	YY_BREAK
 case 16:
 /* rule 16 can match eol */
 YY_RULE_SETUP
-#line 255 "lexer.l"
+#line 250 "lexer.l"
 {}
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 256 "lexer.l"
+#line 251 "lexer.l"
 {commentStack.push({yylloc.first_line, yylloc.first_column});}
 	YY_BREAK
 case YY_STATE_EOF(COMMENT):
-#line 257 "lexer.l"
+#line 252 "lexer.l"
 {auto row_col = commentStack.top(); setPos(row_col.first, row_col.second);
 							yyerror("lexical error: " + string("unexpected end of file"));}
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 259 "lexer.l"
+#line 254 "lexer.l"
 {commentStack.pop(); if(commentStack.empty()) BEGIN(INITIAL);}
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 261 "lexer.l"
+#line 256 "lexer.l"
 {text = yytext; yyerror("lexical error: " + text + string(" is not a VSOP valid character"));}
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 262 "lexer.l"
+#line 257 "lexer.l"
 ECHO;
 	YY_BREAK
-#line 1126 "lex.yy.c"
+#line 1122 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -2139,6 +2135,6 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 262 "lexer.l"
+#line 257 "lexer.l"
 
 

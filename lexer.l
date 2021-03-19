@@ -1,5 +1,4 @@
 /* Declarations */
-
 %{
 #include <iostream>
 #include <map>
@@ -13,9 +12,6 @@
 using namespace std;
 
 string text = "";
-int stringRow;
-int stringCol;
-string filename;
 stack<pair<int, int>> commentStack;
 stack<pair<int, int>> stringStack;
 
@@ -28,7 +24,6 @@ string stringToHex(string escaped);
 string toDecimal(string value);
 void save_pos();
 extern int yyerror(string s);
-
 
 /*
 Updates the token position in the file.
@@ -114,7 +109,7 @@ void setPos(int line, int col) {
 	yylloc.first_line = line;
 }
 
-// Keywords vector
+// Keywords map
 map<string, int> keywords{
 	{"class", CLASS},
 	{"and", AND},

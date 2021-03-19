@@ -96,8 +96,7 @@ extern int yydebug;
     INT_LITERAL = 295,
     STRING_LITERAL = 296,
     TYPE_IDENTIFIER = 297,
-    OBJECT_IDENTIFIER = 298,
-    MOD = 299
+    OBJECT_IDENTIFIER = 298
   };
 #endif
 
@@ -119,7 +118,7 @@ union YYSTYPE
 	Expression* expr;
 	Block* block;
 
-#line 123 "parser.tab.h"
+#line 122 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

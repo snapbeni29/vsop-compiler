@@ -1,4 +1,4 @@
-// include C++ needed libraries
+// Include C++ needed libraries
 %code top {
 	#include <iostream>
 	#include <cmath>
@@ -10,7 +10,7 @@
 	#include <stack> 
 }
 
-// it's here you define the types referenced in the union
+// It is here you define the types referenced in the union
 %code requires {
 	// (in our header file)
 	#include "tree.hh"
@@ -39,19 +39,18 @@ int yyerror(string s);
 extern FILE *yyin;
 
 extern string text;
-extern int stringRow;
-extern int stringCol;
-extern string filename;
+string filename;
 
 // declare the list of classes of the input program
 list<unique_ptr<Class>> classes;
 
-int yyerror(string s) {
+int yyerror(string s){
 	cerr << filename << ":" << yylloc.first_line << ":" << yylloc.first_column << ": " + s + "\n";
 }
 %}
 
 %locations
+
 // Keywords
 %token <str> CLASS "class"
 %token <str> AND "and"
@@ -101,7 +100,6 @@ int yyerror(string s) {
 %token <str> TYPE_IDENTIFIER "type-identifier"
 %token <str> OBJECT_IDENTIFIER "object-identifier"
 
-
 // program is the start symbol
 %start program;
 
@@ -115,7 +113,6 @@ int yyerror(string s) {
 %nterm <block> block block-supp args arg args-supp
 %nterm <expr> expr literal boolean-literal unary-op binary-op call assignment
 
-
 %precedence IF THEN WHILE DO LET IN
 %precedence ELSE
 
@@ -126,7 +123,7 @@ int yyerror(string s) {
 %left PLUS MINUS
 %left TIMES DIV
 %right ISNULL
-%right MOD POW
+%right POW
 %left DOT
 
 %%
@@ -235,7 +232,6 @@ void parser(){
 
 void lexer(){
 	int token;
-
 	token = yylex();
 
 	while(token){
