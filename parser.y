@@ -222,13 +222,17 @@ unary-op: NOT expr { $$ = new UnaryOperator($1, $2); }
 %%
 
 
-void parser(){
+void semanticChecker(unique_ptr<Program> p) {
+	p->checkSemantic();
+}
+
+unique_ptr<Program> parser(){
 	yyparse();
-	
 	// Create and print the program 
 	unique_ptr<Program> p(new Program(move(classes)));
-	cout << p->toString();
+	return p;
 }
+
 
 void lexer(){
 	int token;
@@ -373,7 +377,7 @@ void lexer(){
 
 int main(int argc, char **argv) {
 
-	if((string(argv[1]) != "-l" && string(argv[1]) != "-p") || argc < 3){
+	if((string(argv[1]) != "-l" && string(argv[1]) != "-p" && string(argv[1]) != "-c") || argc < 3){
 		cout << "Error: the executed command is not valid." << endl;
 		return -1;
 	}
@@ -385,16 +389,26 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "Failed to open input file\n");
 		return EXIT_FAILURE;
 	}
+	unique_ptr<Program> p = nullptr;
 
-	if(string(argv[1]) == "-l"){
+	if (string(argv[1]) == "-l"){
 		lexer();
 	}
-	else if(string(argv[1]) == "-p"){
-		parser();
+	
+	else if(string(argv[1]) == "-p" || string(argv[1]) == "-c"){
+		p = parser();
+		if (string(argv[1]) == "-c"){
+			semanticChecker(move(p));
+		} else {
+			cout << p->toString();
+		}
+	
 	}
+	
 
 	// Close the file and exit
 	fclose(yyin);
 	return EXIT_SUCCESS;
 }
+
 
