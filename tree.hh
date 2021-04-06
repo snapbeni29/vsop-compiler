@@ -3,6 +3,7 @@
 #include <string>
 #include <iterator>
 #include <memory>
+#include <algorithm>
 using namespace std;
 
 class Expression {
@@ -191,6 +192,7 @@ class Class {
 
 class Program{
     public:
+        list<unique_ptr<string>> class_names;
         list<unique_ptr<Class>> classes;
         Program(list<unique_ptr<Class>> classList) {
             for(auto& c : classList) {
@@ -208,6 +210,27 @@ class Program{
             }
             classesToStr += "]";
             return classesToStr;
+        }
+
+        void checkSemantic(){
+            checkClasses(move(classes));
+        }
+
+        void checkClasses(list<unique_ptr<Class>> classes) {
+            list<unique_ptr<Class>>::iterator it;
+            for (it = classes.begin(); it != classes.end(); it++) {
+                // check classes redefinitions
+                bool found = (find(class_names.begin(), class_names.end(), (*it)->name) != class_names.end());
+                if (!found) {
+                    class_names.push_back(move((*it)->name));
+                } else {
+                    cout << "semantic error: " + *((*it)->name) + " redefined";
+                }
+                
+                // check Fields and Methods
+                //(*it)->checkFieldsAndMethods();
+            }
+
         }
 };
 

@@ -23,7 +23,7 @@ string charToHex(char c);
 string stringToHex(string escaped);
 string toDecimal(string value);
 void save_pos();
-extern int yyerror(string s);
+extern void yyerror(string s);
 
 /*
 Updates the token position in the file.
