@@ -1,5 +1,5 @@
 CXX=clang++
-CXXFLAGS=-std=c++14 -Wall
+CXXFLAGS=-std=c++14 -Wno-everything
 
 all:	vsopc
 

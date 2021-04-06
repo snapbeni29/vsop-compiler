@@ -35,7 +35,7 @@
 %{
 using namespace std;
 int yylex(void);
-void yyerror(string s);
+int yyerror(string s);
 extern FILE *yyin;
 
 extern string text;
@@ -44,7 +44,7 @@ string filename;
 // declare the list of classes of the input program
 list<unique_ptr<Class>> classes;
 
-void yyerror(string s){
+int yyerror(string s){
 	cerr << filename << ":" << yylloc.first_line << ":" << yylloc.first_column << ": " + s + "\n";
 }
 %}
@@ -233,6 +233,7 @@ unique_ptr<Program> parser(){
 	return p;
 }
 
+
 void lexer(){
 	int token;
 	token = yylex();
@@ -409,4 +410,5 @@ int main(int argc, char **argv) {
 	fclose(yyin);
 	return EXIT_SUCCESS;
 }
+
 
