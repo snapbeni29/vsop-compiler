@@ -9,6 +9,7 @@ class Nil extends List { }
 class Cons extends List {
     head : int32;
     tail : List;
+    tail: List;
     
     init(hd : int32, tl : List) : Cons {
         head <- hd;
@@ -22,8 +23,6 @@ class Cons extends List {
     
 }
 
-
-
 class Main {
     main() : int32 {
         let xs : List <- (new Cons).init(0, (new Cons).init(1, (new Cons).init(2, new Nil))) in {
@@ -34,3 +33,4 @@ class Main {
         }
     }
 }
+

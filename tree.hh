@@ -160,6 +160,8 @@ class ClassBody {
     public:
         unique_ptr<Fields> fields;
         unique_ptr<Methods> methods;
+        list<string> method_names;
+        list<string> field_names;
         ClassBody() {
             unique_ptr<Fields> _fields(new Fields());
             fields = move(_fields);
@@ -174,6 +176,30 @@ class ClassBody {
         void addMethod(unique_ptr<Method> method) {
             methods->addMethod(move(method));
         }
+
+        void checkFieldsAndMethods(){
+            list<unique_ptr<Method>>::iterator it;
+            for (it = methods->methods.begin(); it != methods->methods.end(); it++) {
+                // check method redefinitions
+               bool found = (find(method_names.begin(), method_names.end(), *((*it)->name)) != method_names.end());
+                if (!found) {
+                    method_names.push_back(*((*it)->name));
+                } else {
+                    cout << "semantic error: " + *((*it)->name) + " redefined";
+                }
+            }
+
+            list<unique_ptr<Field>>::iterator it2;
+            for (it2 = fields->fields.begin(); it2 != fields->fields.end(); it2++) {
+                // check field redefinitions
+               bool found = (find(field_names.begin(), field_names.end(), *((*it2)->name)) != field_names.end());
+                if (!found) {
+                    field_names.push_back(*((*it2)->name));
+                } else {
+                    cout << "semantic error: " + *((*it2)->name) + " redefined";
+                }
+            }
+        }
 };
 
 class Class {
@@ -187,11 +213,15 @@ class Class {
         string toString() {
             return "Class(" + *name + ", " + *parent + ", " + classBody->fields->toString() + ", " + classBody->methods->toString() + ")";
         }
+
+        void checkFieldsAndMethods() {
+            classBody->checkFieldsAndMethods();
+        }
 };
 
 class Program{
     public:
-        list<unique_ptr<string>> class_names;
+        list<string> class_names;
         list<unique_ptr<Class>> classes;
         Program(list<unique_ptr<Class>> classList) {
             for(auto& c : classList) {
@@ -219,17 +249,16 @@ class Program{
             list<unique_ptr<Class>>::iterator it;
             for (it = classes.begin(); it != classes.end(); it++) {
                 // check classes redefinitions
-                bool found = (find(class_names.begin(), class_names.end(), (*it)->name) != class_names.end());
+                bool found = (find(class_names.begin(), class_names.end(), *((*it)->name)) != class_names.end());
                 if (!found) {
-                    class_names.push_back(move((*it)->name));
+                    class_names.push_back(*((*it)->name));
                 } else {
                     cout << "semantic error: " + *((*it)->name) + " redefined";
                 }
                 
                 // check Fields and Methods
-                //(*it)->checkFieldsAndMethods();
+                (*it)->checkFieldsAndMethods();
             }
-
         }
 
 };
