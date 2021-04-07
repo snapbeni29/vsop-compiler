@@ -85,11 +85,25 @@ class Method {
         unique_ptr<Formals> formals;
         unique_ptr<string> returnType;
         unique_ptr<Block> block;
+        list<string> formal_names;
         Method(){}
         Method(string* _name, Formals* _formals, string* _returnType, Block* _block) : name(_name), formals(_formals), returnType(_returnType), block(_block) {}
 
         string toString() {
             return "Method(" + *name + ", " + formals->toString() + ", "  + *returnType + ", " + block->toString() + ")";
+        }
+
+        void checkFormalArguments(){
+            list<unique_ptr<Formal>>::iterator it;
+            for (it = formals->formals.begin(); it != formals->formals.end(); it++) {
+                // check formal arguments redefinitions
+               bool found = (find(formal_names.begin(), formal_names.end(), *((*it)->name)) != formal_names.end());
+                if (!found) {
+                    formal_names.push_back(*((*it)->name));
+                } else {
+                    cout << "semantic error: " + *((*it)->name) + " redefined";
+                }
+            }
         }
 };
 
@@ -187,6 +201,8 @@ class ClassBody {
                 } else {
                     cout << "semantic error: " + *((*it)->name) + " redefined";
                 }
+
+                (*it)->checkFormalArguments();
             }
 
             list<unique_ptr<Field>>::iterator it2;
@@ -247,6 +263,7 @@ class Program{
 
         void checkClasses(list<unique_ptr<Class>> classes) {
             list<unique_ptr<Class>>::iterator it;
+            class_names.push_back("Object");
             for (it = classes.begin(); it != classes.end(); it++) {
                 // check classes redefinitions
                 bool found = (find(class_names.begin(), class_names.end(), *((*it)->name)) != class_names.end());
