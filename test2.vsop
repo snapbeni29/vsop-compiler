@@ -25,7 +25,7 @@ class Cons extends List {
 
 class Main {
     main() : int32 {
-        let xs : List <- (new Cons).init(0, (new Cons).init(1, (new Cons).init(2, new Nil))) in {
+        let xs : List <- (new Con).init(0, (new Cons).init(1, (new Cons).init(2, new Nil))) in {
             print("List has length ");
             printInt32(xs.length());
             print("\n");

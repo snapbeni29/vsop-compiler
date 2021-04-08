@@ -10,6 +10,7 @@ class Expression {
         Expression(){}
         virtual ~Expression(){}
         virtual string toString() = 0;
+        virtual void checkTypes(map<string, string> class_names) = 0;
 };
 
 class UnaryOperator : public Expression{
@@ -21,10 +22,14 @@ class UnaryOperator : public Expression{
         string toString(){
             return "UnOp(" + *op + ", " + expr->toString() + ")";
         }
+        void checkTypes(map<string, string> class_names){
+            expr->checkTypes(class_names);
+        }
 };
 
 class Block : public Expression{
     public:
+        list<string> scope_identifiers;
         list<unique_ptr<Expression>> exprList;
         Block(){
         }
@@ -44,6 +49,13 @@ class Block : public Expression{
             exprsToStr += "]";
             return exprsToStr;
         }
+
+        void checkTypes(map<string, string> class_names){
+            list<unique_ptr<Expression>>::iterator f_it;
+            for (f_it = exprList.begin(); f_it != exprList.end(); f_it++) {
+                (*f_it)->checkTypes(class_names);
+            }
+        }
 };
 
 
@@ -55,6 +67,15 @@ class Formal {
         Formal(string* _name, string* _type) : name(_name), type(_type) {}
         string toString(){
             return *name + " : " + *type;
+        }
+
+        void checkTypes(map<string, string> class_names) {
+            map<string, string>::iterator a_pair;
+            a_pair = class_names.find(*type);
+            if (isupper((*type)[0]) && a_pair == class_names.end()) {
+                // not found
+                cout << "semantic error: type " << *type << " not defined" << endl;
+            }
         }
 };
 
@@ -75,6 +96,14 @@ class Formals {
         }
         void addFormal(unique_ptr<Formal> f) {
             formals.push_front(move(f));
+        }
+
+        void checkTypes(map<string, string> class_names) {
+            list<unique_ptr<Formal>>::iterator it;
+            for (it = formals.begin(); it != formals.end(); it++) {
+                // check formal types
+               (*it)->checkTypes(class_names);
+            }
         }
 
 };
@@ -105,6 +134,17 @@ class Method {
                 }
             }
         }
+
+        void checkTypes(map<string, string> class_names) {
+            map<string, string>::iterator a_pair;
+            a_pair = class_names.find(*returnType);
+            if (isupper((*returnType)[0]) && a_pair == class_names.end()) {
+                // not found
+                cout << "semantic error: type " << *returnType << " not defined" << endl;
+            }
+            formals->checkTypes(class_names);
+            block->checkTypes(class_names);
+        }
 };
 
 class Methods {
@@ -127,6 +167,14 @@ class Methods {
         void addMethod(unique_ptr<Method> m) {
             methods.push_front(move(m));
         }
+
+        void checkTypes(map<string, string> class_names) {
+            list<unique_ptr<Method>>::iterator it2;
+            for (it2 = methods.begin(); it2 != methods.end(); it2++) {
+                // check types
+                (*it2)->checkTypes(class_names);
+            }
+        }
 };
 
 class Field : public Expression{
@@ -146,8 +194,19 @@ class Field : public Expression{
             fieldStr += ")";
             return fieldStr;
         }
+
+        void checkTypes(map<string, string> class_names) {
+            map<string, string>::iterator a_pair;
+            a_pair = class_names.find(*type);
+            if (isupper((*type)[0]) && a_pair == class_names.end()) {
+                // not found
+                cout << "semantic error: type " << *type << " not defined" << endl;
+            }
+            if (initExpr != nullptr) {
+                initExpr->checkTypes(class_names);
+            }
+        }
 };
-// test
 
 class Fields {
     public:
@@ -167,6 +226,14 @@ class Fields {
         }
         void addField(unique_ptr<Field> f) {
             fields.push_front(move(f));
+        }
+
+        void checkTypes(map<string, string> class_names) {
+            list<unique_ptr<Field>>::iterator it2;
+            for (it2 = fields.begin(); it2 != fields.end(); it2++) {
+                // check types
+                (*it2)->checkTypes(class_names);
+            }
         }
 };
 
@@ -199,7 +266,7 @@ class ClassBody {
                 if (!found) {
                     method_names.push_back(*((*it)->name));
                 } else {
-                    cout << "semantic error: " + *((*it)->name) + " redefined";
+                    cout << "semantic error: " + *((*it)->name) + " redefined" << endl;
                 }
 
                 (*it)->checkFormalArguments();
@@ -215,6 +282,11 @@ class ClassBody {
                     cout << "semantic error: " + *((*it2)->name) + " redefined";
                 }
             }
+        }
+
+        void checkTypes(map<string, string> class_names) {
+            methods->checkTypes(class_names);
+            fields->checkTypes(class_names);
         }
 };
 
@@ -233,11 +305,17 @@ class Class {
         void checkFieldsAndMethods() {
             classBody->checkFieldsAndMethods();
         }
+
+        void checkTypes(map<string, string> class_names){
+            classBody->checkTypes(class_names);
+        }
 };
 
 class Program{
     public:
-        list<string> class_names;
+        map<string, string> inheritance = {
+            {"Object", "Object"}
+        };
         list<unique_ptr<Class>> classes;
         Program(list<unique_ptr<Class>> classList) {
             for(auto& c : classList) {
@@ -263,19 +341,61 @@ class Program{
 
         void checkClasses(list<unique_ptr<Class>> classes) {
             list<unique_ptr<Class>>::iterator it;
-            class_names.push_back("Object");
             for (it = classes.begin(); it != classes.end(); it++) {
                 // check classes redefinitions
-                bool found = (find(class_names.begin(), class_names.end(), *((*it)->name)) != class_names.end());
-                if (!found) {
-                    class_names.push_back(*((*it)->name));
+                map<string, string>::iterator a_pair;
+                a_pair = inheritance.find(*((*it)->name));
+                if (a_pair == inheritance.end()) {
+                    pair<string, string> p(*((*it)->name), *((*it)->parent));
+                    inheritance.insert(p);
                 } else {
-                    cout << "semantic error: " + *((*it)->name) + " redefined";
+                    cout << "semantic error: " + *((*it)->name) + " redefined" << endl;
                 }
                 
                 // check Fields and Methods
                 (*it)->checkFieldsAndMethods();
+
+                // check identifiers
+                // (*it)->checkIdentifiers();
             }
+            // check inheritance cycles
+            checkInheritanceCycles(classes);
+
+            // check types
+            checkTypes(classes, inheritance);
+        }
+
+        void checkTypes(list<unique_ptr<Class>>& classes, map<string, string> class_names) {
+            list<unique_ptr<Class>>::iterator a_class;
+            for (a_class = classes.begin(); a_class != classes.end(); a_class++) {
+                (*a_class)->checkTypes(class_names);
+            }
+        }
+
+        void checkInheritanceCycles(list<unique_ptr<Class>>& classes) {
+            list<unique_ptr<Class>>::iterator a_class;
+            for (a_class = classes.begin(); a_class != classes.end(); a_class++) {
+                list<string> ancestors;
+                string parentClass = hasInheritanceCycle(*((*a_class)->name), ancestors);
+                if (parentClass.compare("") != 0) {
+                    cout << "semantic error: class " << *((*a_class)->name) << " cannot extend child class " << parentClass << endl;
+                }
+            }
+        }
+
+        string hasInheritanceCycle(string class_name, list<string> ancestors) {
+            map<string, string>::iterator a_pair;
+            a_pair = inheritance.find(class_name);
+            if (a_pair != inheritance.end()) {
+                if (find(ancestors.begin(), ancestors.end(), a_pair->second) != ancestors.end()) {
+                    return a_pair->second;
+                } else if (a_pair->second.compare("Object") == 0) {
+                    return "";
+                }
+                ancestors.push_back(a_pair->second);
+                return hasInheritanceCycle(a_pair->second, ancestors);
+            }
+            return "";
         }
 
 };
@@ -298,6 +418,14 @@ class If : public Expression {
             content += ")";
             return content;
         }
+
+        void checkTypes(map<string, string> class_names){
+            conditionExpr->checkTypes(class_names);
+            thenExpr->checkTypes(class_names);
+            if (elseExpr != nullptr) {
+                elseExpr->checkTypes(class_names);
+            }
+        }
 };
 
 class IntegerExpression : public Expression {
@@ -308,6 +436,9 @@ class IntegerExpression : public Expression {
         string toString() {
             return to_string(value);
         }
+        void checkTypes(map<string, string> class_names){
+
+        }
 };
 
 class StringLitExpression : public Expression {
@@ -317,6 +448,9 @@ class StringLitExpression : public Expression {
 
         string toString() {
             return *value;
+        }
+        void checkTypes(map<string, string> class_names){
+
         }
 };
 
@@ -330,6 +464,10 @@ class While : public Expression {
         string toString() {
             return "While(" + conditionExpr->toString() + ", " + bodyExpr->toString() + ")";
         }
+        void checkTypes(map<string, string> class_names){
+            conditionExpr->checkTypes(class_names);
+            bodyExpr->checkTypes(class_names);
+        }
 };
 
 class Assign : public Expression{
@@ -341,6 +479,9 @@ class Assign : public Expression{
 
         string toString() {
             return "Assign(" + *name + ", " + expr->toString() + ")";;
+        }
+        void checkTypes(map<string, string> class_names){
+            expr->checkTypes(class_names);
         }
 };
 
@@ -354,6 +495,10 @@ class BinaryOperator : public Expression{
 
         string toString() {
             return "BinOp(" + *op + ", " + left->toString() + ", " + right->toString() + ")";
+        }
+        void checkTypes(map<string, string> class_names){
+            left->checkTypes(class_names);
+            right->checkTypes(class_names);
         }
 };
 
@@ -373,6 +518,13 @@ class Call : public Expression{
                 obj = objExpr->toString();
             }
             return "Call(" + obj + ", " + *methodName + ", " + args->toString() + ")";
+        }
+
+        void checkTypes(map<string, string> class_names) {
+            if (objExpr != nullptr) {
+                objExpr->checkTypes(class_names);
+            }
+            args->checkTypes(class_names);
         }
 };
 
@@ -395,14 +547,36 @@ class Let : public Expression{
             lastPart += scope->toString() + ")";
             return firstPart + lastPart;   
         }
+
+        void checkTypes(map<string, string> class_names) {
+            map<string, string>::iterator a_pair;
+            a_pair = class_names.find(*type);
+            if (isupper((*type)[0]) && a_pair == class_names.end()) {
+                // not found
+                cout << "semantic error: type " << *type << " not defined" << endl;
+            }
+            if (init != nullptr) {
+                init->checkTypes(class_names);
+            }
+            scope->checkTypes(class_names);
+        }
 };
 
-class New : public Expression{
+class New : public Expression {
     public:
         unique_ptr<string> type;
         New(){}
         New(string* _type) : type(_type) {}
         string toString() {
             return "New(" + *type + ")";
+        }
+
+        void checkTypes(map<string, string> class_names) {
+            map<string, string>::iterator a_pair;
+            a_pair = class_names.find(*type);
+            if (isupper((*type)[0]) && a_pair == class_names.end()) {
+                // not found
+                cout << "semantic error: type " << *type << " not defined" << endl;
+            }
         }
 };
