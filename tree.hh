@@ -145,6 +145,15 @@ class Method {
             formals->checkTypes(class_names);
             block->checkTypes(class_names);
         }
+
+         void checkMain(){
+             if(*returnType != "int32"){
+                cout << "semantic error: Main method must return int32" << endl;
+             }
+            if(formals->formals.begin() != formals->formals.end()){
+                cout << "semantic error: multiple parameters for main()" << endl;
+            }
+         }
 };
 
 class Methods {
@@ -288,6 +297,21 @@ class ClassBody {
             methods->checkTypes(class_names);
             fields->checkTypes(class_names);
         }
+
+        void checkMain(){
+            list<unique_ptr<Method>>::iterator it;
+            bool hasMainMethod = false;
+            for (it = methods->methods.begin(); it!= methods->methods.end(); it++) {             
+                if(*((*it)->name) == "main"){
+                    hasMainMethod = true;
+                    (*it)->checkMain();
+                    break;
+                }
+            }
+            if(hasMainMethod == false){
+                cout << "semantic error: main method not defined in Main class" << endl;
+            }
+        }
 };
 
 class Class {
@@ -308,6 +332,10 @@ class Class {
 
         void checkTypes(map<string, string> class_names){
             classBody->checkTypes(class_names);
+        }
+
+        void checkMain(){
+            classBody->checkMain();
         }
 };
 
@@ -363,6 +391,24 @@ class Program{
 
             // check types
             checkTypes(classes, inheritance);
+
+            //checkMain
+            checkMain(classes, inheritance);
+        }
+
+        void checkMain(list<unique_ptr<Class>>& classes, map<string, string> class_names){
+            list<unique_ptr<Class>>::iterator it;
+            bool hasMainClass = false;
+            for (it = classes.begin(); it!= classes.end(); it++) {             
+                if(*((*it)->name) == "Main"){
+                    hasMainClass = true;
+                    (*it)->checkMain();
+                    break;
+                }
+            }
+            if(hasMainClass == false){
+                cout << "semantic error: No main class" << endl;
+            }
         }
 
         void checkTypes(list<unique_ptr<Class>>& classes, map<string, string> class_names) {
