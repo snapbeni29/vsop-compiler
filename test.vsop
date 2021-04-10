@@ -1,36 +1,17 @@
-class MyClass {
-    s : string <- "One\n\x1b[33;mTwo and \
-    three\r\n";
-    i : int32 <- 0x1b;
+class C {
+    g() : int32 {
+        if 0 = 0 then 42
+        else false;
+        -1
+    }
 }
 
-class Main {
-    s : string <- "One\n\x1b[33;mTwo and \
-    three\r\n";
-    i : int32 <- 0x1b;
+class Main{
+    main() : int32 {
+        if 0 = 0 then 42
+        else false;
+        -1
+    }
 }
 
-class MyClass {
-    s : MyClass4 <- "One\n\x1b[33;mTwo and \
-    three\r\n";
-    i : int32 <- 0x1b;
-}
-
-class MyClass1 extends MyClass3 {
-    s : string <- "One\n\x1b[33;mTwo and \
-    three\r\n";
-    i : int32 <- 0x1b;
-}
-
-class MyClass2 extends MyClass1 {
-    s : string <- "One\n\x1b[33;mTwo and \
-    three\r\n";
-    i : int32 <- 0x1b;
-}
-
-class MyClass3 extends MyClass2 {
-    s : string <- "One\n\x1b[33;mTwo and \
-    three\r\n";
-    i : int32 <- 0x1b;
-}
 

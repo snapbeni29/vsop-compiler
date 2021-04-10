@@ -3,6 +3,8 @@
 #include <string>
 #include <iterator>
 #include <memory>
+#include <typeinfo>
+#include <iterator>
 using namespace std;
 
 class Expression {
@@ -415,6 +417,55 @@ class Program{
             list<unique_ptr<Class>>::iterator a_class;
             for (a_class = classes.begin(); a_class != classes.end(); a_class++) {
                 (*a_class)->checkTypes(class_names);
+
+                // Check overidden method and return type
+                map<string, string>::iterator a_pair;
+                a_pair = inheritance.find(*((*a_class)->name));
+
+                // Get the parent class object
+                unique_ptr<Class> parentClass;
+                list<unique_ptr<Class>>::iterator it;
+                for (it = classes.begin(); it != classes.end(); it++){
+                    if(*((*it)->name) == a_pair->second){
+                        // Check 
+                        checkParentMethods(*a_class, *it);
+                        break;
+                    }
+                }
+            }
+        }
+
+        void checkParentMethods(unique_ptr<Class>& childClass, unique_ptr<Class>& parentClass){
+            list<unique_ptr<Method>>::iterator itChild;
+            list<unique_ptr<Method>>::iterator itParent;
+            for(itChild = childClass->classBody->methods->methods.begin(); itChild != childClass->classBody->methods->methods.end(); itChild++){
+                for(itParent = parentClass->classBody->methods->methods.begin(); itParent != parentClass->classBody->methods->methods.end(); itParent++){
+                    // If the methods have the same name
+                    if(*((*itChild)->name) == *((*itParent)->name)){
+                        // If the return type is not the same
+                        if(*((*itChild)->returnType) != *((*itParent)->returnType)){
+                           cout << *((*itChild)->name) + " method has not the same type as in its parent class " + *(parentClass->name) << endl;
+                        }
+
+                        // If the type of each argument is not the same
+                        if((*itChild)->formals->formals.size() == (*itParent)->formals->formals.size()){
+                            list<unique_ptr<Formal>>::iterator itArgChild;
+                            int i = 0;
+                            for(itArgChild = (*itChild)->formals->formals.begin();  itArgChild != (*itChild)->formals->formals.end(); itArgChild++){
+                                list<unique_ptr<Formal>>::iterator itArgParent;
+                                itArgParent = (*itParent)->formals->formals.begin();
+                                advance(itArgParent, i);
+                                if(*((*itArgChild)->type) != *((*itArgParent)->type)){
+                                    cout << *((*itArgChild)->name) + " argument has not the same type as in its parent class method " + *((*itParent)->name) << endl;
+                                }
+                                i++ ;
+                            }
+                        }
+                        else{
+                            cout << *((*itChild)->name) + " method has not the same number of argument as in its parent class method " + *((*itParent)->name) << endl;
+                        }
+                    }
+                }
             }
         }
 
@@ -470,7 +521,11 @@ class If : public Expression {
             thenExpr->checkTypes(class_names);
             if (elseExpr != nullptr) {
                 elseExpr->checkTypes(class_names);
+                if(typeid(thenExpr).name() != typeid(elseExpr).name()){ // TO MODIFY WHEN TYPES WILL BE ADDED 
+                    cout << "semantic error: Both branches do not agree" << endl;
+                }
             }
+
         }
 };
 

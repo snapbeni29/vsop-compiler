@@ -1,5 +1,5 @@
 class List {
-    isNil() : bool { true }
+    isNil(s : bool) : bool { true }
     length() : int32 { 0 }
 }
 (* Nil is nothing more than a glorified alias to List *)
@@ -17,7 +17,7 @@ class Cons extends List {
     }
     
     head() : int32 { head }
-    isNil() : bool { false }
+    isNil(s : string, t : bool) : int32 { false }
     length() : int32 { 1 + tail.length() }
     
 }
