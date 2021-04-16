@@ -3,36 +3,67 @@
 #include <string>
 #include <iterator>
 #include <memory>
-#include <typeinfo>
-#include <iterator>
 using namespace std;
+
+class Class;
 
 class Expression {
     public:
         Expression(){}
         virtual ~Expression(){}
         virtual string toString() = 0;
-        virtual void checkTypes(map<string, string> class_names) = 0;
+        virtual void checkTypes(map<string, unique_ptr<Class> *> classesByName) = 0;
+        virtual void checkUndefinedIdentifiers() = 0;
+        virtual void checkCallsToUndefinedMethods(map<string, unique_ptr<Class> *> & classesByName) = 0;
+        virtual string getType(map<string, unique_ptr<Class> *> & classesByName) = 0;
+        virtual void setExpressionClasses(string name) = 0;
+        virtual void set_scope_context(map<string, string> &identifiers) = 0;
 };
 
-class UnaryOperator : public Expression{
+class UnaryOperator : public Expression {
     public:
         unique_ptr<string> op;
         unique_ptr<Expression> expr;
+        string class_name;
         UnaryOperator(){}
         UnaryOperator(string* _operator, Expression* _expr) : op(_operator), expr(_expr) {}
         string toString(){
             return "UnOp(" + *op + ", " + expr->toString() + ")";
         }
-        void checkTypes(map<string, string> class_names){
-            expr->checkTypes(class_names);
+        void checkTypes(map<string, unique_ptr<Class> *> classesByName){
+            expr->checkTypes(classesByName);
         }
+
+        void checkUndefinedIdentifiers(){
+            expr->checkUndefinedIdentifiers();
+        }
+
+        void checkCallsToUndefinedMethods(map<string, unique_ptr<Class> *> & classesByName) {
+            expr->checkCallsToUndefinedMethods(classesByName);
+        }
+
+        string getType(map<string, unique_ptr<Class> *> & classesByName) {
+            if ((*op).compare("isnull") == 0) {
+                return "bool";
+            }
+            return expr->getType(classesByName);
+        }
+
+        void setExpressionClasses(string name) {
+            class_name = name;
+            expr->setExpressionClasses(name);
+        }
+
+        void set_scope_context(map<string, string> &identifiers) {
+            expr->set_scope_context(identifiers);
+        }
+
 };
 
-class Block : public Expression{
+class Block : public Expression {
     public:
-        list<string> scope_identifiers;
         list<unique_ptr<Expression>> exprList;
+        string class_name;
         Block(){
         }
 
@@ -52,10 +83,44 @@ class Block : public Expression{
             return exprsToStr;
         }
 
-        void checkTypes(map<string, string> class_names){
+        void checkTypes(map<string, unique_ptr<Class> *> classesByName){
             list<unique_ptr<Expression>>::iterator f_it;
             for (f_it = exprList.begin(); f_it != exprList.end(); f_it++) {
-                (*f_it)->checkTypes(class_names);
+                (*f_it)->checkTypes(classesByName);
+            }
+        }
+
+        void checkUndefinedIdentifiers(){
+            list<unique_ptr<Expression>>::iterator f_it;
+            for (f_it = exprList.begin(); f_it != exprList.end(); f_it++) {
+                (*f_it)->checkUndefinedIdentifiers();
+            }
+        }
+
+        void checkCallsToUndefinedMethods(map<string, unique_ptr<Class> *> & classesByName) {
+            list<unique_ptr<Expression>>::iterator ex;
+            for (ex = exprList.begin(); ex != exprList.end(); ex++) {
+                (*ex)->checkCallsToUndefinedMethods(classesByName);
+            }
+        }
+
+        string getType(map<string, unique_ptr<Class> *> & classesByName) {
+            list<unique_ptr<Expression>>::iterator lastExpr = exprList.end();
+            return (*lastExpr)->getType(classesByName);
+        }
+
+        void setExpressionClasses(string name){
+            class_name = name;
+            list<unique_ptr<Expression>>::iterator ex;
+            for (ex = exprList.begin(); ex != exprList.end(); ex++) {
+                (*ex)->setExpressionClasses(name);
+            }
+        }
+
+        void set_scope_context(map<string, string> &identifiers) {
+            list<unique_ptr<Expression>>::iterator ex;
+            for (ex = exprList.begin(); ex != exprList.end(); ex++) {
+                (*ex)->set_scope_context(identifiers);
             }
         }
 };
@@ -65,19 +130,24 @@ class Formal {
     public:
         unique_ptr<string> name;
         unique_ptr<string> type;
+        string class_name;
         Formal(){}
         Formal(string* _name, string* _type) : name(_name), type(_type) {}
         string toString(){
             return *name + " : " + *type;
         }
 
-        void checkTypes(map<string, string> class_names) {
-            map<string, string>::iterator a_pair;
-            a_pair = class_names.find(*type);
-            if (isupper((*type)[0]) && a_pair == class_names.end()) {
+        void checkTypes(map<string, unique_ptr<Class> *> classesByName) {
+            map<string, unique_ptr<Class> *>::iterator a_pair;
+            a_pair = classesByName.find(*type);
+            if (isupper((*type)[0]) && a_pair == classesByName.end()) {
                 // not found
                 cout << "semantic error: type " << *type << " not defined" << endl;
             }
+        }
+
+        void setClass(string name){
+            class_name = name;
         }
 };
 
@@ -100,11 +170,18 @@ class Formals {
             formals.push_front(move(f));
         }
 
-        void checkTypes(map<string, string> class_names) {
+        void checkTypes(map<string, unique_ptr<Class> *> classesByName) {
             list<unique_ptr<Formal>>::iterator it;
             for (it = formals.begin(); it != formals.end(); it++) {
                 // check formal types
-               (*it)->checkTypes(class_names);
+               (*it)->checkTypes(classesByName);
+            }
+        }
+
+        void setExpressionClasses(string name){
+            list<unique_ptr<Formal>>::iterator formal;
+            for (formal = formals.begin(); formal != formals.end(); formal++) {
+                (*formal)->setClass(name);
             }
         }
 
@@ -117,6 +194,8 @@ class Method {
         unique_ptr<string> returnType;
         unique_ptr<Block> block;
         list<string> formal_names;
+        string class_name;
+        map<string, string> scope_context;
         Method(){}
         Method(string* _name, Formals* _formals, string* _returnType, Block* _block) : name(_name), formals(_formals), returnType(_returnType), block(_block) {}
 
@@ -128,34 +207,59 @@ class Method {
             list<unique_ptr<Formal>>::iterator it;
             for (it = formals->formals.begin(); it != formals->formals.end(); it++) {
                 // check formal arguments redefinitions
-               bool found = (find(formal_names.begin(), formal_names.end(), *((*it)->name)) != formal_names.end());
+                bool found = (find(formal_names.begin(), formal_names.end(), *((*it)->name)) != formal_names.end());
                 if (!found) {
                     formal_names.push_back(*((*it)->name));
                 } else {
-                    cout << "semantic error: " + *((*it)->name) + " redefined";
+                    cout << "semantic error: formal argument " + *((*it)->name) + " redefined" << endl;
                 }
             }
         }
 
-        void checkTypes(map<string, string> class_names) {
-            map<string, string>::iterator a_pair;
-            a_pair = class_names.find(*returnType);
-            if (isupper((*returnType)[0]) && a_pair == class_names.end()) {
+        void checkTypes(map<string, unique_ptr<Class> *> classesByName) {
+            map<string, unique_ptr<Class> *>::iterator a_pair;
+            a_pair = classesByName.find(*returnType);
+            if (isupper((*returnType)[0]) && a_pair == classesByName.end()) {
                 // not found
                 cout << "semantic error: type " << *returnType << " not defined" << endl;
             }
-            formals->checkTypes(class_names);
-            block->checkTypes(class_names);
+            formals->checkTypes(classesByName);
+            block->checkTypes(classesByName);
         }
 
-         void checkMain(){
-             if(*returnType != "int32"){
-                cout << "semantic error: Main method must return int32" << endl;
-             }
+        void checkUndefinedIdentifiers(){
+            block->checkUndefinedIdentifiers();
+        }
+
+        void checkCallsToUndefinedMethods(map<string, unique_ptr<Class> *> & classesByName) {
+            block->checkCallsToUndefinedMethods(classesByName);
+        }
+
+        void setExpressionClasses(string name){
+            class_name = name;
+            block->setExpressionClasses(name);
+            formals->setExpressionClasses(name);
+        }
+
+        void set_scope_context(map<string, string> & identifiers) {
+            scope_context = identifiers;
+            list<unique_ptr<Formal>>::iterator formal;
+            for (formal = formals->formals.begin(); formal != formals->formals.end(); formal++) {
+                pair<string, string> p(*((*formal)->name), *((*formal)->type));
+                scope_context.insert(p);
+            }
+            block->set_scope_context(scope_context);
+        }
+
+        void checkMain() {
+            if(*returnType != "int32"){
+                cout << "semantic error: main method must return int32" << endl;
+            }
             if(formals->formals.begin() != formals->formals.end()){
                 cout << "semantic error: multiple parameters for main()" << endl;
             }
-         }
+        }
+
 };
 
 class Methods {
@@ -179,20 +283,48 @@ class Methods {
             methods.push_front(move(m));
         }
 
-        void checkTypes(map<string, string> class_names) {
+        void checkTypes(map<string, unique_ptr<Class> *> classesByName) {
             list<unique_ptr<Method>>::iterator it2;
             for (it2 = methods.begin(); it2 != methods.end(); it2++) {
                 // check types
-                (*it2)->checkTypes(class_names);
+                (*it2)->checkTypes(classesByName);
+            }
+        }
+        void checkUndefinedIdentifiers(){
+            list<unique_ptr<Method>>::iterator it2;
+            for (it2 = methods.begin(); it2 != methods.end(); it2++) {
+                (*it2)->checkUndefinedIdentifiers();
+            }
+        }
+
+        void checkCallsToUndefinedMethods(map<string, unique_ptr<Class> *> & classesByName) {
+            list<unique_ptr<Method>>::iterator method;
+            for (method = methods.begin(); method != methods.end(); method++) {
+                (*method)->checkCallsToUndefinedMethods(classesByName);
+            }
+        }
+
+        void setExpressionClasses(string name){
+            list<unique_ptr<Method>>::iterator a_method;
+            for (a_method = methods.begin(); a_method != methods.end(); a_method++) {
+                (*a_method)->setExpressionClasses(name);
+            }
+        }
+
+        void set_scope_context(map<string, string> & identifiers) {
+            list<unique_ptr<Method>>::iterator a_method;
+            for (a_method = methods.begin(); a_method != methods.end(); a_method++) {
+                (*a_method)->set_scope_context(identifiers);
             }
         }
 };
 
-class Field : public Expression{
+class Field : public Expression {
     public:
         unique_ptr<string> name;
         unique_ptr<string> type;
         unique_ptr<Expression> initExpr = nullptr;
+        string class_name;
         Field(){}
         Field(string* _name, string* _type, Expression* _initExpr) : name(_name), type(_type), initExpr(_initExpr) {}
         Field(string* _name, string* _type) : name(_name), type(_type) {}
@@ -206,17 +338,44 @@ class Field : public Expression{
             return fieldStr;
         }
 
-        void checkTypes(map<string, string> class_names) {
-            map<string, string>::iterator a_pair;
-            a_pair = class_names.find(*type);
-            if (isupper((*type)[0]) && a_pair == class_names.end()) {
+        void checkTypes(map<string, unique_ptr<Class> *> classesByName) {
+            map<string, unique_ptr<Class> *>::iterator a_pair;
+            a_pair = classesByName.find(*type);
+            if (isupper((*type)[0]) && a_pair == classesByName.end()) {
                 // not found
                 cout << "semantic error: type " << *type << " not defined" << endl;
             }
             if (initExpr != nullptr) {
-                initExpr->checkTypes(class_names);
+                initExpr->checkTypes(classesByName);
             }
         }
+        void checkUndefinedIdentifiers() {
+            // check in the expression
+            if (initExpr != nullptr) {
+                initExpr->checkUndefinedIdentifiers();
+            }
+        }
+        
+        void checkCallsToUndefinedMethods(map<string, unique_ptr<Class> *> & classesByName) { /* empty */ }
+
+        void setExpressionClasses(string name){
+            class_name = name;
+            if (initExpr != nullptr) {
+                initExpr->setExpressionClasses(name);
+            }
+        }
+
+        string getType(map<string, unique_ptr<Class> *> & classesByName) {
+            return *type;
+        }
+
+        void set_scope_context(map<string, string> &identifiers) { 
+            pair<string, string> p(*name, *type);
+            identifiers.insert(p);
+            if (initExpr != nullptr)
+                initExpr->set_scope_context(identifiers);
+        }   
+
 };
 
 class Fields {
@@ -239,11 +398,18 @@ class Fields {
             fields.push_front(move(f));
         }
 
-        void checkTypes(map<string, string> class_names) {
+        void checkTypes(map<string, unique_ptr<Class> *> classesByName) {
             list<unique_ptr<Field>>::iterator it2;
             for (it2 = fields.begin(); it2 != fields.end(); it2++) {
                 // check types
-                (*it2)->checkTypes(class_names);
+                (*it2)->checkTypes(classesByName);
+            }
+        }
+
+        void setExpressionClasses(string name){
+            list<unique_ptr<Field>>::iterator a_field;
+            for (a_field = fields.begin(); a_field != fields.end(); a_field++) {
+                (*a_field)->setExpressionClasses(name);
             }
         }
 };
@@ -252,8 +418,10 @@ class ClassBody {
     public:
         unique_ptr<Fields> fields;
         unique_ptr<Methods> methods;
-        list<string> method_names;
-        list<string> field_names;
+        map<string, string> method_types;
+        map<string, string> field_types;
+        string class_name;
+
         ClassBody() {
             unique_ptr<Fields> _fields(new Fields());
             fields = move(_fields);
@@ -269,51 +437,84 @@ class ClassBody {
             methods->addMethod(move(method));
         }
 
-        void checkFieldsAndMethods(){
+        void checkMethodsRedefinitions() {
             list<unique_ptr<Method>>::iterator it;
             for (it = methods->methods.begin(); it != methods->methods.end(); it++) {
                 // check method redefinitions
-               bool found = (find(method_names.begin(), method_names.end(), *((*it)->name)) != method_names.end());
+               bool found = (method_types.find(*((*it)->name)) != method_types.end());
                 if (!found) {
-                    method_names.push_back(*((*it)->name));
+                    pair<string, string> p(*((*it)->name), *((*it)->returnType));
+                    method_types.insert(p);
                 } else {
-                    cout << "semantic error: " + *((*it)->name) + " redefined" << endl;
+                    cout << "semantic error: method " + *((*it)->name) + " redefined" << endl;
                 }
-
                 (*it)->checkFormalArguments();
             }
+        }
 
+        map<string, string> getMethodsAndTypes() {
+            return method_types;
+        }
+
+        void checkFieldsRedefinitions() {
             list<unique_ptr<Field>>::iterator it2;
             for (it2 = fields->fields.begin(); it2 != fields->fields.end(); it2++) {
                 // check field redefinitions
-               bool found = (find(field_names.begin(), field_names.end(), *((*it2)->name)) != field_names.end());
+               bool found = (field_types.find(*((*it2)->name)) != field_types.end());
                 if (!found) {
-                    field_names.push_back(*((*it2)->name));
+                    pair<string, string> p(*((*it2)->name), *((*it2)->type));
+                    field_types.insert(p);
                 } else {
-                    cout << "semantic error: " + *((*it2)->name) + " redefined";
+                    cout << "semantic error: field " + *((*it2)->name) + " redefined" << endl;
                 }
             }
         }
 
-        void checkTypes(map<string, string> class_names) {
-            methods->checkTypes(class_names);
-            fields->checkTypes(class_names);
+        // set the map of all known identifiers and their types
+        void set_scope_context() {
+            map<string, string> identifiers(field_types);
+            identifiers.insert(make_pair("self", class_name));
+            methods->set_scope_context(identifiers);
+        }
+
+        map<string, string> getFieldsAndTypes() {
+            return field_types;
+        }
+
+        void checkTypes(map<string, unique_ptr<Class> *> classesByName) {
+            methods->checkTypes(classesByName);
+            fields->checkTypes(classesByName);
+        }
+
+        void checkUndefinedIdentifiers() {
+            methods->checkUndefinedIdentifiers();
+        }
+
+        void checkCallsToUndefinedMethods(map<string, unique_ptr<Class> *> & classesByName) {
+            methods->checkCallsToUndefinedMethods(classesByName);
+        }
+
+        void setExpressionClasses(string name){
+            class_name = name;
+            methods->setExpressionClasses(name);
+            fields->setExpressionClasses(name);
         }
 
         void checkMain(){
             list<unique_ptr<Method>>::iterator it;
             bool hasMainMethod = false;
-            for (it = methods->methods.begin(); it!= methods->methods.end(); it++) {             
+            for (it = methods->methods.begin(); it != methods->methods.end(); it++) {             
                 if(*((*it)->name) == "main"){
                     hasMainMethod = true;
                     (*it)->checkMain();
                     break;
                 }
             }
-            if(hasMainMethod == false){
-                cout << "semantic error: main method not defined in Main class" << endl;
+            if (hasMainMethod == false){
+                cout << "semantic error: main method of class Main is not defined" << endl;
             }
         }
+
 };
 
 class Class {
@@ -328,145 +529,249 @@ class Class {
             return "Class(" + *name + ", " + *parent + ", " + classBody->fields->toString() + ", " + classBody->methods->toString() + ")";
         }
 
-        void checkFieldsAndMethods() {
-            classBody->checkFieldsAndMethods();
+        void checkFieldsRedefinitions() {
+            classBody->checkFieldsRedefinitions();
         }
 
-        void checkTypes(map<string, string> class_names){
-            classBody->checkTypes(class_names);
+        void checkMethodsRedefinitions() {
+            classBody->checkMethodsRedefinitions();
+        }
+
+        map<string, string> getFieldsAndTypes() {
+            return classBody->getFieldsAndTypes();
+        }
+
+        map<string, string> getMethodsAndTypes() {
+            return classBody->getMethodsAndTypes();
+        }
+
+        void checkUndefinedIdentifiers() {
+            classBody->checkUndefinedIdentifiers();
+        }
+
+        void checkTypes(map<string, unique_ptr<Class> *> classesByName){
+            classBody->checkTypes(classesByName);
+        }
+
+        void checkCallsToUndefinedMethods(map<string, unique_ptr<Class> *> & classesByName) {
+            classBody->checkCallsToUndefinedMethods(classesByName);
+        }
+
+        void setExpressionClasses(string name){
+            classBody->setExpressionClasses(name);
         }
 
         void checkMain(){
             classBody->checkMain();
         }
+
+        // set the map of all known identifiers and their types
+        void set_scope_context() {
+            classBody->set_scope_context();
+        }
+        
 };
 
 class Program{
     public:
-        map<string, string> inheritance = {
-            {"Object", "Object"}
-        };
+        Class* obj = createObjectClass();
+        unique_ptr<Class> object_class = unique_ptr<Class>(obj);
+        map<string, unique_ptr<Class>*> classesByName;
         list<unique_ptr<Class>> classes;
         Program(list<unique_ptr<Class>> classList) {
+            classes.push_back(move(object_class));
             for(auto& c : classList) {
                 classes.push_back(move(c));
             }
         }
 
+        Class* createObjectClass() {
+            ClassBody* cb = new ClassBody();
+            Formal* s = new Formal(new string("s"), new string("string"));
+            Formals* print_formals = new Formals();
+            print_formals->addFormal(unique_ptr<Formal>(s));
+            Method* _print = new Method(new string("print"), print_formals, new string("Object"), new Block());
+            cb->addMethod(unique_ptr<Method>(_print));
+
+            Formal* b = new Formal(new string("b"), new string("bool"));
+            Formals* printBool_formals = new Formals();
+            printBool_formals->addFormal(unique_ptr<Formal>(b));
+            Method* _printBool = new Method(new string("printBool"), printBool_formals, new string("Object"), new Block());
+            cb->addMethod(unique_ptr<Method>(_printBool));
+
+            Formal* i = new Formal(new string("i"), new string("int32"));
+            Formals* printInt32_formals = new Formals();
+            printInt32_formals->addFormal(unique_ptr<Formal>(i));
+            Method* _printInt32 = new Method(new string("printInt32"), printInt32_formals, new string("Object"), new Block());
+            cb->addMethod(unique_ptr<Method>(_printInt32));
+            
+            Method* inputLine = new Method(new string("inputLine"), new Formals(), new string("string"), new Block());
+            cb->addMethod(unique_ptr<Method>(inputLine));
+            Method* inputBool = new Method(new string("inputBool"), new Formals(), new string("bool"), new Block());
+            cb->addMethod(unique_ptr<Method>(inputBool));
+            Method* inputInt32 = new Method(new string("inputInt32"), new Formals(), new string("int32"), new Block());
+            cb->addMethod(unique_ptr<Method>(inputInt32));
+
+            return new Class(new string("Object"), nullptr, cb);
+        }
+
         string toString() {
+            if (classes.size() == 1) {
+                return "";
+            }
             string classesToStr = "["; list<unique_ptr<Class>>::iterator f_it;
             for (f_it = classes.begin(); f_it != classes.end(); f_it++) {
-                classesToStr += (*f_it)->toString() + ", ";
+                if (*((*f_it)->name) != "Object")
+                    classesToStr += (*f_it)->toString() + ", ";
             }
             if (classesToStr.length() > 1 && classesToStr.substr(classesToStr.length()-2) == ", ") {
                 classesToStr = classesToStr.substr(0, classesToStr.length()-2);
             }
-            classesToStr += "]";
+            classesToStr += "]\n";
             return classesToStr;
         }
 
         void checkSemantic(){
-            checkClasses(move(classes));
-        }
-
-        void checkClasses(list<unique_ptr<Class>> classes) {
-            list<unique_ptr<Class>>::iterator it;
-            for (it = classes.begin(); it != classes.end(); it++) {
-                // check classes redefinitions
-                map<string, string>::iterator a_pair;
-                a_pair = inheritance.find(*((*it)->name));
-                if (a_pair == inheritance.end()) {
-                    pair<string, string> p(*((*it)->name), *((*it)->parent));
-                    inheritance.insert(p);
-                } else {
-                    cout << "semantic error: " + *((*it)->name) + " redefined" << endl;
-                }
-                
-                // check Fields and Methods
-                (*it)->checkFieldsAndMethods();
-
-                // check identifiers
-                // (*it)->checkIdentifiers();
-            }
+            checkClasses();
+            // inform each expression in which class it actually is
+            setExpressionClasses();
+            // set scope context (inform each scope which identifiers are defined)
+            set_scope_context();
+            // check undefined identifiers in fields and methods
+            checkUndefinedIdentifiers();
+            checkCallsToUndefinedMethods();
+            
             // check inheritance cycles
             checkInheritanceCycles(classes);
 
-            // check types
-            checkTypes(classes, inheritance);
+            // check undefined types (classes)
+            checkTypes(classesByName);
 
-            //checkMain
-            checkMain(classes, inheritance);
+            // check main
+            checkMain(classesByName);
+
         }
 
-        void checkMain(list<unique_ptr<Class>>& classes, map<string, string> class_names){
-            list<unique_ptr<Class>>::iterator it;
-            bool hasMainClass = false;
-            for (it = classes.begin(); it!= classes.end(); it++) {             
-                if(*((*it)->name) == "Main"){
-                    hasMainClass = true;
-                    (*it)->checkMain();
-                    break;
-                }
-            }
-            if(hasMainClass == false){
-                cout << "semantic error: No main class" << endl;
-            }
-        }
-
-        void checkTypes(list<unique_ptr<Class>>& classes, map<string, string> class_names) {
+        void set_scope_context(){
             list<unique_ptr<Class>>::iterator a_class;
             for (a_class = classes.begin(); a_class != classes.end(); a_class++) {
-                (*a_class)->checkTypes(class_names);
+                (*a_class)->set_scope_context();
+            }
+        }
+
+        void checkCallsToUndefinedMethods(){
+            list<unique_ptr<Class>>::iterator a_class;
+            for (a_class = classes.begin(); a_class != classes.end(); a_class++) {
+                (*a_class)->checkCallsToUndefinedMethods(classesByName);
+            }
+        }
+
+        void setExpressionClasses(){
+            list<unique_ptr<Class>>::iterator a_class;
+            for (a_class = classes.begin(); a_class != classes.end(); a_class++) {
+                (*a_class)->setExpressionClasses(*((*a_class)->name));
+            }
+        }
+
+        void checkMain(map<string, unique_ptr<Class> *> classesByName){
+            map<string, unique_ptr<Class> *>::iterator class_pair = classesByName.find("Main");
+            if (class_pair != classesByName.end()) {
+                unique_ptr<Class> * mainClass = class_pair->second;
+                (*mainClass)->checkMain();
+            } else {
+                cout << "semantic error: No Main class" << endl;
+            }
+        }
+
+        void checkClasses() {
+            list<unique_ptr<Class>>::iterator it;
+            for (it = classes.begin(); it != classes.end(); it++) {
+                // check classes redefinitions
+                // and build a map to find classes by name
+                map<string, unique_ptr<Class>*>::iterator a_pair = classesByName.find(*((*it)->name));
+                if (a_pair == classesByName.end()) {
+                    classesByName.insert(make_pair(*((*it)->name), &(*it)));
+                } else {
+                    cout << "semantic error: class " + *((*it)->name) + " redefined" << endl;
+                }
+                
+                // check redefined Fields and Methods (only, not all identifiers)
+                // and add them in a map <name, type>
+                (*it)->checkMethodsRedefinitions();
+                (*it)->checkFieldsRedefinitions();
+            }
+        }
+
+        void checkUndefinedIdentifiers() {
+            list<unique_ptr<Class>>::iterator a_class;
+            for (a_class = classes.begin(); a_class != classes.end(); a_class++) {
+                (*a_class)->checkUndefinedIdentifiers();
+            }
+        }
+
+        void checkTypes(map<string, unique_ptr<Class> *> classesByName) {
+            map<string, unique_ptr<Class> *>::iterator a_class_pair;
+            for (a_class_pair = classesByName.begin(); a_class_pair != classesByName.end(); a_class_pair++) {
+                (*(a_class_pair->second))->checkTypes(classesByName);
 
                 // Check overidden method and return type
-                map<string, string>::iterator a_pair;
-                a_pair = inheritance.find(*((*a_class)->name));
+                unique_ptr<Class>* child_class = a_class_pair->second;
+                if ((*child_class)->parent != nullptr) {
+                    string parent_name = *((*child_class)->parent);
 
-                // Get the parent class object
-                unique_ptr<Class> parentClass;
-                list<unique_ptr<Class>>::iterator it;
-                for (it = classes.begin(); it != classes.end(); it++){
-                    if(*((*it)->name) == a_pair->second){
-                        // Check 
-                        checkParentMethods(*a_class, *it);
-                        break;
-                    }
-                }
+                    // Get the parent class object
+                    map<string, unique_ptr<Class> *>::iterator parent_pair;
+                    parent_pair = classesByName.find(parent_name);
+                    checkParentMethods(*(a_class_pair->second), *(parent_pair->second));
+                }                
             }
         }
 
         void checkParentMethods(unique_ptr<Class>& childClass, unique_ptr<Class>& parentClass){
             list<unique_ptr<Method>>::iterator itChild;
-            list<unique_ptr<Method>>::iterator itParent;
             for(itChild = childClass->classBody->methods->methods.begin(); itChild != childClass->classBody->methods->methods.end(); itChild++){
-                for(itParent = parentClass->classBody->methods->methods.begin(); itParent != parentClass->classBody->methods->methods.end(); itParent++){
-                    // If the methods have the same name
-                    if(*((*itChild)->name) == *((*itParent)->name)){
-                        // If the return type is not the same
-                        if(*((*itChild)->returnType) != *((*itParent)->returnType)){
-                           cout << *((*itChild)->name) + " method has not the same type as in its parent class " + *(parentClass->name) << endl;
-                        }
-
-                        // If the type of each argument is not the same
-                        if((*itChild)->formals->formals.size() == (*itParent)->formals->formals.size()){
-                            list<unique_ptr<Formal>>::iterator itArgChild;
-                            int i = 0;
-                            for(itArgChild = (*itChild)->formals->formals.begin();  itArgChild != (*itChild)->formals->formals.end(); itArgChild++){
-                                list<unique_ptr<Formal>>::iterator itArgParent;
-                                itArgParent = (*itParent)->formals->formals.begin();
-                                advance(itArgParent, i);
-                                if(*((*itArgChild)->type) != *((*itArgParent)->type)){
-                                    cout << *((*itArgChild)->name) + " argument has not the same type as in its parent class method " + *((*itParent)->name) << endl;
-                                }
-                                i++ ;
-                            }
-                        }
-                        else{
-                            cout << *((*itChild)->name) + " method has not the same number of argument as in its parent class method " + *((*itParent)->name) << endl;
-                        }
-                    }
+                unique_ptr<Class> * parent = &parentClass;
+                while (!isMethodInClass(*itChild, *parent) && (*parent)->parent != nullptr) { // look in the parent class of the parent
+                    map<string, unique_ptr<Class> *>::iterator pair = classesByName.find(*((*parent)->parent));
+                    if (pair != classesByName.end()) {
+                        parent = pair->second;
+                    } else break;
                 }
             }
+        }
+
+        bool isMethodInClass(unique_ptr<Method> & method, unique_ptr<Class> & class_ptr) {
+            list<unique_ptr<Method>>::iterator itParent;
+            bool method_found = false;
+            for(itParent = class_ptr->classBody->methods->methods.begin(); itParent != class_ptr->classBody->methods->methods.end(); itParent++){
+                // If the methods have the same name
+                if(*(method->name) == *((*itParent)->name)){
+                    method_found = true;
+                    // If the return type is not the same
+                    if(*(method->returnType) != *((*itParent)->returnType)){
+                        cout << "semantic error: " << *(method->name) << " method has not the same type as in its parent class " + *(class_ptr->name) << endl;
+                    }
+
+                    // If the type of each argument is not the same
+                    if(method->formals->formals.size() == (*itParent)->formals->formals.size()){
+                        list<unique_ptr<Formal>>::iterator itArgChild;
+                        int i = 0;
+                        for(itArgChild = method->formals->formals.begin();  itArgChild != method->formals->formals.end(); itArgChild++){
+                            list<unique_ptr<Formal>>::iterator itArgParent;
+                            itArgParent = (*itParent)->formals->formals.begin();
+                            advance(itArgParent, i);
+                            if(*((*itArgChild)->type) != *((*itArgParent)->type)){
+                                cout << "semantic error: " << *((*itArgChild)->name) << " argument of method " << *(method->name) << " has not the same type as in its parent class " + *(class_ptr->name) << endl;
+                            }
+                            i++;
+                        }
+                    } else {
+                        cout << "semantic error: " << *(method->name) << " method has not the same number of argument as in its parent class " + *(class_ptr->name) << endl;
+                    }
+                    break;
+                }
+            }
+            return method_found;
         }
 
         void checkInheritanceCycles(list<unique_ptr<Class>>& classes) {
@@ -481,16 +786,16 @@ class Program{
         }
 
         string hasInheritanceCycle(string class_name, list<string> ancestors) {
-            map<string, string>::iterator a_pair;
-            a_pair = inheritance.find(class_name);
-            if (a_pair != inheritance.end()) {
-                if (find(ancestors.begin(), ancestors.end(), a_pair->second) != ancestors.end()) {
-                    return a_pair->second;
-                } else if (a_pair->second.compare("Object") == 0) {
+            map<string, unique_ptr<Class> *>::iterator a_pair = classesByName.find(class_name);
+            if (a_pair != classesByName.end()) {
+                unique_ptr<Class> *class_ptr = a_pair->second;
+                if ((*class_ptr)->parent == nullptr) {
                     return "";
+                } else if (find(ancestors.begin(), ancestors.end(), *((*class_ptr)->parent)) != ancestors.end()) {
+                    return *((*class_ptr)->parent);
                 }
-                ancestors.push_back(a_pair->second);
-                return hasInheritanceCycle(a_pair->second, ancestors);
+                ancestors.push_back(*((*class_ptr)->parent));
+                return hasInheritanceCycle(*((*class_ptr)->parent), ancestors);
             }
             return "";
         }
@@ -502,6 +807,7 @@ class If : public Expression {
         unique_ptr<Expression> conditionExpr;
         unique_ptr<Expression> thenExpr;
         unique_ptr<Expression> elseExpr = nullptr;
+        string class_name;
         If(){}
         If(Expression* _conditionExpr, Expression* _thenExpr, Expression* _elseExpr) : conditionExpr(_conditionExpr), thenExpr(_thenExpr), elseExpr(_elseExpr) {}
 
@@ -516,58 +822,164 @@ class If : public Expression {
             return content;
         }
 
-        void checkTypes(map<string, string> class_names){
-            conditionExpr->checkTypes(class_names);
-            thenExpr->checkTypes(class_names);
+        void checkTypes(map<string, unique_ptr<Class> *> classesByName){
+            conditionExpr->checkTypes(classesByName);
+            thenExpr->checkTypes(classesByName);
             if (elseExpr != nullptr) {
-                elseExpr->checkTypes(class_names);
-                if(typeid(thenExpr).name() != typeid(elseExpr).name()){ // TO MODIFY WHEN TYPES WILL BE ADDED 
+                elseExpr->checkTypes(classesByName);
+                if(thenExpr->getType(classesByName) != elseExpr->getType(classesByName)){
                     cout << "semantic error: Both branches do not agree" << endl;
                 }
             }
+        }
 
+        void checkUndefinedIdentifiers() {
+            conditionExpr->checkUndefinedIdentifiers();
+            thenExpr->checkUndefinedIdentifiers();
+            if (elseExpr != nullptr) {
+                elseExpr->checkUndefinedIdentifiers();
+            }
+        }
+
+        void checkCallsToUndefinedMethods(map<string, unique_ptr<Class> *> & classesByName) {
+            conditionExpr->checkCallsToUndefinedMethods(classesByName);
+            thenExpr->checkCallsToUndefinedMethods(classesByName);
+            if (elseExpr != nullptr) {
+                elseExpr->checkCallsToUndefinedMethods(classesByName);
+            }
+        }
+
+        void setExpressionClasses(string name) {
+            class_name = name;
+            conditionExpr->setExpressionClasses(name);
+            thenExpr->setExpressionClasses(name);
+            if (elseExpr != nullptr)
+                elseExpr->setExpressionClasses(name);
+        }
+
+        void set_scope_context(map<string, string> &identifiers) {
+            conditionExpr->set_scope_context(identifiers);
+            thenExpr->set_scope_context(identifiers);
+            if (elseExpr != nullptr)
+                elseExpr->set_scope_context(identifiers);
+        }
+
+        string getType(map<string, unique_ptr<Class> *> & classesByName) { 
+            // TODO: see VSOP manual
+            return "";
         }
 };
 
 class IntegerExpression : public Expression {
     public:
         int value;
+        string class_name;
         IntegerExpression(int val) : value(val) {}
 
-        string toString() {
-            return to_string(value);
-        }
-        void checkTypes(map<string, string> class_names){
+        string toString() { return to_string(value); }
 
-        }
+        void checkTypes(map<string, unique_ptr<Class> *> classesByName) { /* empty */ }
+
+        void checkUndefinedIdentifiers() { /* empty */ }
+
+        void checkCallsToUndefinedMethods(map<string, unique_ptr<Class> *> & classesByName) { /* empty */ }
+
+        void setExpressionClasses(string name) { class_name = name; }
+
+        void set_scope_context(map<string, string> &identifiers) { /* empty */ }
+
+        string getType(map<string, unique_ptr<Class> *> & classesByName) { return "int32"; }
+        
+
 };
 
 class StringLitExpression : public Expression {
     public:
         unique_ptr<string> value;
+        string class_name;
         StringLitExpression(string* val) : value(val) {}
 
-        string toString() {
-            return *value;
-        }
-        void checkTypes(map<string, string> class_names){
+        string toString() { return *value; }
 
+        void checkTypes(map<string, unique_ptr<Class> *> classesByName){ /* empty */ }
+
+        void checkUndefinedIdentifiers() { /* empty */ }
+
+        void checkCallsToUndefinedMethods(map<string, unique_ptr<Class> *> & classesByName) { /* empty */ }
+        
+        void setExpressionClasses(string name) { class_name = name; }
+
+        void set_scope_context(map<string, string> &identifiers) { /* empty */ }
+
+        string getType(map<string, unique_ptr<Class> *> & classesByName) { return "string"; }
+};
+
+class BooleanLitExpression : public Expression {
+    public:
+        bool value;
+        string class_name;
+        BooleanLitExpression(bool val) : value(val) {}
+
+        string toString() {
+            if (value)
+                return "true";
+            return "false";
         }
+
+        void checkTypes(map<string, unique_ptr<Class> *> classesByName){ /* empty */ }
+
+        void checkUndefinedIdentifiers() { /* empty */ }
+
+        void checkCallsToUndefinedMethods(map<string, unique_ptr<Class> *> & classesByName) { /* empty */ }
+
+        string getType(map<string, unique_ptr<Class> *> & classesByName) { return "bool"; }
+        
+        void setExpressionClasses(string name) { class_name = name; }
+
+        void set_scope_context(map<string, string> &identifiers) { /* empty */ }
 };
 
 class While : public Expression {
     public:
         unique_ptr<Expression> conditionExpr;
         unique_ptr<Expression> bodyExpr;
+        string class_name;
+
         While(){}
         While(Expression* _conditionExpr, Expression* _bodyExpr) : conditionExpr(_conditionExpr), bodyExpr(_bodyExpr) {}
 
         string toString() {
             return "While(" + conditionExpr->toString() + ", " + bodyExpr->toString() + ")";
         }
-        void checkTypes(map<string, string> class_names){
-            conditionExpr->checkTypes(class_names);
-            bodyExpr->checkTypes(class_names);
+
+        void checkTypes(map<string, unique_ptr<Class> *> classesByName){
+            conditionExpr->checkTypes(classesByName);
+            bodyExpr->checkTypes(classesByName);
+        }
+
+        void checkUndefinedIdentifiers() {
+            conditionExpr->checkUndefinedIdentifiers();
+            bodyExpr->checkUndefinedIdentifiers();
+        }
+
+        void checkCallsToUndefinedMethods(map<string, unique_ptr<Class> *> & classesByName) {
+            conditionExpr->checkCallsToUndefinedMethods(classesByName);
+            bodyExpr->checkCallsToUndefinedMethods(classesByName);
+        }
+
+        void setExpressionClasses(string name) {
+            class_name = name;
+            conditionExpr->setExpressionClasses(name);
+            bodyExpr->setExpressionClasses(name);
+        }
+
+        void set_scope_context(map<string, string> &identifiers) { 
+            conditionExpr->set_scope_context(identifiers);
+            bodyExpr->set_scope_context(identifiers);
+        }
+
+        string getType(map<string, unique_ptr<Class> *> & classesByName) {
+            return "unit";
         }
 };
 
@@ -575,15 +987,46 @@ class Assign : public Expression{
     public:
         unique_ptr<string> name;
         unique_ptr<Expression> expr;
+        string class_name;
+        map<string, string> scope_identifiers;
+
         Assign(){}
         Assign(string* _name, Expression* _expr) : name(_name), expr(_expr) {}
 
         string toString() {
             return "Assign(" + *name + ", " + expr->toString() + ")";;
         }
-        void checkTypes(map<string, string> class_names){
-            expr->checkTypes(class_names);
+        void checkTypes(map<string, unique_ptr<Class> *> classesByName){
+            expr->checkTypes(classesByName);
         }
+
+        void checkUndefinedIdentifiers() {
+            // search name in fields
+            bool found = (scope_identifiers.find(*name) != scope_identifiers.end());
+            if (!found) {
+                cout << "semantic error: field " + *name + " undefined" << endl;
+            }
+            // check in the expression
+            expr->checkUndefinedIdentifiers();
+        }
+
+        void checkCallsToUndefinedMethods(map<string, unique_ptr<Class> *> & classesByName) {
+            expr->checkCallsToUndefinedMethods(classesByName);
+        }
+
+        string getType(map<string, unique_ptr<Class> *> & classesByName) {
+            return expr->getType(classesByName);
+        }
+
+        void setExpressionClasses(string name) {
+            class_name = name;
+            expr->setExpressionClasses(name);
+        }
+
+        void set_scope_context(map<string, string> &identifiers) { 
+            scope_identifiers = identifiers;
+            expr->set_scope_context(identifiers);
+        }      
 };
 
 class BinaryOperator : public Expression{
@@ -591,24 +1034,57 @@ class BinaryOperator : public Expression{
         unique_ptr<string> op;
         unique_ptr<Expression> left;
         unique_ptr<Expression> right;
+        string class_name;
+        
         BinaryOperator(){}
         BinaryOperator(string* _op, Expression* _left, Expression* _right) : op(_op), left(_left), right(_right) {}
 
         string toString() {
             return "BinOp(" + *op + ", " + left->toString() + ", " + right->toString() + ")";
         }
-        void checkTypes(map<string, string> class_names){
-            left->checkTypes(class_names);
-            right->checkTypes(class_names);
+
+        void checkTypes(map<string, unique_ptr<Class> *> classesByName){
+            left->checkTypes(classesByName);
+            right->checkTypes(classesByName);
         }
+
+        void checkUndefinedIdentifiers() {
+            left->checkUndefinedIdentifiers();
+            right->checkUndefinedIdentifiers();
+        }
+
+        void checkCallsToUndefinedMethods(map<string, unique_ptr<Class> *> & classesByName) {
+            left->checkCallsToUndefinedMethods(classesByName);
+            right->checkCallsToUndefinedMethods(classesByName);
+        }
+
+        string getType(map<string, unique_ptr<Class> *> & classesByName) {
+             if (op->compare("<=") == 0 || op->compare("<") == 0) {
+                 return "bool";
+             }
+             return "int32";
+        }
+
+        void setExpressionClasses(string name) {
+            class_name = name;
+            left->setExpressionClasses(name);
+            right->setExpressionClasses(name);
+        }
+
+        void set_scope_context(map<string, string> &identifiers) { 
+            left->set_scope_context(identifiers);
+            right->set_scope_context(identifiers);
+        }  
 };
 
 
-class Call : public Expression{
+class Call : public Expression {
     public:
         unique_ptr<Expression> objExpr = nullptr;
         unique_ptr<string> methodName;
         unique_ptr<Block> args;
+        string class_name;
+
         Call(){}
         Call(Expression* _objExpr, string* _methodName, Block* _args) : objExpr(_objExpr), methodName(_methodName), args(_args) {}
         Call(string* _methodName, Block* _args) : methodName(_methodName), args(_args) {}
@@ -621,20 +1097,106 @@ class Call : public Expression{
             return "Call(" + obj + ", " + *methodName + ", " + args->toString() + ")";
         }
 
-        void checkTypes(map<string, string> class_names) {
+        void checkTypes(map<string, unique_ptr<Class> *> classesByName) {
             if (objExpr != nullptr) {
-                objExpr->checkTypes(class_names);
+                objExpr->checkTypes(classesByName);
             }
-            args->checkTypes(class_names);
+            args->checkTypes(classesByName);
+        }
+
+        void checkUndefinedIdentifiers() {
+            // check in the expression
+            if (objExpr != nullptr) {
+                objExpr->checkUndefinedIdentifiers();
+            }
+            args->checkUndefinedIdentifiers();
+        }
+
+        void checkCallsToUndefinedMethods(map<string, unique_ptr<Class> *> & classesByName) {
+            if (objExpr != nullptr)
+                objExpr->checkCallsToUndefinedMethods(classesByName);
+            // TODO: getType of objExpr and verify the type has the method
+            getType(classesByName);
+            args->checkCallsToUndefinedMethods(classesByName);
+        }
+
+        string getType(map<string, unique_ptr<Class> *> & classesByName) {
+            // if we call a method of "class_name"
+            if (objExpr == nullptr) {
+                map<string, unique_ptr<Class> *>::iterator self_class = classesByName.find(class_name);
+                unique_ptr<Class> *class_ptr = self_class->second;
+                string type = getMethodType(*class_ptr, classesByName, *methodName);
+                if (type.compare("") == 0) {
+                    cout << "semantic error: type " << class_name << " has no method called " << *methodName << endl;
+                }
+                return type;
+            }
+            string objExprType = objExpr->getType(classesByName);
+            // get methods of this class
+            if (!isPrimitive(objExprType)) {
+                map<string, unique_ptr<Class> *>::iterator a_class = classesByName.find(objExprType);
+                if (a_class != classesByName.end()) {
+                    unique_ptr<Class> *class_ptr = a_class->second;
+                    string type = getMethodType(*class_ptr, classesByName, *methodName);
+                    if (type.compare("") == 0) {
+                        cout << "semantic error: type " << objExprType << " has no method called " << *methodName << endl;
+                    }
+                    return type;
+                }
+            } else {
+                cout << "semantic error: type " << objExprType << " has no method called " << *methodName << endl;
+            }
+            return "";
+        }
+
+        bool isPrimitive(string type) {
+            return type.compare("string") == 0 
+                || type.compare("bool") == 0 
+                || type.compare("int32") == 0 
+                || type.compare("unit") == 0;
+        }
+
+        string getMethodType(unique_ptr<Class>& current_class, map<string, unique_ptr<Class> *> & classesByName, string methodName) {
+            
+            map<string, string> methods_types = current_class->getMethodsAndTypes();
+            map<string, string>::iterator method_type = methods_types.find(methodName);
+            if (method_type != methods_types.end()) {
+                // get return type of the corresponding method
+                return method_type->second;
+            } else {
+                if (current_class->parent == nullptr) {
+                    return "";
+                }
+                map<string, unique_ptr<Class> *>::iterator parent_pair = classesByName.find(*(current_class->parent));
+                return getMethodType(*(parent_pair->second), classesByName, methodName);
+            }
+        }
+
+        void setExpressionClasses(string name) {
+            class_name = name;
+            args->setExpressionClasses(name);
+            if (objExpr != nullptr) {
+                objExpr->setExpressionClasses(name);
+            }
+        }
+
+        void set_scope_context(map<string, string> &identifiers) { 
+            if (objExpr != nullptr) {
+                objExpr->set_scope_context(identifiers);
+            }
+            args->set_scope_context(identifiers);
         }
 };
 
-class Let : public Expression{
+class Let : public Expression {
     public:
         unique_ptr<string> name;
         unique_ptr<string> type;
         unique_ptr<Expression> init = nullptr;
         unique_ptr<Expression> scope;
+        string class_name;
+        map<string, string> scope_identifiers;
+
         Let(){}
         Let(string* _name, string* _type, Expression* _init, Expression* _scope) : name(_name), type(_type), init(_init), scope(_scope) {}
         Let(string* _name, string* _type, Expression* _scope) : name(_name), type(_type), scope(_scope) {}
@@ -649,35 +1211,150 @@ class Let : public Expression{
             return firstPart + lastPart;   
         }
 
-        void checkTypes(map<string, string> class_names) {
-            map<string, string>::iterator a_pair;
-            a_pair = class_names.find(*type);
-            if (isupper((*type)[0]) && a_pair == class_names.end()) {
+        void checkTypes(map<string, unique_ptr<Class> *> classesByName) {
+            map<string, unique_ptr<Class> *>::iterator a_pair;
+            a_pair = classesByName.find(*type);
+            if (isupper((*type)[0]) && a_pair == classesByName.end()) {
                 // not found
                 cout << "semantic error: type " << *type << " not defined" << endl;
             }
             if (init != nullptr) {
-                init->checkTypes(class_names);
+                init->checkTypes(classesByName);
             }
-            scope->checkTypes(class_names);
+            scope->checkTypes(classesByName);
+        }
+
+        void checkUndefinedIdentifiers() {
+            // check the init expression
+            if (init != nullptr) {
+                init->checkUndefinedIdentifiers();
+            }
+            // check in the scope
+            scope->checkUndefinedIdentifiers();
+        }
+
+        void checkCallsToUndefinedMethods(map<string, unique_ptr<Class> *> & classesByName) {
+            if (init != nullptr)
+                init->checkCallsToUndefinedMethods(classesByName);
+            scope->checkCallsToUndefinedMethods(classesByName);
+        }
+
+        string getType(map<string, unique_ptr<Class> *> & classesByName) {
+            return scope->getType(classesByName);
+        }
+
+        void setExpressionClasses(string name) {
+            class_name = name;
+            scope->setExpressionClasses(name);
+            if (init != nullptr){
+                init->setExpressionClasses(name);
+            }
+        }
+
+        void set_scope_context(map<string, string> &identifiers) { 
+            if (init != nullptr) {
+                init->set_scope_context(identifiers);
+            }
+            pair<string, string> p(*name, *type);
+            scope_identifiers = identifiers;
+            scope_identifiers.insert(p);
+            map<string, string> new_identifiers(scope_identifiers);
+            scope->set_scope_context(new_identifiers);
         }
 };
 
 class New : public Expression {
     public:
         unique_ptr<string> type;
+        string class_name;
+
         New(){}
         New(string* _type) : type(_type) {}
         string toString() {
             return "New(" + *type + ")";
         }
 
-        void checkTypes(map<string, string> class_names) {
-            map<string, string>::iterator a_pair;
-            a_pair = class_names.find(*type);
-            if (isupper((*type)[0]) && a_pair == class_names.end()) {
+        void checkTypes(map<string, unique_ptr<Class> *> classesByName) {
+            map<string, unique_ptr<Class> *>::iterator a_pair;
+            a_pair = classesByName.find(*type);
+            if (isupper((*type)[0]) && a_pair == classesByName.end()) {
                 // not found
                 cout << "semantic error: type " << *type << " not defined" << endl;
             }
         }
+
+        void checkUndefinedIdentifiers() { /* empty */ }
+
+        string getType(map<string, unique_ptr<Class> *> & classesByName) { return *type; }
+
+        void setExpressionClasses(string name) { class_name = name; }
+
+        void set_scope_context(map<string, string> &identifiers) { /* empty */ }
+
+        void checkCallsToUndefinedMethods(map<string, unique_ptr<Class> *> & classesByName) { /* empty */ }
+
+};
+
+class ObjectIdentifier : public Expression {
+    public:
+        unique_ptr<string> name;
+        string class_name;
+        map<string, string> scope_identifiers;
+
+        ObjectIdentifier(){}
+        ObjectIdentifier(string* _name) : name(_name) {}
+        string toString() {
+            return *name;
+        }
+
+        void checkTypes(map<string, unique_ptr<Class> *> classesByName) { /* empty */ }
+
+        void checkUndefinedIdentifiers() { /* empty */ }
+
+        string getType(map<string, unique_ptr<Class> *> & classesByName) {
+            map<string, string>:: iterator it = scope_identifiers.find(*name);
+            if (it != scope_identifiers.end()) {
+                return it->second;
+            } else {
+                cout << "semantic error: object-identifier " + *name + " is undefined" << endl;
+            }
+            return "";
+        }
+
+        void setExpressionClasses(string name) { class_name = name; }
+
+        void set_scope_context(map<string, string> &identifiers) {
+            scope_identifiers = identifiers;
+        }
+
+        void checkCallsToUndefinedMethods(map<string, unique_ptr<Class> *> & classesByName) { /* empty */ }
+
+};
+
+class UnitExpression : public Expression {
+    public:
+        string class_name;
+        map<string, string> scope_identifiers;
+
+        UnitExpression(){}
+        string toString() {
+            return "()";
+        }
+
+        void checkTypes(map<string, unique_ptr<Class> *> classesByName) { /* empty */ }
+
+        void checkUndefinedIdentifiers() { /* empty */ }
+
+        string getType(map<string, unique_ptr<Class> *> & classesByName) {
+            return "unit";
+        }
+
+        void setExpressionClasses(string name) { /* empty */ }
+
+        void set_scope_context(map<string, string> &identifiers) {
+            scope_identifiers = identifiers;
+        }
+
+        void checkCallsToUndefinedMethods(map<string, unique_ptr<Class> *> & classesByName) { /* empty */ }
+
 };

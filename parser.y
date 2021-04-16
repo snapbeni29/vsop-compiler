@@ -35,7 +35,7 @@
 %{
 using namespace std;
 int yylex(void);
-int yyerror(string s);
+void yyerror(string s);
 extern FILE *yyin;
 
 extern string text;
@@ -44,7 +44,7 @@ string filename;
 // declare the list of classes of the input program
 list<unique_ptr<Class>> classes;
 
-int yyerror(string s){
+void yyerror(string s){
 	cerr << filename << ":" << yylloc.first_line << ":" << yylloc.first_column << ": " + s + "\n";
 }
 %}
@@ -155,7 +155,8 @@ type: TYPE_IDENTIFIER { $$ = $1; }
 		| INT32 { $$ = $1; }
 		| BOOL { $$ = $1; }
 		| _STRING { $$ = $1; }
-		| UNIT { $$ = $1; };
+		| UNIT { $$ = $1; }
+		| OBJECT_IDENTIFIER { yyerror(*$1 + " is not a primitive type"); $$ = $1; };
 
 formals: /*epsilon*/ { $$ = new Formals(); }
 		| formal { $$ = $1; };
@@ -180,10 +181,10 @@ expr: 	IF expr THEN expr { $$ = new If($2, $4); delete $1; delete $3; }
         | binary-op { $$ = $1; }
         | call { $$ = $1; }
         | NEW TYPE_IDENTIFIER { $$ = new New($2); delete $1; }
-		| OBJECT_IDENTIFIER { $$ = new StringLitExpression($1); }
-		| SELF { $$ = new StringLitExpression($1); }
+		| OBJECT_IDENTIFIER { $$ = new ObjectIdentifier($1); }
+		| SELF { $$ = new ObjectIdentifier($1); }
 		| literal { $$ = $1; }
-		| LPAR RPAR { $$ = new StringLitExpression(new string(*$1 + *$2)); delete $1; delete $2;  }
+		| LPAR RPAR { $$ = new UnitExpression(); delete $1; delete $2;  }
 		| LPAR expr RPAR { $$ = $2;  delete $1; delete $3; }
         | block { $$ = $1; };
 
@@ -191,8 +192,8 @@ literal: INT_LITERAL { $$ = new IntegerExpression($1); }
 		| STRING_LITERAL { $$ = new StringLitExpression($1); }
 		| boolean-literal { $$ = $1; };
 
-boolean-literal: TRUE { $$ = new StringLitExpression($1); }
-				| FALSE { $$ = new StringLitExpression($1); };
+boolean-literal: TRUE { $$ = new BooleanLitExpression($1); }
+				| FALSE { $$ = new BooleanLitExpression($1); };
 
 args: 	/* epsilon */ { $$ = new Block(); }
 		| arg { $$ = $1; };
@@ -222,7 +223,7 @@ unary-op: NOT expr { $$ = new UnaryOperator($1, $2); }
 %%
 
 
-void semanticChecker(unique_ptr<Program> p) {
+void semanticChecker(unique_ptr<Program>& p) {
 	p->checkSemantic();
 }
 
@@ -398,14 +399,11 @@ int main(int argc, char **argv) {
 	else if(string(argv[1]) == "-p" || string(argv[1]) == "-c"){
 		p = parser();
 		if (string(argv[1]) == "-c"){
-			semanticChecker(move(p));
-		} else {
-			cout << p->toString();
-		}
-	
+			semanticChecker(p);
+		} 
+		cout << p->toString();
 	}
 	
-
 	// Close the file and exit
 	fclose(yyin);
 	return EXIT_SUCCESS;

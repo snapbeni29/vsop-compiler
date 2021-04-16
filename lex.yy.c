@@ -549,7 +549,7 @@ string charToHex(char c);
 string stringToHex(string escaped);
 string toDecimal(string value);
 void save_pos();
-extern int yyerror(string s);
+extern void yyerror(string s);
 
 /*
 Updates the token position in the file.
@@ -1023,7 +1023,7 @@ case 6:
 YY_RULE_SETUP
 #line 226 "lexer.l"
 {text = string(yytext);
-							yyerror("lexical error: " + text + string(" is an invalid integer"));}
+							yyerror("lexical error: " + text + string(" is an invalid integer")); exit(-1);}
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
@@ -1063,19 +1063,19 @@ case YY_STATE_EOF(STRING):
 #line 241 "lexer.l"
 {auto row_col = stringStack.top(); 
 							stringStack.pop(); setPos(row_col.first, row_col.second); 
-							yyerror("lexical error: " + string("unexpected end of file"));} 
+							yyerror("lexical error: " + string("unexpected end of file")); exit(-1);} 
 	YY_BREAK
 case 12:
 /* rule 12 can match eol */
 YY_RULE_SETUP
 #line 244 "lexer.l"
-{yyerror("lexical error: " + string("unexpected line feed"));} 
+{yyerror("lexical error: " + string("unexpected line feed")); exit(-1);} 
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
 #line 245 "lexer.l"
 {text = yytext;
-							yyerror("lexical error: " + text + string(" is an invalid escape sequence"));} 
+							yyerror("lexical error: " + text + string(" is an invalid escape sequence")); exit(-1);} 
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
@@ -1101,7 +1101,7 @@ YY_RULE_SETUP
 case YY_STATE_EOF(COMMENT):
 #line 252 "lexer.l"
 {auto row_col = commentStack.top(); setPos(row_col.first, row_col.second);
-							yyerror("lexical error: " + string("unexpected end of file"));}
+							yyerror("lexical error: " + string("unexpected end of file")); exit(-1);}
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
@@ -1111,7 +1111,7 @@ YY_RULE_SETUP
 case 19:
 YY_RULE_SETUP
 #line 256 "lexer.l"
-{text = yytext; yyerror("lexical error: " + text + string(" is not a VSOP valid character"));}
+{text = yytext; yyerror("lexical error: " + text + string(" is not a VSOP valid character")); exit(-1);}
 	YY_BREAK
 case 20:
 YY_RULE_SETUP

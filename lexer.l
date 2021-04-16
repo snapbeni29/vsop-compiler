@@ -23,7 +23,7 @@ string charToHex(char c);
 string stringToHex(string escaped);
 string toDecimal(string value);
 void save_pos();
-extern int yyerror(string s);
+extern void yyerror(string s);
 
 /*
 Updates the token position in the file.
@@ -224,7 +224,7 @@ invalid-character			.
 							yylval.integer = stoi(toDecimal(yytext));
 							return INT_LITERAL;}
 {invalid-integer}			{text = string(yytext);
-							yyerror("lexical error: " + text + string(" is an invalid integer"));}
+							yyerror("lexical error: " + text + string(" is an invalid integer")); exit(-1);}
 
 {double-quote}             	{text = string(yytext);
 							stringStack.push({yylloc.first_line, yylloc.first_column});
@@ -240,18 +240,18 @@ invalid-character			.
 <STRING>{escaped-char}		{text += stringToHex(getEscapeChar(string(yytext)));} 
 <STRING><<EOF>>				{auto row_col = stringStack.top(); 
 							stringStack.pop(); setPos(row_col.first, row_col.second); 
-							yyerror("lexical error: " + string("unexpected end of file"));} 
-<STRING>\n					{yyerror("lexical error: " + string("unexpected line feed"));} 
+							yyerror("lexical error: " + string("unexpected end of file")); exit(-1);} 
+<STRING>\n					{yyerror("lexical error: " + string("unexpected line feed")); exit(-1);} 
 <STRING>{invalid-esc-seq}	{text = yytext;
-							yyerror("lexical error: " + text + string(" is an invalid escape sequence"));} 
+							yyerror("lexical error: " + text + string(" is an invalid escape sequence")); exit(-1);} 
 
 {comment-one-line}			{}
 {comment-begin}				{commentStack.push({yylloc.first_line, yylloc.first_column}); BEGIN(COMMENT);}
 <COMMENT>[^\0]				{}
 <COMMENT>{comment-begin}	{commentStack.push({yylloc.first_line, yylloc.first_column});}
 <COMMENT><<EOF>>			{auto row_col = commentStack.top(); setPos(row_col.first, row_col.second);
-							yyerror("lexical error: " + string("unexpected end of file"));}
+							yyerror("lexical error: " + string("unexpected end of file")); exit(-1);}
 <COMMENT>{comment-end}		{commentStack.pop(); if(commentStack.empty()) BEGIN(INITIAL);}
 
-{invalid-character}			{text = yytext; yyerror("lexical error: " + text + string(" is not a VSOP valid character"));}
+{invalid-character}			{text = yytext; yyerror("lexical error: " + text + string(" is not a VSOP valid character")); exit(-1);}
 %%

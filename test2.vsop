@@ -1,5 +1,5 @@
 class List {
-    isNil(s : bool) : bool { true }
+    isNil(s: int32) : bool { true }
     length() : int32 { 0 }
 }
 (* Nil is nothing more than a glorified alias to List *)
@@ -12,24 +12,46 @@ class Cons extends List {
     
     init(hd : int32, tl : List) : Cons {
         head <- hd;
+        head2 <- hd;
         tail <- tl;
         self
     }
     
     head() : int32 { head }
-    isNil(s : string, t : bool) : int32 { false }
+    isNil(s: bool) : bool { false }
     length() : int32 { 1 + tail.length() }
     
 }
 
-class Main {
+class ConsChild extends Cons {
+
+}
+
+class ConsSubChild extends ConsChild {
+    init(hd : string, tl : List) : Cons { 0 }
+    print() : Object { self }
+}
+
+class Test {
     main() : int32 {
         let xs : List <- (new Cons).init(0, (new Cons).init(1, (new Cons).init(2, new Nil))) in {
             print("List has length ");
             printInt32(xs.length());
             print("\n");
             0
-        }
+        };
+        xs.length()
     }
 }
 
+class Empty { }
+
+class NotEmpty extends Empty { f(): unit { () } }
+
+class Bogus {
+    g() : unit {
+        let e : Empty <- new NotEmpty in 
+        e.f();
+        ()
+    }
+}
