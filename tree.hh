@@ -840,8 +840,10 @@ class If : public Expression {
             thenExpr->checkTypes(classesByName);
             if (elseExpr != nullptr) {
                 elseExpr->checkTypes(classesByName);
-                if(thenExpr->getType(classesByName) != elseExpr->getType(classesByName)){
-                    cout << "semantic error: Both branches do not agree" << endl;
+                if(thenExpr->getType(classesByName) != "unit" && elseExpr->getType(classesByName) != "unit"){
+                    if(thenExpr->getType(classesByName) != elseExpr->getType(classesByName)){
+                        cout << "semantic error: Both branches do not agree" << endl;
+                    }
                 }
             }
         }
@@ -877,9 +879,13 @@ class If : public Expression {
                 elseExpr->set_scope_context(identifiers);
         }
 
-        string getType(map<string, unique_ptr<Class> *> & classesByName) { 
-            // TODO: see VSOP manual
-            return "";
+        string getType(map<string, unique_ptr<Class> *> & classesByName) {
+            string type = "";
+            if(thenExpr->getType(classesByName) == "unit" || elseExpr->getType(classesByName) == "unit")
+                type = "unit";      
+            else
+                type = thenExpr->getType(classesByName);
+            return type;
         }
 };
 
@@ -1072,7 +1078,7 @@ class BinaryOperator : public Expression{
         }
 
         string getType(map<string, unique_ptr<Class> *> & classesByName) {
-             if (op->compare("<=") == 0 || op->compare("<") == 0) {
+             if (op->compare("<=") == 0 || op->compare("<") == 0 || op->compare("=") == 0) {
                  return "bool";
              }
              return "int32";
