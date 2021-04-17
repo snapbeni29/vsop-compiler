@@ -2322,8 +2322,10 @@ int main(int argc, char **argv) {
 		p = parser();
 		if (string(argv[1]) == "-c"){
 			semanticChecker(p);
-		} 
-		cout << p->toString(true, p->classesByName);
+			cout << p->toString(true, p->classesByName);
+		}
+		else
+			cout << p->toString(false, p->classesByName);
 	}
 	
 	// Close the file and exit
