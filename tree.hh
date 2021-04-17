@@ -250,6 +250,29 @@ class Method {
             }
             block->set_scope_context(scope_context);
         }
+        
+        void set_scope_context(map<string, string>& identifiers) {
+            scope_context = identifiers;
+            list<unique_ptr<Formal>>::iterator formal;
+            for (formal = formals->formals.begin(); formal != formals->formals.end(); formal++) {
+                pair<string, string> p(*((*formal)->name), *((*formal)->type));
+                // Verify if existing in the fields before inserting a new one
+                std::map<string, string>::iterator it = scope_context.find(*((*formal)->name)); 
+                if (it != scope_context.end())
+                    it->second = *((*formal)->type);
+                else
+                    scope_context.insert(p);
+            }
+            
+            /* FOR DEBUG
+            for (auto it = scope_context.begin(); it != scope_context.end(); it++){                   
+                    cout << it->first << " "<< it->second << endl;
+            }
+            cout << "\n \n" << endl;
+            */
+            
+            block->set_scope_context(scope_context);
+        }
 
         void checkMain() {
             if(*returnType != "int32"){

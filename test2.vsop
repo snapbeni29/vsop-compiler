@@ -7,10 +7,10 @@ class Nil extends List { }
 
 
 class Cons extends List {
-    head : int32;
+    selff : int32;
     tail : List;
     
-    init(hd : int32, tl : List) : Cons {
+    init(hd : int32, hd : List) : Cons {
         head <- hd;
         head2 <- hd;
         tail <- tl;

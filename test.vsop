@@ -1,25 +1,14 @@
-class C {
-    g() : int32 {
-        if 0 = 0 then true
-        else 0;
-        -1
-    }
-}
-
 class Main {
+    x : bool;
+    t : bool;
     main() : int32{
         0
     }
-    g: Object;
-    t(s: string) : int32 {
+    t(x: int32) : int32 {
         x <- 32;
         if a = 0 then 42
         else 0;
         -1
-    }
-    
-    test(): int32 {
-        0
     }
 }
 
