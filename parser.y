@@ -401,7 +401,7 @@ int main(int argc, char **argv) {
 		if (string(argv[1]) == "-c"){
 			semanticChecker(p);
 		} 
-		cout << p->toString();
+		cout << p->toString(true, p->classesByName);
 	}
 	
 	// Close the file and exit
