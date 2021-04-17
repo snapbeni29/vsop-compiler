@@ -33,6 +33,7 @@ class ConsSubChild extends ConsChild {
 }
 
 class Test {
+    xs: bool;
     main() : int32 {
         let xs : List <- (new Cons).init(0, (new Cons).init(1, (new Cons).init(2, new Nil))) in {
             print("List has length ");

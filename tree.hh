@@ -1270,7 +1270,20 @@ class Let : public Expression {
             }
             pair<string, string> p(*name, *type);
             scope_identifiers = identifiers;
-            scope_identifiers.insert(p);
+            // Verify if existing before inserting a new one
+            std::map<string, string>::iterator it = scope_identifiers.find(p.first); 
+            if (it != scope_identifiers.end())
+                it->second = p.second;
+            else
+                scope_identifiers.insert(p);
+
+            /* FOR DEBUG            
+            for (auto it = scope_identifiers.begin(); it != scope_identifiers.end(); it++){                   
+                    cout << it->first << " "<< it->second << endl;
+            }
+            cout << "\n \n" << endl;
+            */
+            
             map<string, string> new_identifiers(scope_identifiers);
             scope->set_scope_context(new_identifiers);
         }
