@@ -240,16 +240,6 @@ class Method {
             block->setExpressionClasses(name);
             formals->setExpressionClasses(name);
         }
-
-        void set_scope_context(map<string, string> & identifiers) {
-            scope_context = identifiers;
-            list<unique_ptr<Formal>>::iterator formal;
-            for (formal = formals->formals.begin(); formal != formals->formals.end(); formal++) {
-                pair<string, string> p(*((*formal)->name), *((*formal)->type));
-                scope_context.insert(p);
-            }
-            block->set_scope_context(scope_context);
-        }
         
         void set_scope_context(map<string, string>& identifiers) {
             scope_context = identifiers;
