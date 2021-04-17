@@ -6,7 +6,7 @@ class Main {
     }
     t(x: int32) : int32 {
         x <- 32;
-        if a = 0 then ()
+        if x = 0 then ()
         else 0;
         -1
     }
