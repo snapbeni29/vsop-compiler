@@ -103,8 +103,6 @@ class Block : public Expression {
                 exprsToStr = exprsToStr.substr(0, exprsToStr.length()-2);
             }
             exprsToStr += "]";
-            if (c) // TO MODIFY
-                exprsToStr += " : " + getType(classesByName);
             return exprsToStr;
         }
 
@@ -224,7 +222,10 @@ class Method : public TreeNode {
         Method(string* _name, Formals* _formals, string* _returnType, Block* _block, Position p) : TreeNode(p), name(_name), formals(_formals), returnType(_returnType), block(_block) {}
 
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
-            return "Method(" + *name + ", " + formals->toString(c, classesByName) + ", "  + *returnType + ", " + block->toString(c, classesByName) + ")";
+            if(c)
+                return "Method(" + *name + ", " + formals->toString(c, classesByName) + ", "  + *returnType + ", " + block->toString(c, classesByName) + " : " + block->getType(classesByName) + ")";
+            else
+                return "Method(" + *name + ", " + formals->toString(c, classesByName) + ", "  + *returnType + ", " + block->toString(c, classesByName) + ")";
         }
 
         void checkFormalArguments(){
