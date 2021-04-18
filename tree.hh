@@ -6,6 +6,7 @@
 using namespace std;
 
 extern string filename;
+extern int errors;
 
 class Class;
 
@@ -21,6 +22,7 @@ class TreeNode {
         Position position;
         void printError(string s, Position p) {
             cerr << filename << ":" << p.row << ":" <<  p.col << ": semantic error: " << s << endl;
+            errors++;
         }
 };
 

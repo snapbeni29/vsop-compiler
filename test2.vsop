@@ -1,4 +1,4 @@
 class MyClass {
-    myField : unit <- if true then ();
+    myField : int31 <- let x : int32 <- 42 in x;
 }
 class Main { main() : int32 { 0 } }

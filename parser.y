@@ -41,12 +41,15 @@ extern FILE *yyin;
 
 extern string text;
 string filename;
+int errors = 0;
 
 // declare the list of classes of the input program
 list<unique_ptr<Class>> classes;
 
 void yyerror(string s){
 	cerr << filename << ":" << yylloc.first_line << ":" << yylloc.first_column << ": " + s + "\n";
+	errors++;
+	exit(-1);
 }
 %}
 
@@ -157,7 +160,7 @@ type: TYPE_IDENTIFIER { $$ = $1; }
 		| BOOL { $$ = $1; }
 		| _STRING { $$ = $1; }
 		| UNIT { $$ = $1; }
-		| OBJECT_IDENTIFIER { yyerror(*$1 + " is not a primitive type"); $$ = $1; };
+		| OBJECT_IDENTIFIER { yyerror("syntax error: " + *$1 + " not a primitive type"); $$ = $1; };
 
 formals: /*epsilon*/ { $$ = new Formals(); }
 		| formal { $$ = $1; };
@@ -401,15 +404,17 @@ int main(int argc, char **argv) {
 		p = parser();
 		if (string(argv[1]) == "-c"){
 			semanticChecker(p);
-			cout << p->toString(true, p->classesByName);
+			if(errors == 0)
+				cout << p->toString(true, p->classesByName);
 		}
 		else
-			cout << p->toString(false, p->classesByName);
+			if(errors == 0)
+				cout << p->toString(false, p->classesByName);
 	}
 	
 	// Close the file and exit
 	fclose(yyin);
-	return EXIT_SUCCESS;
+	return errors;
 }
 
 
