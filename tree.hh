@@ -1213,6 +1213,7 @@ class Call : public Expression {
                 class_ptr = self_class->second;
             } else {
                 string objExprType = objExpr->getType(classesByName);
+                if (objExprType == "") return;
                 if (isPrimitive(objExprType)) {
                     cout << "semantic error: type " << objExpr->getType(classesByName) << " has no method called " << *methodName << endl;
                     return;
