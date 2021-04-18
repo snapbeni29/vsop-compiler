@@ -5,11 +5,29 @@
 #include <memory>
 using namespace std;
 
+extern string filename;
+
 class Class;
 
-class Expression {
+struct Position {
+    int row;
+    int col;
+};
+
+class TreeNode {
+    public: 
+        TreeNode(Position p) : position(p) {}
+        TreeNode() {}
+        Position position;
+        void printError(string s, Position p) {
+            cerr << filename << ":" << p.row << ":" <<  p.col << ": semantic error: " << s << endl;
+        }
+};
+
+class Expression : public TreeNode {
     public:
-        Expression(){}
+        Expression(Position p) : TreeNode(p) {}
+        Expression() {}
         virtual ~Expression(){}
         virtual string toString(bool c, map<string, unique_ptr<Class> *> classesByName) = 0;
         virtual void checkTypes(map<string, unique_ptr<Class> *> & classesByName) = 0;
@@ -26,7 +44,7 @@ class UnaryOperator : public Expression {
         unique_ptr<Expression> expr;
         string class_name;
         UnaryOperator(){}
-        UnaryOperator(string* _operator, Expression* _expr) : op(_operator), expr(_expr) {}
+        UnaryOperator(string* _operator, Expression* _expr, Position p) : Expression(p), op(_operator), expr(_expr) {}
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName){
             if(c)
                 return "UnOp(" + *op + ", " + expr->toString(c, classesByName) + " : " + getType(classesByName) + ")";
@@ -73,6 +91,7 @@ class Block : public Expression {
 
         void addExpression(unique_ptr<Expression> e) {
             exprList.push_front(move(e));
+            position = exprList.back()->position;
         }
 
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
@@ -133,13 +152,13 @@ class Block : public Expression {
 };
 
 
-class Formal {
+class Formal : public TreeNode {
     public:
         unique_ptr<string> name;
         unique_ptr<string> type;
         string class_name;
         Formal(){}
-        Formal(string* _name, string* _type) : name(_name), type(_type) {}
+        Formal(string* _name, string* _type, Position p) : TreeNode(p), name(_name), type(_type) {}
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName){
             return *name + " : " + *type;
         }
@@ -149,7 +168,7 @@ class Formal {
             a_pair = classesByName.find(*type);
             if (isupper((*type)[0]) && a_pair == classesByName.end()) {
                 // not found
-                cout << "semantic error: type " << *type << " not defined" << endl;
+                printError("type" + *type + " not defined", position);
             }
         }
 
@@ -194,7 +213,7 @@ class Formals {
 
 };
 
-class Method {
+class Method : public TreeNode {
     public:
         unique_ptr<string> name;
         unique_ptr<Formals> formals;
@@ -204,7 +223,7 @@ class Method {
         string class_name;
         map<string, string> scope_context;
         Method(){}
-        Method(string* _name, Formals* _formals, string* _returnType, Block* _block) : name(_name), formals(_formals), returnType(_returnType), block(_block) {}
+        Method(string* _name, Formals* _formals, string* _returnType, Block* _block, Position p) : TreeNode(p), name(_name), formals(_formals), returnType(_returnType), block(_block) {}
 
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
             if(c)
@@ -221,7 +240,7 @@ class Method {
                 if (!found) {
                     formal_names.push_back(*((*it)->name));
                 } else {
-                    cout << "semantic error: formal argument " + *((*it)->name) + " redefined" << endl;
+                    printError("formal argument " + *((*it)->name) + " redefined", (*it)->position);
                 }
             }
         }
@@ -231,7 +250,7 @@ class Method {
             a_pair = classesByName.find(*returnType);
             if (isupper((*returnType)[0]) && a_pair == classesByName.end()) {
                 // not found
-                cout << "semantic error: type " << *returnType << " not defined" << endl;
+                printError("type " + *returnType + " not defined", position);
             }
             formals->checkTypes(classesByName);
             block->checkTypes(classesByName);
@@ -239,7 +258,7 @@ class Method {
             if (block->exprList.size() == 0) return;
             string blockType = block->getType(classesByName);
             if (blockType != *returnType) {
-                cout << "semantic error: block of method " << *name << " in class " << class_name << " should return a value of type " << *returnType << " but returns a value of type " << blockType << endl;
+                printError("block of method " + *name + " in class " + class_name + " should return a value of type " + *returnType + " but returns a value of type " + blockType, block->exprList.back()->position);
             }
         }
 
@@ -273,10 +292,10 @@ class Method {
 
         void checkMain() {
             if(*returnType != "int32"){
-                cout << "semantic error: main method must return int32" << endl;
+                printError("main method must return int32", position);
             }
             if(formals->formals.begin() != formals->formals.end()){
-                cout << "semantic error: multiple parameters for main()" << endl;
+                printError("multiple parameters for main()", position);
             }
         }
 
@@ -346,8 +365,8 @@ class Field : public Expression {
         unique_ptr<Expression> initExpr = nullptr;
         string class_name;
         Field(){}
-        Field(string* _name, string* _type, Expression* _initExpr) : name(_name), type(_type), initExpr(_initExpr) {}
-        Field(string* _name, string* _type) : name(_name), type(_type) {}
+        Field(string* _name, string* _type, Expression* _initExpr, Position p) : Expression(p), name(_name), type(_type), initExpr(_initExpr) {}
+        Field(string* _name, string* _type, Position p) : Expression(p), name(_name), type(_type) {}
 
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
             string fieldStr = "Field(" + *name + ", " + *type;
@@ -363,7 +382,7 @@ class Field : public Expression {
             a_pair = classesByName.find(*type);
             if (isupper((*type)[0]) && a_pair == classesByName.end()) {
                 // not found
-                cout << "semantic error: type " << *type << " not defined" << endl;
+                printError("type " + *type + " not defined", position);
             }
             if (initExpr != nullptr) {
                 initExpr->checkTypes(classesByName);
@@ -434,7 +453,7 @@ class Fields {
         }
 };
 
-class ClassBody {
+class ClassBody : public TreeNode {
     public:
         unique_ptr<Fields> fields;
         unique_ptr<Methods> methods;
@@ -466,7 +485,7 @@ class ClassBody {
                     pair<string, string> p(*((*it)->name), *((*it)->returnType));
                     method_types.insert(p);
                 } else {
-                    cout << "semantic error: method " + *((*it)->name) + " redefined" << endl;
+                    printError("method " + *((*it)->name) + " redefined", (*it)->position);
                 }
                 (*it)->checkFormalArguments();
             }
@@ -515,19 +534,19 @@ class ClassBody {
                 }
             }
             if (hasMainMethod == false){
-                cout << "semantic error: main method of class Main is not defined" << endl;
+                printError("main method of class Main is not defined", {1, 1});
             }
         }
 
 };
 
-class Class {
+class Class : public TreeNode {
     public:
         unique_ptr<string> name;
         unique_ptr<string> parent;
         unique_ptr<ClassBody> classBody;
-        Class(){}
-        Class(string* _name, string* _parent, ClassBody* _classBody) : name(_name), parent(_parent), classBody(_classBody) {}
+        Class(Position p) : TreeNode(p) {}
+        Class(string* _name, string* _parent, ClassBody* _classBody, Position p) : TreeNode(p), name(_name), parent(_parent), classBody(_classBody) {}
 
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
             return "Class(" + *name + ", " + *parent + ", " + classBody->fields->toString(c, classesByName) + ", " + classBody->methods->toString(c, classesByName) + ")";
@@ -539,12 +558,12 @@ class Class {
                 // check field redefinitions
                 int currentClassDefinitions = countFieldDefinitions(classBody->fields->fields, *((*it2)->name));
                 if (currentClassDefinitions > 1)
-                    cout << "semantic error: field " + *((*it2)->name) + " of class " << *name << " is already defined in the class" << endl;
+                    printError("field " + *((*it2)->name) + " of class " + *name + " is already defined in the class", (*it2)->position);
                 
                 if (parent == nullptr) return;
                 string classContainingField = isFieldAlreadyDefined(classesByName, *parent, *((*it2)->name));
                 if (classContainingField != "") {
-                    cout << "semantic error: field " + *((*it2)->name) + " of class " << *name << " is already defined in class " << classContainingField << endl;
+                    printError("field " + *((*it2)->name) + " of class " + *name + " is already defined in class " + classContainingField, (*it2)->position);
                 } else {
                     pair<string, string> p(*((*it2)->name), *((*it2)->type));
                     classBody->field_types.insert(p);
@@ -631,7 +650,7 @@ class Class {
         
 };
 
-class Program{
+class Program : public TreeNode {
     public:
         Class* obj = createObjectClass();
         unique_ptr<Class> object_class = unique_ptr<Class>(obj);
@@ -646,32 +665,32 @@ class Program{
 
         Class* createObjectClass() {
             ClassBody* cb = new ClassBody();
-            Formal* s = new Formal(new string("s"), new string("string"));
+            Formal* s = new Formal(new string("s"), new string("string"), {1, 1});
             Formals* print_formals = new Formals();
             print_formals->addFormal(unique_ptr<Formal>(s));
-            Method* _print = new Method(new string("print"), print_formals, new string("Object"), new Block());
+            Method* _print = new Method(new string("print"), print_formals, new string("Object"), new Block(), {1, 1});
             cb->addMethod(unique_ptr<Method>(_print));
 
-            Formal* b = new Formal(new string("b"), new string("bool"));
+            Formal* b = new Formal(new string("b"), new string("bool"), {1, 1});
             Formals* printBool_formals = new Formals();
             printBool_formals->addFormal(unique_ptr<Formal>(b));
-            Method* _printBool = new Method(new string("printBool"), printBool_formals, new string("Object"), new Block());
+            Method* _printBool = new Method(new string("printBool"), printBool_formals, new string("Object"), new Block(), {1, 1});
             cb->addMethod(unique_ptr<Method>(_printBool));
 
-            Formal* i = new Formal(new string("i"), new string("int32"));
+            Formal* i = new Formal(new string("i"), new string("int32"), {1, 1});
             Formals* printInt32_formals = new Formals();
             printInt32_formals->addFormal(unique_ptr<Formal>(i));
-            Method* _printInt32 = new Method(new string("printInt32"), printInt32_formals, new string("Object"), new Block());
+            Method* _printInt32 = new Method(new string("printInt32"), printInt32_formals, new string("Object"), new Block(), {1, 1});
             cb->addMethod(unique_ptr<Method>(_printInt32));
             
-            Method* inputLine = new Method(new string("inputLine"), new Formals(), new string("string"), new Block());
+            Method* inputLine = new Method(new string("inputLine"), new Formals(), new string("string"), new Block(), {1, 1});
             cb->addMethod(unique_ptr<Method>(inputLine));
-            Method* inputBool = new Method(new string("inputBool"), new Formals(), new string("bool"), new Block());
+            Method* inputBool = new Method(new string("inputBool"), new Formals(), new string("bool"), new Block(), {1, 1});
             cb->addMethod(unique_ptr<Method>(inputBool));
-            Method* inputInt32 = new Method(new string("inputInt32"), new Formals(), new string("int32"), new Block());
+            Method* inputInt32 = new Method(new string("inputInt32"), new Formals(), new string("int32"), new Block(), {1, 1});
             cb->addMethod(unique_ptr<Method>(inputInt32));
 
-            return new Class(new string("Object"), nullptr, cb);
+            return new Class(new string("Object"), nullptr, cb, {1, 1});
         }
 
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
@@ -738,7 +757,7 @@ class Program{
                 unique_ptr<Class> * mainClass = class_pair->second;
                 (*mainClass)->checkMain();
             } else {
-                cout << "semantic error: No Main class" << endl;
+                printError("No main class", {1,1});
             }
         }
 
@@ -751,7 +770,7 @@ class Program{
                 if (a_pair == classesByName.end()) {
                     classesByName.insert(make_pair(*((*it)->name), &(*it)));
                 } else {
-                    cout << "semantic error: class " + *((*it)->name) + " redefined" << endl;
+                    printError("class " + *((*it)->name) + " redefined", (*it)->position);
                 }
                 
                 // check redefined Fields and Methods (only, not all identifiers)
@@ -808,7 +827,7 @@ class Program{
                     method_found = true;
                     // If the return type is not the same
                     if(*(method->returnType) != *((*itParent)->returnType)){
-                        cout << "semantic error: " << *(method->name) << " method has not the same type as in its parent class " + *(class_ptr->name) << endl;
+                        printError(*(method->name) + " method has not the same type as in its parent class " + *(class_ptr->name), method->position);
                     }
 
                     // If the type of each argument is not the same
@@ -820,12 +839,12 @@ class Program{
                             itArgParent = (*itParent)->formals->formals.begin();
                             advance(itArgParent, i);
                             if(*((*itArgChild)->type) != *((*itArgParent)->type)){
-                                cout << "semantic error: " << *((*itArgChild)->name) << " argument of method " << *(method->name) << " has not the same type as in its parent class " + *(class_ptr->name) << endl;
+                                printError(*((*itArgChild)->name) + " argument of method " + *(method->name) + " has not the same type as in its parent class " + *(class_ptr->name), (*itArgChild)->position);
                             }
                             i++;
                         }
                     } else {
-                        cout << "semantic error: " << *(method->name) << " method has not the same number of argument as in its parent class " + *(class_ptr->name) << endl;
+                        printError(*(method->name) + " method has not the same number of argument as in its parent class " + *(class_ptr->name), method->position);
                     }
                     break;
                 }
@@ -839,7 +858,7 @@ class Program{
                 list<string> ancestors;
                 string parentClass = hasInheritanceCycle(*((*a_class)->name), ancestors);
                 if (parentClass.compare("") != 0) {
-                    cout << "semantic error: class " << *((*a_class)->name) << " cannot extend child class " << parentClass << endl;
+                    printError("class " + *((*a_class)->name) + " cannot extend child class " + parentClass, (*a_class)->position);
                 }
             }
         }
@@ -868,9 +887,9 @@ class If : public Expression {
         unique_ptr<Expression> elseExpr = nullptr;
         string class_name;
         If(){}
-        If(Expression* _conditionExpr, Expression* _thenExpr, Expression* _elseExpr) : conditionExpr(_conditionExpr), thenExpr(_thenExpr), elseExpr(_elseExpr) {}
+        If(Expression* _conditionExpr, Expression* _thenExpr, Expression* _elseExpr, Position p) : Expression(p), conditionExpr(_conditionExpr), thenExpr(_thenExpr), elseExpr(_elseExpr) {}
 
-        If(Expression* _conditionExpr, Expression* _thenExpr) : conditionExpr(_conditionExpr), thenExpr(_thenExpr) {}
+        If(Expression* _conditionExpr, Expression* _thenExpr, Position p) : Expression(p), conditionExpr(_conditionExpr), thenExpr(_thenExpr) {}
 
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
             string content = "If(" + conditionExpr->toString(c, classesByName) + ", " + thenExpr->toString(c, classesByName);
@@ -888,7 +907,7 @@ class If : public Expression {
                 elseExpr->checkTypes(classesByName);
                 if(thenExpr->getType(classesByName) != "unit" && elseExpr->getType(classesByName) != "unit"){
                     if(thenExpr->getType(classesByName) != elseExpr->getType(classesByName)){
-                        cout << "semantic error: Both branches do not agree" << endl;
+                        printError("Both branches do not agree", position);
                     }
                 }
             }
@@ -939,7 +958,7 @@ class IntegerExpression : public Expression {
     public:
         int value;
         string class_name;
-        IntegerExpression(int val) : value(val) {}
+        IntegerExpression(int val, Position p) : Expression(p), value(val) {}
 
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) { return to_string(value); }
 
@@ -962,7 +981,7 @@ class StringLitExpression : public Expression {
     public:
         unique_ptr<string> value;
         string class_name;
-        StringLitExpression(string* val) : value(val) {}
+        StringLitExpression(string* val, Position p) : Expression(p), value(val) {}
 
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) { return *value; }
 
@@ -983,7 +1002,7 @@ class BooleanLitExpression : public Expression {
     public:
         unique_ptr<string> value;
         string class_name;
-        BooleanLitExpression(string* val) : value(val) {}
+        BooleanLitExpression(string* val, Position p) : Expression(p), value(val) {}
 
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
             return *value;
@@ -1009,7 +1028,7 @@ class While : public Expression {
         string class_name;
 
         While(){}
-        While(Expression* _conditionExpr, Expression* _bodyExpr) : conditionExpr(_conditionExpr), bodyExpr(_bodyExpr) {}
+        While(Expression* _conditionExpr, Expression* _bodyExpr, Position p) : Expression(p), conditionExpr(_conditionExpr), bodyExpr(_bodyExpr) {}
 
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
             return "While(" + conditionExpr->toString(c, classesByName) + ", " + bodyExpr->toString(c, classesByName) + ")";
@@ -1054,7 +1073,7 @@ class Assign : public Expression{
         map<string, string> scope_identifiers;
 
         Assign(){}
-        Assign(string* _name, Expression* _expr) : name(_name), expr(_expr) {}
+        Assign(string* _name, Expression* _expr, Position p) : Expression(p), name(_name), expr(_expr) {}
 
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
             if(c)
@@ -1068,7 +1087,7 @@ class Assign : public Expression{
             string id_type = scope_identifiers.find(*name)->second;
             string expr_type = expr->getType(classesByName);
             if (id_type != expr_type) {
-                cout << "semantic error: cannot assign type " << expr_type << " to type " << id_type << endl;
+                printError("cannot assign type " + expr_type + " to type " + id_type, expr->position);
             }
             expr->checkTypes(classesByName);
         }
@@ -1077,7 +1096,7 @@ class Assign : public Expression{
             // search name in fields
             bool found = (scope_identifiers.find(*name) != scope_identifiers.end());
             if (!found) {
-                cout << "semantic error: field " + *name + " undefined" << endl;
+                printError("field " + *name + " undefined", position);
             }
             // check in the expression
             expr->checkUndefinedIdentifiers();
@@ -1110,7 +1129,7 @@ class BinaryOperator : public Expression{
         string class_name;
         
         BinaryOperator(){}
-        BinaryOperator(string* _op, Expression* _left, Expression* _right) : op(_op), left(_left), right(_right) {}
+        BinaryOperator(string* _op, Expression* _left, Expression* _right, Position p) : Expression(p), op(_op), left(_left), right(_right) {}
 
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
             if(c)
@@ -1162,8 +1181,8 @@ class Call : public Expression {
         string class_name;
 
         Call(){}
-        Call(Expression* _objExpr, string* _methodName, Block* _args) : objExpr(_objExpr), methodName(_methodName), args(_args) {}
-        Call(string* _methodName, Block* _args) : methodName(_methodName), args(_args) {}
+        Call(Expression* _objExpr, string* _methodName, Block* _args, Position p) : Expression(p), objExpr(_objExpr), methodName(_methodName), args(_args) {}
+        Call(string* _methodName, Block* _args, Position p) : Expression(p), methodName(_methodName), args(_args) {}
 
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
             string obj = "self";
@@ -1215,7 +1234,7 @@ class Call : public Expression {
                 string objExprType = objExpr->getType(classesByName);
                 if (objExprType == "") return;
                 if (isPrimitive(objExprType)) {
-                    cout << "semantic error: type " << objExpr->getType(classesByName) << " has no method called " << *methodName << endl;
+                    printError("type " + objExpr->getType(classesByName) + " has no method called " + *methodName, position);
                     return;
                 } else {
                     map<string, unique_ptr<Class> *>::iterator a_class = classesByName.find(objExprType);
@@ -1224,7 +1243,7 @@ class Call : public Expression {
             }
             string type = getMethodType(*class_ptr, classesByName, *methodName);
             if (type.compare("") == 0) {
-                cout << "semantic error: type " << class_name << " has no method called " << *methodName << endl;
+                printError("type " + class_name + " has no method called " + *methodName, position);
             }
             checkMethodFormals(*class_ptr, classesByName, *methodName, args);
         }
@@ -1284,7 +1303,7 @@ class Call : public Expression {
                 if (*((*method_it)->name) == methodName) {
                     // check nb of formals of the method
                     if ((*method_it)->formals->formals.size() != args->exprList.size()) {
-                        cout << "semantic error: call to method " << methodName << " of class " << *(current_class->name) << " does not match the required number of formal arguments" << endl;
+                        printError("call to method " + methodName + " of class " + *(current_class->name) + " does not match the required number of formal arguments", (*method_it)->position);
                         return;
                     }
                     // check types of formals of the method
@@ -1293,7 +1312,7 @@ class Call : public Expression {
                     while (formal_it != (*method_it)->formals->formals.end()) {
                         string arg_type = (*args_it)->getType(classesByName);
                         if (*((*formal_it)->type) != arg_type && !inheritsFrom(arg_type, *((*formal_it)->type), classesByName)) {
-                            cout << "semantic error: cannot assign type " << arg_type << " to formal argument " << *((*formal_it)->name) << " : " << *((*formal_it)->type) << " of method " << methodName << endl;
+                            printError("cannot assign type " + arg_type + " to formal argument " + *((*formal_it)->name) + " : " + *((*formal_it)->type) + " of method " + methodName, (*formal_it)->position);
                         }
                         advance(args_it, 1);
                         advance(formal_it, 1);
@@ -1349,8 +1368,8 @@ class Let : public Expression {
         map<string, string> scope_identifiers;
 
         Let(){}
-        Let(string* _name, string* _type, Expression* _init, Expression* _scope) : name(_name), type(_type), init(_init), scope(_scope) {}
-        Let(string* _name, string* _type, Expression* _scope) : name(_name), type(_type), scope(_scope) {}
+        Let(string* _name, string* _type, Expression* _init, Expression* _scope, Position p) : Expression(p), name(_name), type(_type), init(_init), scope(_scope) {}
+        Let(string* _name, string* _type, Expression* _scope, Position p) : Expression(p), name(_name), type(_type), scope(_scope) {}
 
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
             string firstPart = "Let(" + *name + ", " + *type + ", ";
@@ -1370,13 +1389,13 @@ class Let : public Expression {
             a_pair = classesByName.find(*type);
             if (isupper((*type)[0]) && a_pair == classesByName.end()) {
                 // not found
-                cout << "semantic error: type " << *type << " not defined" << endl;
+                printError("type " + *type + " not defined", position);
             }
             if (init != nullptr) {
                 init->checkTypes(classesByName);
                 string initType = init->getType(classesByName);
                 if (initType != *type) {
-                    cout << "semantic error: expected type " << *type << ", but found type " << initType << endl;
+                    printError("expected type " + *type + ", but found type " + initType, init->position);
                 }
             }
             scope->checkTypes(classesByName);
@@ -1431,7 +1450,7 @@ class New : public Expression {
         string class_name;
 
         New(){}
-        New(string* _type) : type(_type) {}
+        New(string* _type, Position p) : Expression(p), type(_type) {}
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
             return "New(" + *type + ")";
         }
@@ -1441,7 +1460,7 @@ class New : public Expression {
             a_pair = classesByName.find(*type);
             if (isupper((*type)[0]) && a_pair == classesByName.end()) {
                 // not found
-                cout << "semantic error: type " << *type << " not defined" << endl;
+                printError("type " + *type + " not defined", position);
             }
         }
 
@@ -1464,7 +1483,7 @@ class ObjectIdentifier : public Expression {
         map<string, string> scope_identifiers;
 
         ObjectIdentifier(){}
-        ObjectIdentifier(string* _name) : name(_name) {}
+        ObjectIdentifier(string* _name, Position p) : Expression(p), name(_name) {}
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
             return *name;
         }
@@ -1472,7 +1491,7 @@ class ObjectIdentifier : public Expression {
         void checkTypes(map<string, unique_ptr<Class> *> & classesByName) { 
             map<string, string>:: iterator it = scope_identifiers.find(*name);
             if (it == scope_identifiers.end()) {
-                cout << "semantic error: object-identifier " + *name + " is undefined" << endl;
+                printError("object-identifier " + *name + " is undefined", position);
             }
         }
 
@@ -1501,7 +1520,7 @@ class UnitExpression : public Expression {
         string class_name;
         map<string, string> scope_identifiers;
 
-        UnitExpression(){}
+        UnitExpression(Position p) : Expression(p) {}
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
             return "()";
         }

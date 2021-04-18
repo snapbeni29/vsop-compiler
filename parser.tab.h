@@ -42,10 +42,11 @@ extern int yydebug;
 /* "%code requires" blocks.  */
 #line 14 "parser.y" /* yacc.c:1909  */
 
+	
 	// (in our header file)
 	#include "tree.hh"
 
-#line 49 "parser.tab.h" /* yacc.c:1909  */
+#line 50 "parser.tab.h" /* yacc.c:1909  */
 
 /* Token type.  */
 #ifndef YYTOKENTYPE
@@ -101,7 +102,7 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 21 "parser.y" /* yacc.c:1909  */
+#line 22 "parser.y" /* yacc.c:1909  */
 
 	int integer;
 	string* str;
@@ -115,7 +116,7 @@ union YYSTYPE
 	Expression* expr;
 	Block* block;
 
-#line 119 "parser.tab.h" /* yacc.c:1909  */
+#line 120 "parser.tab.h" /* yacc.c:1909  */
 };
 
 typedef union YYSTYPE YYSTYPE;
