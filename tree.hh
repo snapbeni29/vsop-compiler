@@ -981,14 +981,12 @@ class StringLitExpression : public Expression {
 
 class BooleanLitExpression : public Expression {
     public:
-        bool value;
+        unique_ptr<string> value;
         string class_name;
-        BooleanLitExpression(bool val) : value(val) {}
+        BooleanLitExpression(string* val) : value(val) {}
 
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
-            if (value)
-                return "true";
-            return "false";
+            return *value;
         }
 
         void checkTypes(map<string, unique_ptr<Class> *> & classesByName){ /* empty */ }
@@ -1172,8 +1170,10 @@ class Call : public Expression {
             if (objExpr != nullptr) {
                 obj = objExpr->toString(c, classesByName);
             }
-            if(c && args != nullptr && objExpr != nullptr) // TO MODIFY => The obj expr is null for "self => no type => it is a problem => we have to search the class of the self
+            if(c && args != nullptr && objExpr != nullptr) 
                 return "Call(" + obj +  " : " + objExpr->getType(classesByName) + ", " + *methodName + ", " + args->toString(c, classesByName) + ")";
+            else if(c && args != nullptr && objExpr == nullptr) 
+                return "Call(" + obj +  " : " + class_name + ", " + *methodName + ", " + args->toString(c, classesByName) + ")";
             else
                 return "Call(" + obj + ", " + *methodName + ", " + args->toString(c, classesByName) + ")";
         }
