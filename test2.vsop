@@ -1,6 +1,2 @@
-class C {
-    f() : int32 {
-        "an ignored string";
-        let x : bool <- {1; "a"} in not x
-    }
+class fistLetterIsNotUpperCase {
 }

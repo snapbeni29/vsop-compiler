@@ -1376,9 +1376,10 @@ class Let : public Expression {
             string lastPart = "";
             if (init != nullptr) {
                 lastPart += init->toString(c, classesByName);
+                if(c)
+                    lastPart += " : " + init->getType(classesByName);
+                lastPart += ", ";
             }
-            if(c)
-                lastPart += " : " + init->getType(classesByName) + ", ";
             lastPart += scope->toString(c, classesByName) + ")";
             return firstPart + lastPart;   
         }
