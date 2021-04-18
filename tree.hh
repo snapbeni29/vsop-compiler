@@ -1374,6 +1374,10 @@ class Let : public Expression {
             }
             if (init != nullptr) {
                 init->checkTypes(classesByName);
+                string initType = init->getType(classesByName);
+                if (initType != *type) {
+                    cout << "semantic error: expected type " << *type << ", but found type " << initType << endl;
+                }
             }
             scope->checkTypes(classesByName);
         }
@@ -1465,7 +1469,12 @@ class ObjectIdentifier : public Expression {
             return *name;
         }
 
-        void checkTypes(map<string, unique_ptr<Class> *> & classesByName) { /* empty */ }
+        void checkTypes(map<string, unique_ptr<Class> *> & classesByName) { 
+            map<string, string>:: iterator it = scope_identifiers.find(*name);
+            if (it == scope_identifiers.end()) {
+                cout << "semantic error: object-identifier " + *name + " is undefined" << endl;
+            }
+        }
 
         void checkUndefinedIdentifiers() { /* empty */ }
 
@@ -1473,8 +1482,6 @@ class ObjectIdentifier : public Expression {
             map<string, string>:: iterator it = scope_identifiers.find(*name);
             if (it != scope_identifiers.end()) {
                 return it->second;
-            } else {
-                cout << "semantic error: object-identifier " + *name + " is undefined" << endl;
             }
             return "";
         }

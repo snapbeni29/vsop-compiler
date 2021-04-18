@@ -1,54 +1,6 @@
-class List {
-    test : int32;
-    isNil(s: int32) : bool { true }
-    length() : Object { inputInt32("test") }
-}
-(* Nil is nothing more than a glorified alias to List *)
-class Nil extends List { }
-
-
-class Cons extends List {
-    head : int32;
-    tail : List;
-    
-    init(hd : int32, tl : List) : Cons {
-        head <- hd;
-        tail <- tl;
-        self
-    }
-    
-    head() : int32 { head }
-    length() : bool { 1 + tail.length() }
-}
-
-class ConsChild extends Cons {
-    test() : int32 { test + tail.length() }
-}
-
-class ConsSubChild extends ConsChild {
-    
-}
-
-class Test {
-    main() : int32 {
-        let xs : List <- (new Cons).init(0, (new Cons).init(1, (new Cons).init(2, new Object))) in {
-            print("List has length ");
-            printInt32(xs.length());
-            print("\n");
-            0
-        };
-        xs.length()
-    }
-}
-
-class Empty { }
-
-class NotEmpty extends Empty { f(): unit { () } }
-
-class Bogus {
-    g() : unit {
-        let e : Empty <- new NotEmpty in 
-        e.f();
-        ()
+class C {
+    f() : int32 {
+        "an ignored string";
+        let x : bool <- {1; "a"} in not x
     }
 }
