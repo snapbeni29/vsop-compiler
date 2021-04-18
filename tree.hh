@@ -46,11 +46,11 @@ class UnaryOperator : public Expression {
         UnaryOperator(){}
         UnaryOperator(string* _operator, Expression* _expr, Position p) : Expression(p), op(_operator), expr(_expr) {}
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName){
-            if(c)
-                return "UnOp(" + *op + ", " + expr->toString(c, classesByName) + " : " + getType(classesByName) + ")";
-            else
-                return "UnOp(" + *op + ", " + expr->toString(c, classesByName) + ")";
-
+            string content = "";
+            content += "UnOp(" + *op + ", " + expr->toString(c, classesByName) + ")";
+            if (c) 
+                content += " : " + getType(classesByName);
+            return content;
         }
         void checkTypes(map<string, unique_ptr<Class> *> & classesByName){
             expr->checkTypes(classesByName);
@@ -96,17 +96,15 @@ class Block : public Expression {
 
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
             string exprsToStr = "["; list<unique_ptr<Expression>>::iterator f_it;
-            for (f_it = exprList.begin(); f_it != exprList.end(); f_it++) {
-                if(c)
-                    exprsToStr += (*f_it)->toString(c, classesByName) + " : " + (*f_it)->getType(classesByName) + ", ";
-                else 
-                    exprsToStr += (*f_it)->toString(c, classesByName) + ", ";
-
+            for (f_it = exprList.begin(); f_it != exprList.end(); f_it++) {           
+                 exprsToStr += (*f_it)->toString(c, classesByName) + ", ";
             }
             if (exprsToStr.length() > 1 && exprsToStr.substr(exprsToStr.length()-2) == ", ") {
                 exprsToStr = exprsToStr.substr(0, exprsToStr.length()-2);
             }
             exprsToStr += "]";
+            if (c) // TO MODIFY
+                exprsToStr += " : " + getType(classesByName);
             return exprsToStr;
         }
 
@@ -226,10 +224,7 @@ class Method : public TreeNode {
         Method(string* _name, Formals* _formals, string* _returnType, Block* _block, Position p) : TreeNode(p), name(_name), formals(_formals), returnType(_returnType), block(_block) {}
 
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
-            if(c)
-                return "Method(" + *name + ", " + formals->toString(c, classesByName) + ", "  + *returnType + ", " + block->toString(c, classesByName) + " : " + *returnType + ")";
-            else
-                return "Method(" + *name + ", " + formals->toString(c, classesByName) + ", "  + *returnType + ", " + block->toString(c, classesByName) + ")";
+            return "Method(" + *name + ", " + formals->toString(c, classesByName) + ", "  + *returnType + ", " + block->toString(c, classesByName) + ")";
         }
 
         void checkFormalArguments(){
@@ -897,6 +892,8 @@ class If : public Expression {
                 content += ", " + elseExpr->toString(c, classesByName);
             }
             content += ")";
+            if (c) 
+                content += " : " + getType(classesByName);
             return content;
         }
 
@@ -960,7 +957,12 @@ class IntegerExpression : public Expression {
         string class_name;
         IntegerExpression(int val, Position p) : Expression(p), value(val) {}
 
-        string toString(bool c, map<string, unique_ptr<Class> *> classesByName) { return to_string(value); }
+        string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
+            string content = to_string(value);
+            if (c)
+                content += " : int32";
+            return content;
+        }
 
         void checkTypes(map<string, unique_ptr<Class> *> & classesByName) { /* empty */ }
 
@@ -983,7 +985,12 @@ class StringLitExpression : public Expression {
         string class_name;
         StringLitExpression(string* val, Position p) : Expression(p), value(val) {}
 
-        string toString(bool c, map<string, unique_ptr<Class> *> classesByName) { return *value; }
+        string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
+            string content = *value;
+            if (c)
+                content += " : string";
+            return content;
+        }
 
         void checkTypes(map<string, unique_ptr<Class> *> & classesByName){ /* empty */ }
 
@@ -1005,7 +1012,10 @@ class BooleanLitExpression : public Expression {
         BooleanLitExpression(string* val, Position p) : Expression(p), value(val) {}
 
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
-            return *value;
+            string content = *value;
+            if (c)
+                content += " : bool";
+            return content;
         }
 
         void checkTypes(map<string, unique_ptr<Class> *> & classesByName){ /* empty */ }
@@ -1031,7 +1041,10 @@ class While : public Expression {
         While(Expression* _conditionExpr, Expression* _bodyExpr, Position p) : Expression(p), conditionExpr(_conditionExpr), bodyExpr(_bodyExpr) {}
 
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
-            return "While(" + conditionExpr->toString(c, classesByName) + ", " + bodyExpr->toString(c, classesByName) + ")";
+            string content = "While(" + conditionExpr->toString(c, classesByName) + ", " + bodyExpr->toString(c, classesByName) + ")";
+            if (c)
+                content += " : "  + getType(classesByName);
+            return content;
         }
 
         void checkTypes(map<string, unique_ptr<Class> *> & classesByName){
@@ -1076,10 +1089,10 @@ class Assign : public Expression{
         Assign(string* _name, Expression* _expr, Position p) : Expression(p), name(_name), expr(_expr) {}
 
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
-            if(c)
-                return "Assign(" + *name + ", " + expr->toString(c, classesByName) + " : " + expr->getType(classesByName) + ")" + " : " + getType(classesByName);
-            else
-                return "Assign(" + *name + ", " + expr->toString(c, classesByName) + ")";
+            string content = "Assign(" + *name + ", " + expr->toString(c, classesByName) + ")";
+            if (c)
+                content += " : " + getType(classesByName);
+            return content;
 
         }
         void checkTypes(map<string, unique_ptr<Class> *> & classesByName){
@@ -1132,10 +1145,10 @@ class BinaryOperator : public Expression{
         BinaryOperator(string* _op, Expression* _left, Expression* _right, Position p) : Expression(p), op(_op), left(_left), right(_right) {}
 
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
-            if(c)
-                return "BinOp(" + *op + ", " + left->toString(c, classesByName) + " : " + left->getType(classesByName) + ", " + right->toString(c, classesByName) + " : " + right->getType(classesByName) + ")";
-            else
-                return "BinOp(" + *op + ", " + left->toString(c, classesByName) + ", " + right->toString(c, classesByName) + ")";
+            string content = "BinOp(" + *op + ", " + left->toString(c, classesByName) + ", " + right->toString(c, classesByName) + ")";
+            if (c)
+                content += " : " + getType(classesByName);
+            return content;
         }
 
         void checkTypes(map<string, unique_ptr<Class> *> & classesByName){
@@ -1186,15 +1199,15 @@ class Call : public Expression {
 
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
             string obj = "self";
+            if (c)
+                obj += " : " + class_name;
             if (objExpr != nullptr) {
                 obj = objExpr->toString(c, classesByName);
             }
-            if(c && args != nullptr && objExpr != nullptr) 
-                return "Call(" + obj +  " : " + objExpr->getType(classesByName) + ", " + *methodName + ", " + args->toString(c, classesByName) + ")";
-            else if(c && args != nullptr && objExpr == nullptr) 
-                return "Call(" + obj +  " : " + class_name + ", " + *methodName + ", " + args->toString(c, classesByName) + ")";
-            else
-                return "Call(" + obj + ", " + *methodName + ", " + args->toString(c, classesByName) + ")";
+            string content = "Call(" + obj + ", " + *methodName + ", " + args->toString(c, classesByName) + ")";
+            if (c)
+                content += " : " + getType(classesByName);
+            return content;
         }
 
 
@@ -1376,11 +1389,11 @@ class Let : public Expression {
             string lastPart = "";
             if (init != nullptr) {
                 lastPart += init->toString(c, classesByName);
-                if(c)
-                    lastPart += " : " + init->getType(classesByName);
                 lastPart += ", ";
             }
             lastPart += scope->toString(c, classesByName) + ")";
+            if (c)
+                lastPart += " : " + getType(classesByName);
             return firstPart + lastPart;   
         }
 
@@ -1453,7 +1466,10 @@ class New : public Expression {
         New(){}
         New(string* _type, Position p) : Expression(p), type(_type) {}
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
-            return "New(" + *type + ")";
+            string content = "New(" + *type + ")";
+            if (c)
+                content += " : " + *type;
+            return content;
         }
 
         void checkTypes(map<string, unique_ptr<Class> *> & classesByName) {
@@ -1486,7 +1502,10 @@ class ObjectIdentifier : public Expression {
         ObjectIdentifier(){}
         ObjectIdentifier(string* _name, Position p) : Expression(p), name(_name) {}
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
-            return *name;
+            string content = *name;
+            if (c)
+                content += " : " + getType(classesByName);
+            return content;
         }
 
         void checkTypes(map<string, unique_ptr<Class> *> & classesByName) { 
@@ -1523,7 +1542,10 @@ class UnitExpression : public Expression {
 
         UnitExpression(Position p) : Expression(p) {}
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
-            return "()";
+            string content = "()";
+            if (c)
+                content += " : unit";
+            return content;
         }
 
         void checkTypes(map<string, unique_ptr<Class> *> & classesByName) { /* empty */ }
