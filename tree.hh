@@ -38,6 +38,13 @@ class Expression : public TreeNode {
         virtual string getType(map<string, unique_ptr<Class> *> & classesByName) = 0;
         virtual void setExpressionClasses(string name) = 0;
         virtual void set_scope_context(map<string, string> &identifiers) = 0;
+
+        bool isPrimitive(string type) {
+            return type.compare("string") == 0 
+                || type.compare("bool") == 0 
+                || type.compare("int32") == 0 
+                || type.compare("unit") == 0;
+        }
 };
 
 class UnaryOperator : public Expression {
@@ -105,6 +112,8 @@ class Block : public Expression {
                 exprsToStr = exprsToStr.substr(0, exprsToStr.length()-2);
             }
             exprsToStr += "]";
+            if (c)
+                exprsToStr += " : " + getType(classesByName);
             return exprsToStr;
         }
 
@@ -224,10 +233,7 @@ class Method : public TreeNode {
         Method(string* _name, Formals* _formals, string* _returnType, Block* _block, Position p) : TreeNode(p), name(_name), formals(_formals), returnType(_returnType), block(_block) {}
 
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
-            if(c)
-                return "Method(" + *name + ", " + formals->toString(c, classesByName) + ", "  + *returnType + ", " + block->toString(c, classesByName) + " : " + block->getType(classesByName) + ")";
-            else
-                return "Method(" + *name + ", " + formals->toString(c, classesByName) + ", "  + *returnType + ", " + block->toString(c, classesByName) + ")";
+            return "Method(" + *name + ", " + formals->toString(c, classesByName) + ", "  + *returnType + ", " + block->toString(c, classesByName) + ")";
         }
 
         void checkFormalArguments(){
@@ -362,6 +368,7 @@ class Field : public Expression {
         unique_ptr<string> type;
         unique_ptr<Expression> initExpr = nullptr;
         string class_name;
+        map<string, string> scope_identifiers;
         Field(){}
         Field(string* _name, string* _type, Expression* _initExpr, Position p) : Expression(p), name(_name), type(_type), initExpr(_initExpr) {}
         Field(string* _name, string* _type, Position p) : Expression(p), name(_name), type(_type) {}
@@ -407,10 +414,11 @@ class Field : public Expression {
         }
 
         void set_scope_context(map<string, string> &identifiers) { 
+            scope_identifiers = identifiers;
             pair<string, string> p(*name, *type);
-            identifiers.insert(p);
+            scope_identifiers.insert(p);
             if (initExpr != nullptr)
-                initExpr->set_scope_context(identifiers);
+                initExpr->set_scope_context(scope_identifiers);
         }   
 
 };
@@ -447,6 +455,20 @@ class Fields {
             list<unique_ptr<Field>>::iterator a_field;
             for (a_field = fields.begin(); a_field != fields.end(); a_field++) {
                 (*a_field)->setExpressionClasses(name);
+            }
+        }
+
+        void checkUndefinedIdentifiers() {
+            list<unique_ptr<Field>>::iterator a_field;
+            for (a_field = fields.begin(); a_field != fields.end(); a_field++) {
+                (*a_field)->checkUndefinedIdentifiers();
+            }
+        }
+
+        void set_scope_context(map<string, string> & identifiers) {
+            list<unique_ptr<Field>>::iterator a_field;
+            for (a_field = fields.begin(); a_field != fields.end(); a_field++) {
+                (*a_field)->set_scope_context(identifiers);
             }
         }
 };
@@ -496,6 +518,9 @@ class ClassBody : public TreeNode {
         // set the map of all known identifiers and their types
         void set_scope_context(map<string, string> & identifiers) {
             methods->set_scope_context(identifiers);
+            map<string, string> no_fields_ids;
+            // fields have non access to other fields (object not initialized yet)
+            fields->set_scope_context(no_fields_ids);
         }
 
         map<string, string> getFieldsAndTypes() {
@@ -509,6 +534,7 @@ class ClassBody : public TreeNode {
 
         void checkUndefinedIdentifiers() {
             methods->checkUndefinedIdentifiers();
+            fields->checkUndefinedIdentifiers();
         }
 
         void checkCallsToUndefinedMethods(map<string, unique_ptr<Class> *> & classesByName) {
@@ -902,13 +928,24 @@ class If : public Expression {
 
         void checkTypes(map<string, unique_ptr<Class> *> & classesByName){
             conditionExpr->checkTypes(classesByName);
+            string condType = conditionExpr->getType(classesByName);
+            string thenType = thenExpr->getType(classesByName);
+            string elseType = elseExpr->getType(classesByName);
+            if (condType != "bool") {
+                printError("condition expression is of type " + condType + ", but should be of type bool", conditionExpr->position);
+            }
             thenExpr->checkTypes(classesByName);
             if (elseExpr != nullptr) {
                 elseExpr->checkTypes(classesByName);
-                if(thenExpr->getType(classesByName) != "unit" && elseExpr->getType(classesByName) != "unit"){
-                    if(thenExpr->getType(classesByName) != elseExpr->getType(classesByName)){
-                        printError("Both branches do not agree", position);
+                if (!isPrimitive(thenType) && !isPrimitive(elseType)) {
+                    list<string> thenParents = getInheritanceList(thenType, classesByName);
+                    list<string> elseParents = getInheritanceList(elseType, classesByName);
+                    string commonParent = getNearestCommonParent(thenParents, elseParents);
+                    if (commonParent == "") {
+                        printError("then expression and else expression have no compatible types", position);
                     }
+                } else {
+                    printError("then expression and else expression have no compatible types", position);
                 }
             }
         }
@@ -946,11 +983,72 @@ class If : public Expression {
 
         string getType(map<string, unique_ptr<Class> *> & classesByName) {
             string type = "";
-            if(thenExpr->getType(classesByName) == "unit" || elseExpr->getType(classesByName) == "unit")
-                type = "unit";      
-            else
-                type = thenExpr->getType(classesByName);
-            return type;
+            string thenType = thenExpr->getType(classesByName);
+            if (elseExpr != nullptr) {
+                string elseType = elseExpr->getType(classesByName);
+                if (!isPrimitive(thenType) && !isPrimitive(elseType)) {
+                    list<string> thenParents = getInheritanceList(thenType, classesByName);
+                    list<string> elseParents = getInheritanceList(elseType, classesByName);
+                    string commonParent = getNearestCommonParent(thenParents, elseParents);
+                    if (commonParent == "") {
+                        return "";
+                    } else {
+                        return commonParent;
+                    }
+                }
+                if(thenType == "unit" || elseType == "unit")
+                    return "unit";      
+                else if (isPrimitive(thenType) && isPrimitive(elseType) && thenType == elseType) {
+                    return thenType;
+                } else {
+                    return "";
+                }
+            }
+            return thenType;
+        }
+
+        string getNearestCommonParent(list<string> parents1, list<string> parents2) {
+            list<string>::iterator it1;
+            list<string>::iterator it2;
+            for (it1 = parents1.begin(); it1 != parents1.end(); it1++) {
+                for (it2 = parents2.begin(); it2 != parents2.end(); it2++) {
+                    if (*it1 == *it2) {
+                        return *it1;
+                    }
+                }
+            }
+            return "";
+        }
+        
+
+        list<string> getInheritanceList(string class_name, map<string, unique_ptr<Class> *> & classesByName) {
+            map<string, unique_ptr<Class> *>::iterator it = classesByName.find(class_name); 
+            if (it != classesByName.end()) {
+                if (*((*(it->second))->name) == "Object") {
+                    list<string> l = {"Object"};
+                    return l;
+                } else {
+                    list<string> ancestors = getInheritanceList(*((*(it->second))->parent), classesByName);
+                    ancestors.push_back(*((*(it->second))->name));
+                    return ancestors;
+                }
+            } else {
+                return list<string>();
+            }
+
+        }
+
+        bool inheritsFrom(string child_class, string parent_class, map<string, unique_ptr<Class> *> & classesByName) {
+            map<string, unique_ptr<Class> *>::iterator it = classesByName.find(child_class);
+            if (it != classesByName.end()) {
+                if ((*(it->second))->parent != nullptr) {
+                    if (*((*(it->second))->parent) == parent_class)
+                        return true;
+                    else
+                        return inheritsFrom(*((*(it->second))->parent), parent_class, classesByName);
+                } else return false;
+            }
+            return false;
         }
 };
 
@@ -1170,7 +1268,7 @@ class BinaryOperator : public Expression{
         }
 
         string getType(map<string, unique_ptr<Class> *> & classesByName) {
-            if (op->compare("<=") == 0 || op->compare("<") == 0 || op->compare("=") == 0) {
+            if (op->compare("<=") == 0 || op->compare("<") == 0 || op->compare("=") == 0 || op->compare("and") == 0) {
                 return "bool";
             }
             return "int32";
@@ -1188,17 +1286,83 @@ class BinaryOperator : public Expression{
         }  
 };
 
+class Args : public Expression {
+    public:
+        list<unique_ptr<Expression>> args;
+        string class_name;
+        Args(){}
+
+        void addCallArgument(unique_ptr<Expression> arg) {
+            args.push_front(move(arg));
+        }
+
+        string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
+            list<unique_ptr<Expression>>::iterator args_it;
+            string content = "[";
+            for (args_it = args.begin(); args_it != args.end(); args_it++) {
+                content += (*args_it)->toString(c, classesByName) + ", ";
+            }
+            if (content.length() > 1 && content.substr(content.length()-2) == ", ") {
+                content = content.substr(0, content.length()-2);
+            }
+            return content + "]";
+        }
+
+        void checkTypes(map<string, unique_ptr<Class> *> & classesByName) {
+            // check each arg
+            list<unique_ptr<Expression>>::iterator args_it;
+            for (args_it = args.begin(); args_it != args.end(); args_it++) {
+                (*args_it)->checkTypes(classesByName);
+            }
+        }
+
+        void checkUndefinedIdentifiers() {
+            // check in the expressions
+            list<unique_ptr<Expression>>::iterator args_it;
+            for (args_it = args.begin(); args_it != args.end(); args_it++) {
+                (*args_it)->checkUndefinedIdentifiers();
+            }
+        }
+
+        void checkCallsToUndefinedMethods(map<string, unique_ptr<Class> *> & classesByName) {
+            // getType of objExpr and verify the type has the method
+            list<unique_ptr<Expression>>::iterator args_it;
+            for (args_it = args.begin(); args_it != args.end(); args_it++) {
+                (*args_it)->checkCallsToUndefinedMethods(classesByName);
+            }
+        }
+
+        string getType(map<string, unique_ptr<Class> *> & classesByName) {
+            return "";
+        }
+
+        void setExpressionClasses(string name) {
+            class_name = name;
+            list<unique_ptr<Expression>>::iterator args_it;
+            for (args_it = args.begin(); args_it != args.end(); args_it++) {
+                (*args_it)->setExpressionClasses(name);
+            }
+        }
+
+        void set_scope_context(map<string, string> &identifiers) { 
+            list<unique_ptr<Expression>>::iterator args_it;
+            for (args_it = args.begin(); args_it != args.end(); args_it++) {
+                (*args_it)->set_scope_context(identifiers);
+            }
+        }
+};
+
 
 class Call : public Expression {
     public:
         unique_ptr<Expression> objExpr = nullptr;
         unique_ptr<string> methodName;
-        unique_ptr<Block> args;
+        unique_ptr<Args> args;
         string class_name;
 
         Call(){}
-        Call(Expression* _objExpr, string* _methodName, Block* _args, Position p) : Expression(p), objExpr(_objExpr), methodName(_methodName), args(_args) {}
-        Call(string* _methodName, Block* _args, Position p) : Expression(p), methodName(_methodName), args(_args) {}
+        Call(Expression* _objExpr, string* _methodName, Args* _args, Position p) : Expression(p), objExpr(_objExpr), methodName(_methodName), args(_args) {}
+        Call(string* _methodName, Args* _args, Position p) : Expression(p), methodName(_methodName), args(_args) {}
 
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
             string obj = "self";
@@ -1219,10 +1383,7 @@ class Call : public Expression {
                 objExpr->checkTypes(classesByName);
             }
             // check each arg
-            list<unique_ptr<Expression>>::iterator args_it;
-            for (args_it = args->exprList.begin(); args_it != args->exprList.end(); args_it++) {
-                (*args_it)->checkTypes(classesByName);
-            }
+            args->checkTypes(classesByName);
         }
 
         void checkUndefinedIdentifiers() {
@@ -1291,13 +1452,6 @@ class Call : public Expression {
             return "";
         }
 
-        bool isPrimitive(string type) {
-            return type.compare("string") == 0 
-                || type.compare("bool") == 0 
-                || type.compare("int32") == 0 
-                || type.compare("unit") == 0;
-        }
-
         bool inheritsFrom(string child_class, string parent_class, map<string, unique_ptr<Class> *> & classesByName) {
             map<string, unique_ptr<Class> *>::iterator it = classesByName.find(child_class);
             if (it != classesByName.end()) {
@@ -1311,20 +1465,20 @@ class Call : public Expression {
             return false;
         }
 
-        void checkMethodFormals(unique_ptr<Class> & current_class, map<string, unique_ptr<Class> *> & classesByName, string methodName, unique_ptr<Block> & args) {
+        void checkMethodFormals(unique_ptr<Class> & current_class, map<string, unique_ptr<Class> *> & classesByName, string methodName, unique_ptr<Args> & args) {
             list<unique_ptr<Method>> & methods = current_class->classBody->methods->methods;
             list<unique_ptr<Method>>::iterator method_it;
             // find the method
             for (method_it = methods.begin(); method_it != methods.end(); method_it++) {
                 if (*((*method_it)->name) == methodName) {
                     // check nb of formals of the method
-                    if ((*method_it)->formals->formals.size() != args->exprList.size()) {
+                    if ((*method_it)->formals->formals.size() != args->args.size()) {
                         printError("call to method " + methodName + " of class " + *(current_class->name) + " does not match the required number of formal arguments", (*method_it)->position);
                         return;
                     }
                     // check types of formals of the method
                     list<unique_ptr<Formal>>::iterator formal_it = (*method_it)->formals->formals.begin();
-                    list<unique_ptr<Expression>>::iterator args_it = args->exprList.begin();
+                    list<unique_ptr<Expression>>::iterator args_it = args->args.begin();
                     while (formal_it != (*method_it)->formals->formals.end()) {
                         string arg_type = (*args_it)->getType(classesByName);
                         if (*((*formal_it)->type) != arg_type && !inheritsFrom(arg_type, *((*formal_it)->type), classesByName)) {
@@ -1449,6 +1603,7 @@ class Let : public Expression {
             if (init != nullptr) {
                 init->set_scope_context(identifiers);
             }
+            // save the variable in the scope identifiers
             pair<string, string> p(*name, *type);
             scope_identifiers = identifiers;
             map<string, string>::iterator it = scope_identifiers.find(p.first); 
@@ -1512,13 +1667,14 @@ class ObjectIdentifier : public Expression {
         }
 
         void checkTypes(map<string, unique_ptr<Class> *> & classesByName) { 
+        }
+
+        void checkUndefinedIdentifiers() {
             map<string, string>:: iterator it = scope_identifiers.find(*name);
             if (it == scope_identifiers.end()) {
                 printError("object-identifier " + *name + " is undefined", position);
             }
         }
-
-        void checkUndefinedIdentifiers() { /* empty */ }
 
         string getType(map<string, unique_ptr<Class> *> & classesByName) {
             map<string, string>:: iterator it = scope_identifiers.find(*name);

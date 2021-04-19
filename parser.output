@@ -76,15 +76,15 @@ Grammar
    53 call: "object-identifier" "(" args ")"
    54     | expr "." "object-identifier" "(" args ")"
 
-   55 binary-op: expr "=" expr
-   56          | expr "<" expr
-   57          | expr "<=" expr
-   58          | expr "+" expr
-   59          | expr "-" expr
-   60          | expr "*" expr
-   61          | expr "/" expr
-   62          | expr "^" expr
-   63          | expr "and" expr
+   55 binary-op: expr "and" expr
+   56          | expr "=" expr
+   57          | expr "<" expr
+   58          | expr "<=" expr
+   59          | expr "+" expr
+   60          | expr "-" expr
+   61          | expr "*" expr
+   62          | expr "/" expr
+   63          | expr "^" expr
 
    64 unary-op: "not" expr
    65         | "-" expr
@@ -96,7 +96,7 @@ Terminals, with rules where they appear
 $end (0) 0
 error (256)
 "class" (258) 3
-"and" (259) 63
+"and" (259) 55
 "bool" (260) 15
 "do" (261) 29
 "if" (262) 27 28
@@ -122,15 +122,15 @@ error (256)
 ":" (282) 9 10 12 21 30 31
 ";" (283) 9 10 26
 "," (284) 23 52
-"+" (285) 58
-"-" (286) 59 65
-"*" (287) 60
-"/" (288) 61
-"^" (289) 62
+"+" (285) 59
+"-" (286) 60 65
+"*" (287) 61
+"/" (288) 62
+"^" (289) 63
 "." (290) 54
-"=" (291) 55
-"<" (292) 56
-"<=" (293) 57
+"=" (291) 56
+"<" (292) 57
+"<=" (293) 58
 "<-" (294) 9 11 31
 "integer-literal" (295) 43
 "string-literal" (296) 44
@@ -819,15 +819,15 @@ State 52
 
     9 field: "object-identifier" ":" type "<-" expr . ";"
    54 call: expr . "." "object-identifier" "(" args ")"
-   55 binary-op: expr . "=" expr
-   56          | expr . "<" expr
-   57          | expr . "<=" expr
-   58          | expr . "+" expr
-   59          | expr . "-" expr
-   60          | expr . "*" expr
-   61          | expr . "/" expr
-   62          | expr . "^" expr
-   63          | expr . "and" expr
+   55 binary-op: expr . "and" expr
+   56          | expr . "=" expr
+   57          | expr . "<" expr
+   58          | expr . "<=" expr
+   59          | expr . "+" expr
+   60          | expr . "-" expr
+   61          | expr . "*" expr
+   62          | expr . "/" expr
+   63          | expr . "^" expr
 
     "and"  shift, and go to state 74
     ";"    shift, and go to state 75
@@ -914,15 +914,15 @@ State 62
    27 expr: "if" expr . "then" expr
    28     | "if" expr . "then" expr "else" expr
    54 call: expr . "." "object-identifier" "(" args ")"
-   55 binary-op: expr . "=" expr
-   56          | expr . "<" expr
-   57          | expr . "<=" expr
-   58          | expr . "+" expr
-   59          | expr . "-" expr
-   60          | expr . "*" expr
-   61          | expr . "/" expr
-   62          | expr . "^" expr
-   63          | expr . "and" expr
+   55 binary-op: expr . "and" expr
+   56          | expr . "=" expr
+   57          | expr . "<" expr
+   58          | expr . "<=" expr
+   59          | expr . "+" expr
+   60          | expr . "-" expr
+   61          | expr . "*" expr
+   62          | expr . "/" expr
+   63          | expr . "^" expr
 
     "and"   shift, and go to state 74
     "then"  shift, and go to state 87
@@ -940,15 +940,15 @@ State 62
 State 63
 
    54 call: expr . "." "object-identifier" "(" args ")"
-   55 binary-op: expr . "=" expr
-   56          | expr . "<" expr
-   57          | expr . "<=" expr
-   58          | expr . "+" expr
-   59          | expr . "-" expr
-   60          | expr . "*" expr
-   61          | expr . "/" expr
-   62          | expr . "^" expr
-   63          | expr . "and" expr
+   55 binary-op: expr . "and" expr
+   56          | expr . "=" expr
+   57          | expr . "<" expr
+   58          | expr . "<=" expr
+   59          | expr . "+" expr
+   60          | expr . "-" expr
+   61          | expr . "*" expr
+   62          | expr . "/" expr
+   63          | expr . "^" expr
    66 unary-op: "isnull" expr .
 
     "^"  shift, and go to state 80
@@ -975,15 +975,15 @@ State 65
 State 66
 
    54 call: expr . "." "object-identifier" "(" args ")"
-   55 binary-op: expr . "=" expr
-   56          | expr . "<" expr
-   57          | expr . "<=" expr
-   58          | expr . "+" expr
-   59          | expr . "-" expr
-   60          | expr . "*" expr
-   61          | expr . "/" expr
-   62          | expr . "^" expr
-   63          | expr . "and" expr
+   55 binary-op: expr . "and" expr
+   56          | expr . "=" expr
+   57          | expr . "<" expr
+   58          | expr . "<=" expr
+   59          | expr . "+" expr
+   60          | expr . "-" expr
+   61          | expr . "*" expr
+   62          | expr . "/" expr
+   63          | expr . "^" expr
    64 unary-op: "not" expr .
 
     "+"   shift, and go to state 76
@@ -1003,15 +1003,15 @@ State 67
 
    29 expr: "while" expr . "do" expr
    54 call: expr . "." "object-identifier" "(" args ")"
-   55 binary-op: expr . "=" expr
-   56          | expr . "<" expr
-   57          | expr . "<=" expr
-   58          | expr . "+" expr
-   59          | expr . "-" expr
-   60          | expr . "*" expr
-   61          | expr . "/" expr
-   62          | expr . "^" expr
-   63          | expr . "and" expr
+   55 binary-op: expr . "and" expr
+   56          | expr . "=" expr
+   57          | expr . "<" expr
+   58          | expr . "<=" expr
+   59          | expr . "+" expr
+   60          | expr . "-" expr
+   61          | expr . "*" expr
+   62          | expr . "/" expr
+   63          | expr . "^" expr
 
     "and"  shift, and go to state 74
     "do"   shift, and go to state 89
@@ -1030,15 +1030,15 @@ State 68
 
    24 block: "{" expr . block-supp "}"
    54 call: expr . "." "object-identifier" "(" args ")"
-   55 binary-op: expr . "=" expr
-   56          | expr . "<" expr
-   57          | expr . "<=" expr
-   58          | expr . "+" expr
-   59          | expr . "-" expr
-   60          | expr . "*" expr
-   61          | expr . "/" expr
-   62          | expr . "^" expr
-   63          | expr . "and" expr
+   55 binary-op: expr . "and" expr
+   56          | expr . "=" expr
+   57          | expr . "<" expr
+   58          | expr . "<=" expr
+   59          | expr . "+" expr
+   60          | expr . "-" expr
+   61          | expr . "*" expr
+   62          | expr . "/" expr
+   63          | expr . "^" expr
 
     "and"  shift, and go to state 74
     ";"    shift, and go to state 90
@@ -1068,15 +1068,15 @@ State 70
 
    41 expr: "(" expr . ")"
    54 call: expr . "." "object-identifier" "(" args ")"
-   55 binary-op: expr . "=" expr
-   56          | expr . "<" expr
-   57          | expr . "<=" expr
-   58          | expr . "+" expr
-   59          | expr . "-" expr
-   60          | expr . "*" expr
-   61          | expr . "/" expr
-   62          | expr . "^" expr
-   63          | expr . "and" expr
+   55 binary-op: expr . "and" expr
+   56          | expr . "=" expr
+   57          | expr . "<" expr
+   58          | expr . "<=" expr
+   59          | expr . "+" expr
+   60          | expr . "-" expr
+   61          | expr . "*" expr
+   62          | expr . "/" expr
+   63          | expr . "^" expr
 
     "and"  shift, and go to state 74
     ")"    shift, and go to state 92
@@ -1094,15 +1094,15 @@ State 70
 State 71
 
    54 call: expr . "." "object-identifier" "(" args ")"
-   55 binary-op: expr . "=" expr
-   56          | expr . "<" expr
-   57          | expr . "<=" expr
-   58          | expr . "+" expr
-   59          | expr . "-" expr
-   60          | expr . "*" expr
-   61          | expr . "/" expr
-   62          | expr . "^" expr
-   63          | expr . "and" expr
+   55 binary-op: expr . "and" expr
+   56          | expr . "=" expr
+   57          | expr . "<" expr
+   58          | expr . "<=" expr
+   59          | expr . "+" expr
+   60          | expr . "-" expr
+   61          | expr . "*" expr
+   62          | expr . "/" expr
+   63          | expr . "^" expr
    65 unary-op: "-" expr .
 
     "*"  shift, and go to state 78
@@ -1179,7 +1179,7 @@ State 73
 
 State 74
 
-   63 binary-op: expr "and" . expr
+   55 binary-op: expr "and" . expr
 
     "if"                 shift, and go to state 36
     "false"              shift, and go to state 37
@@ -1216,7 +1216,7 @@ State 75
 
 State 76
 
-   58 binary-op: expr "+" . expr
+   59 binary-op: expr "+" . expr
 
     "if"                 shift, and go to state 36
     "false"              shift, and go to state 37
@@ -1246,7 +1246,7 @@ State 76
 
 State 77
 
-   59 binary-op: expr "-" . expr
+   60 binary-op: expr "-" . expr
 
     "if"                 shift, and go to state 36
     "false"              shift, and go to state 37
@@ -1276,7 +1276,7 @@ State 77
 
 State 78
 
-   60 binary-op: expr "*" . expr
+   61 binary-op: expr "*" . expr
 
     "if"                 shift, and go to state 36
     "false"              shift, and go to state 37
@@ -1306,7 +1306,7 @@ State 78
 
 State 79
 
-   61 binary-op: expr "/" . expr
+   62 binary-op: expr "/" . expr
 
     "if"                 shift, and go to state 36
     "false"              shift, and go to state 37
@@ -1336,7 +1336,7 @@ State 79
 
 State 80
 
-   62 binary-op: expr "^" . expr
+   63 binary-op: expr "^" . expr
 
     "if"                 shift, and go to state 36
     "false"              shift, and go to state 37
@@ -1373,7 +1373,7 @@ State 81
 
 State 82
 
-   55 binary-op: expr "=" . expr
+   56 binary-op: expr "=" . expr
 
     "if"                 shift, and go to state 36
     "false"              shift, and go to state 37
@@ -1403,7 +1403,7 @@ State 82
 
 State 83
 
-   56 binary-op: expr "<" . expr
+   57 binary-op: expr "<" . expr
 
     "if"                 shift, and go to state 36
     "false"              shift, and go to state 37
@@ -1433,7 +1433,7 @@ State 83
 
 State 84
 
-   57 binary-op: expr "<=" . expr
+   58 binary-op: expr "<=" . expr
 
     "if"                 shift, and go to state 36
     "false"              shift, and go to state 37
@@ -1613,15 +1613,15 @@ State 95
 
    50 arg: expr . args-supp
    54 call: expr . "." "object-identifier" "(" args ")"
-   55 binary-op: expr . "=" expr
-   56          | expr . "<" expr
-   57          | expr . "<=" expr
-   58          | expr . "+" expr
-   59          | expr . "-" expr
-   60          | expr . "*" expr
-   61          | expr . "/" expr
-   62          | expr . "^" expr
-   63          | expr . "and" expr
+   55 binary-op: expr . "and" expr
+   56          | expr . "=" expr
+   57          | expr . "<" expr
+   58          | expr . "<=" expr
+   59          | expr . "+" expr
+   60          | expr . "-" expr
+   61          | expr . "*" expr
+   62          | expr . "/" expr
+   63          | expr . "^" expr
 
     "and"  shift, and go to state 74
     ","    shift, and go to state 113
@@ -1644,15 +1644,15 @@ State 96
 
    11 assignment: "object-identifier" "<-" expr .
    54 call: expr . "." "object-identifier" "(" args ")"
-   55 binary-op: expr . "=" expr
-   56          | expr . "<" expr
-   57          | expr . "<=" expr
-   58          | expr . "+" expr
-   59          | expr . "-" expr
-   60          | expr . "*" expr
-   61          | expr . "/" expr
-   62          | expr . "^" expr
-   63          | expr . "and" expr
+   55 binary-op: expr . "and" expr
+   56          | expr . "=" expr
+   57          | expr . "<" expr
+   58          | expr . "<=" expr
+   59          | expr . "+" expr
+   60          | expr . "-" expr
+   61          | expr . "*" expr
+   62          | expr . "/" expr
+   63          | expr . "^" expr
 
     "and"  shift, and go to state 74
     "+"    shift, and go to state 76
@@ -1671,16 +1671,16 @@ State 96
 State 97
 
    54 call: expr . "." "object-identifier" "(" args ")"
-   55 binary-op: expr . "=" expr
-   56          | expr . "<" expr
-   57          | expr . "<=" expr
-   58          | expr . "+" expr
-   59          | expr . "-" expr
-   60          | expr . "*" expr
-   61          | expr . "/" expr
-   62          | expr . "^" expr
-   63          | expr . "and" expr
-   63          | expr "and" expr .
+   55 binary-op: expr . "and" expr
+   55          | expr "and" expr .
+   56          | expr . "=" expr
+   57          | expr . "<" expr
+   58          | expr . "<=" expr
+   59          | expr . "+" expr
+   60          | expr . "-" expr
+   61          | expr . "*" expr
+   62          | expr . "/" expr
+   63          | expr . "^" expr
 
     "+"   shift, and go to state 76
     "-"   shift, and go to state 77
@@ -1692,44 +1692,22 @@ State 97
     "<"   shift, and go to state 83
     "<="  shift, and go to state 84
 
-    $default  reduce using rule 63 (binary-op)
+    $default  reduce using rule 55 (binary-op)
 
 
 State 98
 
    54 call: expr . "." "object-identifier" "(" args ")"
-   55 binary-op: expr . "=" expr
-   56          | expr . "<" expr
-   57          | expr . "<=" expr
-   58          | expr . "+" expr
-   58          | expr "+" expr .
-   59          | expr . "-" expr
-   60          | expr . "*" expr
-   61          | expr . "/" expr
-   62          | expr . "^" expr
-   63          | expr . "and" expr
-
-    "*"  shift, and go to state 78
-    "/"  shift, and go to state 79
-    "^"  shift, and go to state 80
-    "."  shift, and go to state 81
-
-    $default  reduce using rule 58 (binary-op)
-
-
-State 99
-
-   54 call: expr . "." "object-identifier" "(" args ")"
-   55 binary-op: expr . "=" expr
-   56          | expr . "<" expr
-   57          | expr . "<=" expr
-   58          | expr . "+" expr
-   59          | expr . "-" expr
-   59          | expr "-" expr .
-   60          | expr . "*" expr
-   61          | expr . "/" expr
-   62          | expr . "^" expr
-   63          | expr . "and" expr
+   55 binary-op: expr . "and" expr
+   56          | expr . "=" expr
+   57          | expr . "<" expr
+   58          | expr . "<=" expr
+   59          | expr . "+" expr
+   59          | expr "+" expr .
+   60          | expr . "-" expr
+   61          | expr . "*" expr
+   62          | expr . "/" expr
+   63          | expr . "^" expr
 
     "*"  shift, and go to state 78
     "/"  shift, and go to state 79
@@ -1739,39 +1717,41 @@ State 99
     $default  reduce using rule 59 (binary-op)
 
 
-State 100
+State 99
 
    54 call: expr . "." "object-identifier" "(" args ")"
-   55 binary-op: expr . "=" expr
-   56          | expr . "<" expr
-   57          | expr . "<=" expr
-   58          | expr . "+" expr
-   59          | expr . "-" expr
-   60          | expr . "*" expr
-   60          | expr "*" expr .
-   61          | expr . "/" expr
-   62          | expr . "^" expr
-   63          | expr . "and" expr
+   55 binary-op: expr . "and" expr
+   56          | expr . "=" expr
+   57          | expr . "<" expr
+   58          | expr . "<=" expr
+   59          | expr . "+" expr
+   60          | expr . "-" expr
+   60          | expr "-" expr .
+   61          | expr . "*" expr
+   62          | expr . "/" expr
+   63          | expr . "^" expr
 
+    "*"  shift, and go to state 78
+    "/"  shift, and go to state 79
     "^"  shift, and go to state 80
     "."  shift, and go to state 81
 
     $default  reduce using rule 60 (binary-op)
 
 
-State 101
+State 100
 
    54 call: expr . "." "object-identifier" "(" args ")"
-   55 binary-op: expr . "=" expr
-   56          | expr . "<" expr
-   57          | expr . "<=" expr
-   58          | expr . "+" expr
-   59          | expr . "-" expr
-   60          | expr . "*" expr
-   61          | expr . "/" expr
-   61          | expr "/" expr .
-   62          | expr . "^" expr
-   63          | expr . "and" expr
+   55 binary-op: expr . "and" expr
+   56          | expr . "=" expr
+   57          | expr . "<" expr
+   58          | expr . "<=" expr
+   59          | expr . "+" expr
+   60          | expr . "-" expr
+   61          | expr . "*" expr
+   61          | expr "*" expr .
+   62          | expr . "/" expr
+   63          | expr . "^" expr
 
     "^"  shift, and go to state 80
     "."  shift, and go to state 81
@@ -1779,24 +1759,44 @@ State 101
     $default  reduce using rule 61 (binary-op)
 
 
-State 102
+State 101
 
    54 call: expr . "." "object-identifier" "(" args ")"
-   55 binary-op: expr . "=" expr
-   56          | expr . "<" expr
-   57          | expr . "<=" expr
-   58          | expr . "+" expr
-   59          | expr . "-" expr
-   60          | expr . "*" expr
-   61          | expr . "/" expr
-   62          | expr . "^" expr
-   62          | expr "^" expr .
-   63          | expr . "and" expr
+   55 binary-op: expr . "and" expr
+   56          | expr . "=" expr
+   57          | expr . "<" expr
+   58          | expr . "<=" expr
+   59          | expr . "+" expr
+   60          | expr . "-" expr
+   61          | expr . "*" expr
+   62          | expr . "/" expr
+   62          | expr "/" expr .
+   63          | expr . "^" expr
 
     "^"  shift, and go to state 80
     "."  shift, and go to state 81
 
     $default  reduce using rule 62 (binary-op)
+
+
+State 102
+
+   54 call: expr . "." "object-identifier" "(" args ")"
+   55 binary-op: expr . "and" expr
+   56          | expr . "=" expr
+   57          | expr . "<" expr
+   58          | expr . "<=" expr
+   59          | expr . "+" expr
+   60          | expr . "-" expr
+   61          | expr . "*" expr
+   62          | expr . "/" expr
+   63          | expr . "^" expr
+   63          | expr "^" expr .
+
+    "^"  shift, and go to state 80
+    "."  shift, and go to state 81
+
+    $default  reduce using rule 63 (binary-op)
 
 
 State 103
@@ -1809,44 +1809,16 @@ State 103
 State 104
 
    54 call: expr . "." "object-identifier" "(" args ")"
-   55 binary-op: expr . "=" expr
-   55          | expr "=" expr .
-   56          | expr . "<" expr
-   57          | expr . "<=" expr
-   58          | expr . "+" expr
-   59          | expr . "-" expr
-   60          | expr . "*" expr
-   61          | expr . "/" expr
-   62          | expr . "^" expr
-   63          | expr . "and" expr
-
-    "+"  shift, and go to state 76
-    "-"  shift, and go to state 77
-    "*"  shift, and go to state 78
-    "/"  shift, and go to state 79
-    "^"  shift, and go to state 80
-    "."  shift, and go to state 81
-
-    "="   error (nonassociative)
-    "<"   error (nonassociative)
-    "<="  error (nonassociative)
-
-    $default  reduce using rule 55 (binary-op)
-
-
-State 105
-
-   54 call: expr . "." "object-identifier" "(" args ")"
-   55 binary-op: expr . "=" expr
-   56          | expr . "<" expr
-   56          | expr "<" expr .
-   57          | expr . "<=" expr
-   58          | expr . "+" expr
-   59          | expr . "-" expr
-   60          | expr . "*" expr
-   61          | expr . "/" expr
-   62          | expr . "^" expr
-   63          | expr . "and" expr
+   55 binary-op: expr . "and" expr
+   56          | expr . "=" expr
+   56          | expr "=" expr .
+   57          | expr . "<" expr
+   58          | expr . "<=" expr
+   59          | expr . "+" expr
+   60          | expr . "-" expr
+   61          | expr . "*" expr
+   62          | expr . "/" expr
+   63          | expr . "^" expr
 
     "+"  shift, and go to state 76
     "-"  shift, and go to state 77
@@ -1862,19 +1834,19 @@ State 105
     $default  reduce using rule 56 (binary-op)
 
 
-State 106
+State 105
 
    54 call: expr . "." "object-identifier" "(" args ")"
-   55 binary-op: expr . "=" expr
-   56          | expr . "<" expr
-   57          | expr . "<=" expr
-   57          | expr "<=" expr .
-   58          | expr . "+" expr
-   59          | expr . "-" expr
-   60          | expr . "*" expr
-   61          | expr . "/" expr
-   62          | expr . "^" expr
-   63          | expr . "and" expr
+   55 binary-op: expr . "and" expr
+   56          | expr . "=" expr
+   57          | expr . "<" expr
+   57          | expr "<" expr .
+   58          | expr . "<=" expr
+   59          | expr . "+" expr
+   60          | expr . "-" expr
+   61          | expr . "*" expr
+   62          | expr . "/" expr
+   63          | expr . "^" expr
 
     "+"  shift, and go to state 76
     "-"  shift, and go to state 77
@@ -1890,20 +1862,48 @@ State 106
     $default  reduce using rule 57 (binary-op)
 
 
+State 106
+
+   54 call: expr . "." "object-identifier" "(" args ")"
+   55 binary-op: expr . "and" expr
+   56          | expr . "=" expr
+   57          | expr . "<" expr
+   58          | expr . "<=" expr
+   58          | expr "<=" expr .
+   59          | expr . "+" expr
+   60          | expr . "-" expr
+   61          | expr . "*" expr
+   62          | expr . "/" expr
+   63          | expr . "^" expr
+
+    "+"  shift, and go to state 76
+    "-"  shift, and go to state 77
+    "*"  shift, and go to state 78
+    "/"  shift, and go to state 79
+    "^"  shift, and go to state 80
+    "."  shift, and go to state 81
+
+    "="   error (nonassociative)
+    "<"   error (nonassociative)
+    "<="  error (nonassociative)
+
+    $default  reduce using rule 58 (binary-op)
+
+
 State 107
 
    27 expr: "if" expr "then" expr .
    28     | "if" expr "then" expr . "else" expr
    54 call: expr . "." "object-identifier" "(" args ")"
-   55 binary-op: expr . "=" expr
-   56          | expr . "<" expr
-   57          | expr . "<=" expr
-   58          | expr . "+" expr
-   59          | expr . "-" expr
-   60          | expr . "*" expr
-   61          | expr . "/" expr
-   62          | expr . "^" expr
-   63          | expr . "and" expr
+   55 binary-op: expr . "and" expr
+   56          | expr . "=" expr
+   57          | expr . "<" expr
+   58          | expr . "<=" expr
+   59          | expr . "+" expr
+   60          | expr . "-" expr
+   61          | expr . "*" expr
+   62          | expr . "/" expr
+   63          | expr . "^" expr
 
     "and"   shift, and go to state 74
     "else"  shift, and go to state 116
@@ -1933,15 +1933,15 @@ State 109
 
    29 expr: "while" expr "do" expr .
    54 call: expr . "." "object-identifier" "(" args ")"
-   55 binary-op: expr . "=" expr
-   56          | expr . "<" expr
-   57          | expr . "<=" expr
-   58          | expr . "+" expr
-   59          | expr . "-" expr
-   60          | expr . "*" expr
-   61          | expr . "/" expr
-   62          | expr . "^" expr
-   63          | expr . "and" expr
+   55 binary-op: expr . "and" expr
+   56          | expr . "=" expr
+   57          | expr . "<" expr
+   58          | expr . "<=" expr
+   59          | expr . "+" expr
+   60          | expr . "-" expr
+   61          | expr . "*" expr
+   62          | expr . "/" expr
+   63          | expr . "^" expr
 
     "and"  shift, and go to state 74
     "+"    shift, and go to state 76
@@ -1961,15 +1961,15 @@ State 110
 
    26 block-supp: ";" expr . block-supp
    54 call: expr . "." "object-identifier" "(" args ")"
-   55 binary-op: expr . "=" expr
-   56          | expr . "<" expr
-   57          | expr . "<=" expr
-   58          | expr . "+" expr
-   59          | expr . "-" expr
-   60          | expr . "*" expr
-   61          | expr . "/" expr
-   62          | expr . "^" expr
-   63          | expr . "and" expr
+   55 binary-op: expr . "and" expr
+   56          | expr . "=" expr
+   57          | expr . "<" expr
+   58          | expr . "<=" expr
+   59          | expr . "+" expr
+   60          | expr . "-" expr
+   61          | expr . "*" expr
+   62          | expr . "/" expr
+   63          | expr . "^" expr
 
     "and"  shift, and go to state 74
     ";"    shift, and go to state 90
@@ -2189,15 +2189,15 @@ State 122
 
    28 expr: "if" expr "then" expr "else" expr .
    54 call: expr . "." "object-identifier" "(" args ")"
-   55 binary-op: expr . "=" expr
-   56          | expr . "<" expr
-   57          | expr . "<=" expr
-   58          | expr . "+" expr
-   59          | expr . "-" expr
-   60          | expr . "*" expr
-   61          | expr . "/" expr
-   62          | expr . "^" expr
-   63          | expr . "and" expr
+   55 binary-op: expr . "and" expr
+   56          | expr . "=" expr
+   57          | expr . "<" expr
+   58          | expr . "<=" expr
+   59          | expr . "+" expr
+   60          | expr . "-" expr
+   61          | expr . "*" expr
+   62          | expr . "/" expr
+   63          | expr . "^" expr
 
     "and"  shift, and go to state 74
     "+"    shift, and go to state 76
@@ -2217,15 +2217,15 @@ State 123
 
    30 expr: "let" "object-identifier" ":" type "in" expr .
    54 call: expr . "." "object-identifier" "(" args ")"
-   55 binary-op: expr . "=" expr
-   56          | expr . "<" expr
-   57          | expr . "<=" expr
-   58          | expr . "+" expr
-   59          | expr . "-" expr
-   60          | expr . "*" expr
-   61          | expr . "/" expr
-   62          | expr . "^" expr
-   63          | expr . "and" expr
+   55 binary-op: expr . "and" expr
+   56          | expr . "=" expr
+   57          | expr . "<" expr
+   58          | expr . "<=" expr
+   59          | expr . "+" expr
+   60          | expr . "-" expr
+   61          | expr . "*" expr
+   62          | expr . "/" expr
+   63          | expr . "^" expr
 
     "and"  shift, and go to state 74
     "+"    shift, and go to state 76
@@ -2245,15 +2245,15 @@ State 124
 
    31 expr: "let" "object-identifier" ":" type "<-" expr . "in" expr
    54 call: expr . "." "object-identifier" "(" args ")"
-   55 binary-op: expr . "=" expr
-   56          | expr . "<" expr
-   57          | expr . "<=" expr
-   58          | expr . "+" expr
-   59          | expr . "-" expr
-   60          | expr . "*" expr
-   61          | expr . "/" expr
-   62          | expr . "^" expr
-   63          | expr . "and" expr
+   55 binary-op: expr . "and" expr
+   56          | expr . "=" expr
+   57          | expr . "<" expr
+   58          | expr . "<=" expr
+   59          | expr . "+" expr
+   60          | expr . "-" expr
+   61          | expr . "*" expr
+   62          | expr . "/" expr
+   63          | expr . "^" expr
 
     "and"  shift, and go to state 74
     "in"   shift, and go to state 126
@@ -2309,15 +2309,15 @@ State 127
 
    31 expr: "let" "object-identifier" ":" type "<-" expr "in" expr .
    54 call: expr . "." "object-identifier" "(" args ")"
-   55 binary-op: expr . "=" expr
-   56          | expr . "<" expr
-   57          | expr . "<=" expr
-   58          | expr . "+" expr
-   59          | expr . "-" expr
-   60          | expr . "*" expr
-   61          | expr . "/" expr
-   62          | expr . "^" expr
-   63          | expr . "and" expr
+   55 binary-op: expr . "and" expr
+   56          | expr . "=" expr
+   57          | expr . "<" expr
+   58          | expr . "<=" expr
+   59          | expr . "+" expr
+   60          | expr . "-" expr
+   61          | expr . "*" expr
+   62          | expr . "/" expr
+   63          | expr . "^" expr
 
     "and"  shift, and go to state 74
     "+"    shift, and go to state 76

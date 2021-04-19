@@ -31,6 +31,7 @@
 	Formals* formals;
 	Expression* expr;
 	Block* block;
+	Args* args;
 }
 
 %{
@@ -114,7 +115,8 @@ void yyerror(string s){
 %nterm <field> field
 %nterm <method> method
 %nterm <formals> formals formal formal-supp
-%nterm <block> block block-supp args arg args-supp
+%nterm <block> block block-supp 
+%nterm <args> args arg args-supp
 %nterm <expr> expr literal boolean-literal unary-op binary-op call assignment
 
 %precedence IF THEN WHILE DO LET IN
@@ -199,18 +201,19 @@ literal: INT_LITERAL { Position pos = {@$.first_line, @$.first_column}; $$ = new
 boolean-literal: TRUE { Position pos = {@$.first_line, @$.first_column}; $$ = new BooleanLitExpression($1, pos); }
 				| FALSE { Position pos = {@$.first_line, @$.first_column}; $$ = new BooleanLitExpression($1, pos); };
 
-args: 	/* epsilon */ { $$ = new Block(); }
+args: 	/* epsilon */ { $$ = new Args(); }
 		| arg { $$ = $1; };
 
-arg: expr args-supp { ($2)->addExpression(unique_ptr<Expression>($1)); $$ = $2; };
+arg: expr args-supp { ($2)->addCallArgument(unique_ptr<Expression>($1)); $$ = $2; };
 
-args-supp: 	/* epsilon */ { $$ = new Block(); }
+args-supp: 	/* epsilon */ { $$ = new Args(); }
 			| COMMA arg { $$ = $2; delete $1;};
 
 call:	OBJECT_IDENTIFIER LPAR args RPAR { Position pos = {@$.first_line, @$.first_column}; $$ = new Call($1, $3, pos); delete $2; delete $4; }
 		| expr DOT OBJECT_IDENTIFIER LPAR args RPAR { Position pos = {@$.first_line, @$.first_column}; $$ = new Call($1, $3, $5, pos); delete $2;  delete $4; delete $6; };
 
-binary-op: 	expr EQUAL expr { Position pos = {@$.first_line, @$.first_column}; $$ = new BinaryOperator($2, $1, $3, pos); }
+binary-op: 	expr AND expr { Position pos = {@$.first_line, @$.first_column}; $$ = new BinaryOperator($2, $1, $3, pos); }
+			| expr EQUAL expr { Position pos = {@$.first_line, @$.first_column}; $$ = new BinaryOperator($2, $1, $3, pos); };
 		   	| expr LOWER expr { Position pos = {@$.first_line, @$.first_column}; $$ = new BinaryOperator($2, $1, $3, pos); }
 		  	| expr LOWER_EQUAL expr { Position pos = {@$.first_line, @$.first_column}; $$ = new BinaryOperator($2, $1, $3, pos); }
 			| expr PLUS expr { Position pos = {@$.first_line, @$.first_column}; $$ = new BinaryOperator($2, $1, $3, pos); }
@@ -218,7 +221,6 @@ binary-op: 	expr EQUAL expr { Position pos = {@$.first_line, @$.first_column}; $
 			| expr TIMES expr { Position pos = {@$.first_line, @$.first_column}; $$ = new BinaryOperator($2, $1, $3, pos); }
 			| expr DIV expr { Position pos = {@$.first_line, @$.first_column}; $$ = new BinaryOperator($2, $1, $3, pos); }
 			| expr POW expr { Position pos = {@$.first_line, @$.first_column}; $$ = new BinaryOperator($2, $1, $3, pos); };
-			| expr AND expr { Position pos = {@$.first_line, @$.first_column}; $$ = new BinaryOperator($2, $1, $3, pos); };
 
 unary-op: NOT expr { Position pos = {@$.first_line, @$.first_column}; $$ = new UnaryOperator($1, $2, pos); }
 		| MINUS expr { Position pos = {@$.first_line, @$.first_column}; $$ = new UnaryOperator($1, $2, pos); }

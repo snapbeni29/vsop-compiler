@@ -115,8 +115,9 @@ union YYSTYPE
 	Formals* formals;
 	Expression* expr;
 	Block* block;
+	Args* args;
 
-#line 120 "parser.tab.h" /* yacc.c:1909  */
+#line 121 "parser.tab.h" /* yacc.c:1909  */
 };
 
 typedef union YYSTYPE YYSTYPE;
