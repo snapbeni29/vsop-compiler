@@ -1,4 +1,9 @@
+class Parent {
+    addOne(i : int32) : int32 { i + 1 }
+}
+class Child extends Parent {
+}
 class MyClass {
-    myField : bool <- 42 = true;
+    myField : int32 <- (new Child).addOne(41);
 }
 class Main { main() : int32 { 0 } }

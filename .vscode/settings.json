@@ -17,6 +17,7 @@
         "type_traits": "cpp",
         "utility": "cpp",
         "optional": "cpp",
-        "system_error": "cpp"
+        "system_error": "cpp",
+        "*.y": "cpp"
     }
 }

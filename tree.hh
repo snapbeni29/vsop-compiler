@@ -247,7 +247,7 @@ class Method : public TreeNode {
             return "Method(" + *name + ", " + formals->toString(c, classesByName) + ", "  + *returnType + ", " + block->toString(c, classesByName) + ")";
         }
 
-        void checkFormalArguments(){
+        void checkFormalArgumentsRedefinition(){
             list<unique_ptr<Formal>>::iterator it;
             for (it = formals->formals.begin(); it != formals->formals.end(); it++) {
                 // check formal arguments redefinitions
@@ -415,7 +415,11 @@ class Field : public Expression {
             }
         }
         
-        void checkCallsToUndefinedMethods(map<string, unique_ptr<Class> *> & classesByName) { /* empty */ }
+        void checkCallsToUndefinedMethods(map<string, unique_ptr<Class> *> & classesByName) { 
+            if (initExpr != nullptr) {
+                initExpr->checkCallsToUndefinedMethods(classesByName);
+            }
+        }
 
         void setExpressionClasses(string name){
             class_name = name;
@@ -463,6 +467,13 @@ class Fields {
             for (it2 = fields.begin(); it2 != fields.end(); it2++) {
                 // check types
                 (*it2)->checkTypes(classesByName);
+            }
+        }
+
+        void checkCallsToUndefinedMethods(map<string, unique_ptr<Class> *> & classesByName) {
+            list<unique_ptr<Field>>::iterator a_field;
+            for (a_field = fields.begin(); a_field != fields.end(); a_field++) {
+                (*a_field)->checkCallsToUndefinedMethods(classesByName);
             }
         }
 
@@ -522,7 +533,7 @@ class ClassBody : public TreeNode {
                 } else {
                     printError("method " + *((*it)->name) + " redefined", (*it)->position);
                 }
-                (*it)->checkFormalArguments();
+                (*it)->checkFormalArgumentsRedefinition();
             }
         }
 
@@ -553,6 +564,7 @@ class ClassBody : public TreeNode {
         }
 
         void checkCallsToUndefinedMethods(map<string, unique_ptr<Class> *> & classesByName) {
+            fields->checkCallsToUndefinedMethods(classesByName);
             methods->checkCallsToUndefinedMethods(classesByName);
         }
 
@@ -1383,6 +1395,7 @@ class Call : public Expression {
         unique_ptr<string> methodName;
         unique_ptr<Args> args;
         string class_name;
+        map<string, string> scope_context;
 
         Call(){}
         Call(Expression* _objExpr, string* _methodName, Args* _args, Position p) : Expression(p), objExpr(_objExpr), methodName(_methodName), args(_args) {}
@@ -1411,6 +1424,9 @@ class Call : public Expression {
         }
 
         void checkUndefinedIdentifiers() {
+            if (objExpr == nullptr && scope_context.find("self") == scope_context.end()) {
+                printError("cannot use self in field initializer", position);                
+            }
             // check in the expression
             if (objExpr != nullptr) {
                 objExpr->checkUndefinedIdentifiers();
@@ -1419,6 +1435,9 @@ class Call : public Expression {
         }
 
         void checkCallsToUndefinedMethods(map<string, unique_ptr<Class> *> & classesByName) {
+            if (objExpr == nullptr && scope_context.find("self") == scope_context.end()) {
+                printError("cannot find method " + *methodName + " in type <invalid-type>", position);                
+            }
             if (objExpr != nullptr)
                 objExpr->checkCallsToUndefinedMethods(classesByName);
             // getType of objExpr and verify the type has the method
@@ -1484,7 +1503,7 @@ class Call : public Expression {
                 if (*((*method_it)->name) == methodName) {
                     // check nb of formals of the method
                     if ((*method_it)->formals->formals.size() != args->args.size()) {
-                        printError("call to method " + methodName + " of class " + *(current_class->name) + " does not match the required number of formal arguments", (*method_it)->position);
+                        printError("call to method " + methodName + " of class " + *(current_class->name) + " does not match the required number of formal arguments", position);
                         return;
                     }
                     // check types of formals of the method
@@ -1493,7 +1512,7 @@ class Call : public Expression {
                     while (formal_it != (*method_it)->formals->formals.end()) {
                         string arg_type = (*args_it)->getType(classesByName);
                         if (*((*formal_it)->type) != arg_type && !Utils::inheritsFrom(arg_type, *((*formal_it)->type), classesByName)) {
-                            printError("cannot assign type " + arg_type + " to formal argument " + *((*formal_it)->name) + " : " + *((*formal_it)->type) + " of method " + methodName, (*formal_it)->position);
+                            printError("cannot assign type " + arg_type + " to formal argument " + *((*formal_it)->name) + " : " + *((*formal_it)->type) + " of method " + methodName, (*args_it)->position);
                         }
                         advance(args_it, 1);
                         advance(formal_it, 1);
@@ -1532,10 +1551,11 @@ class Call : public Expression {
         }
 
         void set_scope_context(map<string, string> &identifiers) { 
+            scope_context = identifiers;
             if (objExpr != nullptr) {
-                objExpr->set_scope_context(identifiers);
+                objExpr->set_scope_context(scope_context);
             }
-            args->set_scope_context(identifiers);
+            args->set_scope_context(scope_context);
         }
 };
 
