@@ -19,7 +19,7 @@ parser.tab.c: parser.y
 	bison -v -d parser.y
 
 vsopc:	lex.yy.c
-	$(CXX) $(CXXFLAGS) -g lex.yy.c parser.tab.c -o vsopc
+	$(CXX) $(CXXFLAGS) -g lex.yy.c parser.tab.c tree.cc -o vsopc
 
 # Phony rules are those that do not correspond to an actual file
 .PHONY: all clean dist-clean

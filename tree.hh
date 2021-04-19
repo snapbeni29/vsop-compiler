@@ -10,6 +10,13 @@ extern int errors;
 
 class Class;
 
+
+class Utils {
+    public:
+        static bool inheritsFrom(string child_class, string parent_class, map<string, unique_ptr<Class> *> & classesByName);
+};
+
+
 struct Position {
     int row;
     int col;
@@ -261,7 +268,7 @@ class Method : public TreeNode {
             // verify if block type matches returnType
             if (block->exprList.size() == 0) return;
             string blockType = block->getType(classesByName);
-            if (blockType != *returnType) {
+            if (blockType != *returnType && !Utils::inheritsFrom(blockType, *returnType, classesByName)) {
                 printError("block of method " + *name + " in class " + class_name + " should return a value of type " + *returnType + " but returns a value of type " + blockType, block->exprList.back()->position);
             }
         }
@@ -930,13 +937,13 @@ class If : public Expression {
             conditionExpr->checkTypes(classesByName);
             string condType = conditionExpr->getType(classesByName);
             string thenType = thenExpr->getType(classesByName);
-            string elseType = elseExpr->getType(classesByName);
             if (condType != "bool") {
                 printError("condition expression is of type " + condType + ", but should be of type bool", conditionExpr->position);
             }
             thenExpr->checkTypes(classesByName);
             if (elseExpr != nullptr) {
                 elseExpr->checkTypes(classesByName);
+                string elseType = elseExpr->getType(classesByName);
                 if (!isPrimitive(thenType) && !isPrimitive(elseType)) {
                     list<string> thenParents = getInheritanceList(thenType, classesByName);
                     list<string> elseParents = getInheritanceList(elseType, classesByName);
@@ -944,8 +951,8 @@ class If : public Expression {
                     if (commonParent == "") {
                         printError("then expression and else expression have no compatible types", position);
                     }
-                } else {
-                    printError("then expression and else expression have no compatible types", position);
+                } else if (thenType != elseType && thenType != "unit" && elseType != "unit") {
+                    printError("then expression (" + thenType + ") and else expression (" + elseType + ") have no compatible types", position);
                 }
             }
         }
@@ -1004,7 +1011,7 @@ class If : public Expression {
                     return "";
                 }
             }
-            return thenType;
+            return "unit";
         }
 
         string getNearestCommonParent(list<string> parents1, list<string> parents2) {
@@ -1029,26 +1036,13 @@ class If : public Expression {
                     return l;
                 } else {
                     list<string> ancestors = getInheritanceList(*((*(it->second))->parent), classesByName);
-                    ancestors.push_back(*((*(it->second))->name));
+                    ancestors.push_front(*((*(it->second))->name));
                     return ancestors;
                 }
             } else {
                 return list<string>();
             }
 
-        }
-
-        bool inheritsFrom(string child_class, string parent_class, map<string, unique_ptr<Class> *> & classesByName) {
-            map<string, unique_ptr<Class> *>::iterator it = classesByName.find(child_class);
-            if (it != classesByName.end()) {
-                if ((*(it->second))->parent != nullptr) {
-                    if (*((*(it->second))->parent) == parent_class)
-                        return true;
-                    else
-                        return inheritsFrom(*((*(it->second))->parent), parent_class, classesByName);
-                } else return false;
-            }
-            return false;
         }
 };
 
@@ -1452,19 +1446,6 @@ class Call : public Expression {
             return "";
         }
 
-        bool inheritsFrom(string child_class, string parent_class, map<string, unique_ptr<Class> *> & classesByName) {
-            map<string, unique_ptr<Class> *>::iterator it = classesByName.find(child_class);
-            if (it != classesByName.end()) {
-                if ((*(it->second))->parent != nullptr) {
-                    if (*((*(it->second))->parent) == parent_class)
-                        return true;
-                    else
-                        return inheritsFrom(*((*(it->second))->parent), parent_class, classesByName);
-                } else return false;
-            }
-            return false;
-        }
-
         void checkMethodFormals(unique_ptr<Class> & current_class, map<string, unique_ptr<Class> *> & classesByName, string methodName, unique_ptr<Args> & args) {
             list<unique_ptr<Method>> & methods = current_class->classBody->methods->methods;
             list<unique_ptr<Method>>::iterator method_it;
@@ -1481,7 +1462,7 @@ class Call : public Expression {
                     list<unique_ptr<Expression>>::iterator args_it = args->args.begin();
                     while (formal_it != (*method_it)->formals->formals.end()) {
                         string arg_type = (*args_it)->getType(classesByName);
-                        if (*((*formal_it)->type) != arg_type && !inheritsFrom(arg_type, *((*formal_it)->type), classesByName)) {
+                        if (*((*formal_it)->type) != arg_type && !Utils::inheritsFrom(arg_type, *((*formal_it)->type), classesByName)) {
                             printError("cannot assign type " + arg_type + " to formal argument " + *((*formal_it)->name) + " : " + *((*formal_it)->type) + " of method " + methodName, (*formal_it)->position);
                         }
                         advance(args_it, 1);
@@ -1565,7 +1546,7 @@ class Let : public Expression {
             if (init != nullptr) {
                 init->checkTypes(classesByName);
                 string initType = init->getType(classesByName);
-                if (initType != *type) {
+                if (initType != *type && !Utils::inheritsFrom(initType, *type, classesByName)) {
                     printError("expected type " + *type + ", but found type " + initType, init->position);
                 }
             }
