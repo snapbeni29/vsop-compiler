@@ -69,6 +69,10 @@ class UnaryOperator : public Expression {
             return content;
         }
         void checkTypes(map<string, unique_ptr<Class> *> & classesByName){
+            string exprType = expr->getType(classesByName);
+            if (*op == "isnull" && isPrimitive(exprType)) {
+                printError("isnull is applied to a primitive type", expr->position);
+            }
             expr->checkTypes(classesByName);
         }
 
@@ -1268,6 +1272,11 @@ class BinaryOperator : public Expression{
         }
 
         void checkTypes(map<string, unique_ptr<Class> *> & classesByName){
+            string leftType = left->getType(classesByName);
+            string rightType = right->getType(classesByName);
+            if (leftType != rightType) {
+                printError("cannot compare a value of type " + leftType + " and a value of type " + rightType, position);
+            }
             left->checkTypes(classesByName);
             right->checkTypes(classesByName);
         }
