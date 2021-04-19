@@ -397,6 +397,10 @@ class Field : public Expression {
                 printError("type " + *type + " not defined", position);
             }
             if (initExpr != nullptr) {
+                string resultType = initExpr->getType(classesByName);
+                if (resultType != *type && !Utils::inheritsFrom(resultType, *type, classesByName)) {
+                    printError("expected type was " + *type + ", but found " + resultType, initExpr->position);
+                }
                 initExpr->checkTypes(classesByName);
             }
         }
@@ -664,19 +668,29 @@ class Class : public TreeNode {
         void set_scope_context(map<string, unique_ptr<Class>*> & classesByName) {
             map<string, string> identifiers(classBody->field_types);
             identifiers.insert(make_pair("self", *name));
-            if (parent != nullptr)
-                includeParentFields(classesByName, *parent, identifiers);
+            if (parent != nullptr) {
+                list<string> seen_classes = { *name };
+
+                includeParentFields(classesByName, *parent, seen_classes, identifiers);
+            }
             classBody->set_scope_context(identifiers);
         }
 
-        void includeParentFields(map<string, unique_ptr<Class> *> & classesByName, string parent_name, map<string, string> & identifiers) {
+        void includeParentFields(map<string, unique_ptr<Class> *> & classesByName, string parent_name, list<string> seen_classes, map<string, string> & identifiers) {
+            if (find(seen_classes.begin(), seen_classes.end(), parent_name) != seen_classes.end()) {
+                return;
+            }
             map<string, unique_ptr<Class> *>::iterator class_it = classesByName.find(parent_name);
             list<unique_ptr<Field>>::iterator fields_it;
+            if (class_it == classesByName.end()) {
+                return;
+            }
             for (fields_it = (*(class_it->second))->classBody->fields->fields.begin(); fields_it != (*(class_it->second))->classBody->fields->fields.end(); fields_it++) {
                 identifiers.insert(make_pair(*((*fields_it)->name), *((*fields_it)->type)));
             }
             if ((*(class_it->second))->parent == nullptr) return;
-            includeParentFields(classesByName, *((*(class_it->second))->parent), identifiers);
+            seen_classes.push_back(parent_name);
+            includeParentFields(classesByName, *((*(class_it->second))->parent), seen_classes, identifiers);
         }
         
 };
@@ -746,12 +760,12 @@ class Program : public TreeNode {
             setExpressionClasses();
             // set scope context (inform each scope which identifiers are defined)
             set_scope_context();
+            // check inheritance cycles
+            checkInheritanceCycles(classes);
             // check undefined identifiers in fields and methods
             checkUndefinedIdentifiers();
             checkCallsToUndefinedMethods();
             
-            // check inheritance cycles
-            checkInheritanceCycles(classes);
 
             // check undefined types (classes)
             checkTypes(classesByName);
@@ -831,7 +845,10 @@ class Program : public TreeNode {
                     // Get the parent class object
                     map<string, unique_ptr<Class> *>::iterator parent_pair;
                     parent_pair = classesByName.find(parent_name);
-                    checkParentMethods(*(a_class_pair->second), *(parent_pair->second));
+                    if (parent_pair != classesByName.end())
+                        checkParentMethods(*(a_class_pair->second), *(parent_pair->second));
+                    else 
+                        printError("use of undefined type " + parent_name, (*child_class)->position);
                 }                
             }
         }
@@ -1143,6 +1160,10 @@ class While : public Expression {
         }
 
         void checkTypes(map<string, unique_ptr<Class> *> & classesByName){
+            string condType = conditionExpr->getType(classesByName);
+            if (condType != "bool") {
+                printError("expected type was bool, but found " + condType, position);
+            }
             conditionExpr->checkTypes(classesByName);
             bodyExpr->checkTypes(classesByName);
         }
