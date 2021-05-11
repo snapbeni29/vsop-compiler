@@ -18,6 +18,8 @@
         "utility": "cpp",
         "optional": "cpp",
         "system_error": "cpp",
-        "*.y": "cpp"
+        "*.y": "cpp",
+        "functional": "cpp",
+        "iostream": "cpp"
     }
 }

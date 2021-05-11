@@ -1840,73 +1840,73 @@ yyreduce:
 
   case 56:
 #line 215 "parser.y" /* yacc.c:1646  */
-    { Position pos = {(yyloc).first_line, (yyloc).first_column}; (yyval.expr) = new BinaryOperator((yyvsp[-1].str), (yyvsp[-2].expr), (yyvsp[0].expr), pos); }
+    { Position pos = {(yyloc).first_line, (yyloc).first_column}; (yyval.expr) = new BinOp((yyvsp[-1].str), (yyvsp[-2].expr), (yyvsp[0].expr), pos); }
 #line 1845 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 57:
 #line 216 "parser.y" /* yacc.c:1646  */
-    { Position pos = {(yyloc).first_line, (yyloc).first_column}; (yyval.expr) = new BinaryOperator((yyvsp[-1].str), (yyvsp[-2].expr), (yyvsp[0].expr), pos); }
+    { Position pos = {(yyloc).first_line, (yyloc).first_column}; (yyval.expr) = new BinOp((yyvsp[-1].str), (yyvsp[-2].expr), (yyvsp[0].expr), pos); }
 #line 1851 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 58:
 #line 217 "parser.y" /* yacc.c:1646  */
-    { Position pos = {(yyloc).first_line, (yyloc).first_column}; (yyval.expr) = new BinaryOperator((yyvsp[-1].str), (yyvsp[-2].expr), (yyvsp[0].expr), pos); }
+    { Position pos = {(yyloc).first_line, (yyloc).first_column}; (yyval.expr) = new BinOp((yyvsp[-1].str), (yyvsp[-2].expr), (yyvsp[0].expr), pos); }
 #line 1857 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 59:
 #line 218 "parser.y" /* yacc.c:1646  */
-    { Position pos = {(yyloc).first_line, (yyloc).first_column}; (yyval.expr) = new BinaryOperator((yyvsp[-1].str), (yyvsp[-2].expr), (yyvsp[0].expr), pos); }
+    { Position pos = {(yyloc).first_line, (yyloc).first_column}; (yyval.expr) = new BinOp((yyvsp[-1].str), (yyvsp[-2].expr), (yyvsp[0].expr), pos); }
 #line 1863 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 60:
 #line 219 "parser.y" /* yacc.c:1646  */
-    { Position pos = {(yyloc).first_line, (yyloc).first_column}; (yyval.expr) = new BinaryOperator((yyvsp[-1].str), (yyvsp[-2].expr), (yyvsp[0].expr), pos); }
+    { Position pos = {(yyloc).first_line, (yyloc).first_column}; (yyval.expr) = new BinOp((yyvsp[-1].str), (yyvsp[-2].expr), (yyvsp[0].expr), pos); }
 #line 1869 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 61:
 #line 220 "parser.y" /* yacc.c:1646  */
-    { Position pos = {(yyloc).first_line, (yyloc).first_column}; (yyval.expr) = new BinaryOperator((yyvsp[-1].str), (yyvsp[-2].expr), (yyvsp[0].expr), pos); }
+    { Position pos = {(yyloc).first_line, (yyloc).first_column}; (yyval.expr) = new BinOp((yyvsp[-1].str), (yyvsp[-2].expr), (yyvsp[0].expr), pos); }
 #line 1875 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 62:
 #line 221 "parser.y" /* yacc.c:1646  */
-    { Position pos = {(yyloc).first_line, (yyloc).first_column}; (yyval.expr) = new BinaryOperator((yyvsp[-1].str), (yyvsp[-2].expr), (yyvsp[0].expr), pos); }
+    { Position pos = {(yyloc).first_line, (yyloc).first_column}; (yyval.expr) = new BinOp((yyvsp[-1].str), (yyvsp[-2].expr), (yyvsp[0].expr), pos); }
 #line 1881 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 63:
 #line 222 "parser.y" /* yacc.c:1646  */
-    { Position pos = {(yyloc).first_line, (yyloc).first_column}; (yyval.expr) = new BinaryOperator((yyvsp[-1].str), (yyvsp[-2].expr), (yyvsp[0].expr), pos); }
+    { Position pos = {(yyloc).first_line, (yyloc).first_column}; (yyval.expr) = new BinOp((yyvsp[-1].str), (yyvsp[-2].expr), (yyvsp[0].expr), pos); }
 #line 1887 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 64:
 #line 223 "parser.y" /* yacc.c:1646  */
-    { Position pos = {(yyloc).first_line, (yyloc).first_column}; (yyval.expr) = new BinaryOperator((yyvsp[-1].str), (yyvsp[-2].expr), (yyvsp[0].expr), pos); }
+    { Position pos = {(yyloc).first_line, (yyloc).first_column}; (yyval.expr) = new BinOp((yyvsp[-1].str), (yyvsp[-2].expr), (yyvsp[0].expr), pos); }
 #line 1893 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 65:
 #line 225 "parser.y" /* yacc.c:1646  */
-    { Position pos = {(yyloc).first_line, (yyloc).first_column}; (yyval.expr) = new UnaryOperator((yyvsp[-1].str), (yyvsp[0].expr), pos); }
+    { Position pos = {(yyloc).first_line, (yyloc).first_column}; (yyval.expr) = new UnOp((yyvsp[-1].str), (yyvsp[0].expr), pos); }
 #line 1899 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 66:
 #line 226 "parser.y" /* yacc.c:1646  */
-    { Position pos = {(yyloc).first_line, (yyloc).first_column}; (yyval.expr) = new UnaryOperator((yyvsp[-1].str), (yyvsp[0].expr), pos); }
+    { Position pos = {(yyloc).first_line, (yyloc).first_column}; (yyval.expr) = new UnOp((yyvsp[-1].str), (yyvsp[0].expr), pos); }
 #line 1905 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 67:
 #line 227 "parser.y" /* yacc.c:1646  */
-    { Position pos = { (yyloc).first_line, (yyloc).first_column }; (yyval.expr) = new UnaryOperator((yyvsp[-1].str), (yyvsp[0].expr), pos ); }
+    { Position pos = { (yyloc).first_line, (yyloc).first_column }; (yyval.expr) = new UnOp((yyvsp[-1].str), (yyvsp[0].expr), pos ); }
 #line 1911 "parser.tab.c" /* yacc.c:1646  */
     break;
 
@@ -2152,6 +2152,8 @@ yyreturn:
 
 void semanticChecker(unique_ptr<Program>& p) {
 	p->checkSemantic();
+	LLVM ll;
+	p->codegen(ll);
 }
 
 unique_ptr<Program> parser(){

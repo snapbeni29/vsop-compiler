@@ -212,25 +212,27 @@ args-supp: 	/* epsilon */ { $$ = new Args(); }
 call:	OBJECT_IDENTIFIER LPAR args RPAR { Position pos = {@$.first_line, @$.first_column}; $$ = new Call($1, $3, pos); delete $2; delete $4; }
 		| expr DOT OBJECT_IDENTIFIER LPAR args RPAR { Position pos = {@$.first_line, @$.first_column}; $$ = new Call($1, $3, $5, pos); delete $2;  delete $4; delete $6; };
 
-binary-op: 	expr AND expr { Position pos = {@$.first_line, @$.first_column}; $$ = new BinaryOperator($2, $1, $3, pos); }
-			| expr EQUAL expr { Position pos = {@$.first_line, @$.first_column}; $$ = new BinaryOperator($2, $1, $3, pos); };
-		   	| expr LOWER expr { Position pos = {@$.first_line, @$.first_column}; $$ = new BinaryOperator($2, $1, $3, pos); }
-		  	| expr LOWER_EQUAL expr { Position pos = {@$.first_line, @$.first_column}; $$ = new BinaryOperator($2, $1, $3, pos); }
-			| expr PLUS expr { Position pos = {@$.first_line, @$.first_column}; $$ = new BinaryOperator($2, $1, $3, pos); }
-			| expr MINUS expr { Position pos = {@$.first_line, @$.first_column}; $$ = new BinaryOperator($2, $1, $3, pos); }
-			| expr TIMES expr { Position pos = {@$.first_line, @$.first_column}; $$ = new BinaryOperator($2, $1, $3, pos); }
-			| expr DIV expr { Position pos = {@$.first_line, @$.first_column}; $$ = new BinaryOperator($2, $1, $3, pos); }
-			| expr POW expr { Position pos = {@$.first_line, @$.first_column}; $$ = new BinaryOperator($2, $1, $3, pos); };
+binary-op: 	expr AND expr { Position pos = {@$.first_line, @$.first_column}; $$ = new BinOp($2, $1, $3, pos); }
+			| expr EQUAL expr { Position pos = {@$.first_line, @$.first_column}; $$ = new BinOp($2, $1, $3, pos); };
+		   	| expr LOWER expr { Position pos = {@$.first_line, @$.first_column}; $$ = new BinOp($2, $1, $3, pos); }
+		  	| expr LOWER_EQUAL expr { Position pos = {@$.first_line, @$.first_column}; $$ = new BinOp($2, $1, $3, pos); }
+			| expr PLUS expr { Position pos = {@$.first_line, @$.first_column}; $$ = new BinOp($2, $1, $3, pos); }
+			| expr MINUS expr { Position pos = {@$.first_line, @$.first_column}; $$ = new BinOp($2, $1, $3, pos); }
+			| expr TIMES expr { Position pos = {@$.first_line, @$.first_column}; $$ = new BinOp($2, $1, $3, pos); }
+			| expr DIV expr { Position pos = {@$.first_line, @$.first_column}; $$ = new BinOp($2, $1, $3, pos); }
+			| expr POW expr { Position pos = {@$.first_line, @$.first_column}; $$ = new BinOp($2, $1, $3, pos); };
 
-unary-op: NOT expr { Position pos = {@$.first_line, @$.first_column}; $$ = new UnaryOperator($1, $2, pos); }
-		| MINUS expr { Position pos = {@$.first_line, @$.first_column}; $$ = new UnaryOperator($1, $2, pos); }
-		| ISNULL expr { Position pos = { @$.first_line, @$.first_column }; $$ = new UnaryOperator($1, $2, pos ); };
+unary-op: NOT expr { Position pos = {@$.first_line, @$.first_column}; $$ = new UnOp($1, $2, pos); }
+		| MINUS expr { Position pos = {@$.first_line, @$.first_column}; $$ = new UnOp($1, $2, pos); }
+		| ISNULL expr { Position pos = { @$.first_line, @$.first_column }; $$ = new UnOp($1, $2, pos ); };
 
 %%
 
 
 void semanticChecker(unique_ptr<Program>& p) {
 	p->checkSemantic();
+	LLVM ll;
+	p->codegen(ll);
 }
 
 unique_ptr<Program> parser(){

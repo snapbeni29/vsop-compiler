@@ -3,13 +3,15 @@
 #include <string>
 #include <iterator>
 #include <memory>
+#include "llvm.hh"
+
 using namespace std;
+using namespace llvm;
 
 extern string filename;
 extern int errors;
 
 class Class;
-
 
 class Utils {
     public:
@@ -45,7 +47,7 @@ class Expression : public TreeNode {
         virtual string getType(map<string, unique_ptr<Class> *> & classesByName) = 0;
         virtual void setExpressionClasses(string name) = 0;
         virtual void set_scope_context(map<string, string> &identifiers) = 0;
-
+        virtual void codegen(LLVM& ll) {};
         bool isPrimitive(string type) {
             return type.compare("string") == 0 
                 || type.compare("bool") == 0 
@@ -54,13 +56,14 @@ class Expression : public TreeNode {
         }
 };
 
-class UnaryOperator : public Expression {
+class UnOp : public Expression {
     public:
         unique_ptr<string> op;
         unique_ptr<Expression> expr;
         string class_name;
-        UnaryOperator(){}
-        UnaryOperator(string* _operator, Expression* _expr, Position p) : Expression(p), op(_operator), expr(_expr) {}
+        UnOp(){}
+        UnOp(string* _operator, Expression* _expr, Position p) : Expression(p), op(_operator), expr(_expr) {}
+        
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName){
             string content = "";
             content += "UnOp(" + *op + ", " + expr->toString(c, classesByName) + ")";
@@ -210,6 +213,7 @@ class Formals {
             formalsToStr += "]";
             return formalsToStr;
         }
+
         void addFormal(unique_ptr<Formal> f) {
             formals.push_front(move(f));
         }
@@ -383,7 +387,7 @@ class Field : public Expression {
         Field(){}
         Field(string* _name, string* _type, Expression* _initExpr, Position p) : Expression(p), name(_name), type(_type), initExpr(_initExpr) {}
         Field(string* _name, string* _type, Position p) : Expression(p), name(_name), type(_type) {}
-
+        
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
             string fieldStr = "Field(" + *name + ", " + *type;
             if (initExpr != nullptr) {
@@ -446,7 +450,7 @@ class Fields {
     public:
         list<unique_ptr<Field>> fields;
         Fields(){}
-
+        
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
             string fieldsToStr = "["; list<unique_ptr<Field>>::iterator f_it;
             for (f_it = fields.begin(); f_it != fields.end(); f_it++) {
@@ -514,6 +518,16 @@ class ClassBody : public TreeNode {
             methods = move(_methods);
         }
         ClassBody(Fields* _fields, Methods* _methods) : fields(_fields), methods(_methods) {}
+        
+        void codegen(LLVM& ll){
+            llvm::Function *function = ll.TheModule->getFunction(class_name);
+
+            llvm::BasicBlock* entry_block = llvm::BasicBlock::Create(*ll.TheContext, "", function);
+	        ll.Builder->SetInsertPoint(entry_block);
+
+            // Methods code generation
+            //methods->codegen();
+        }
 
         void addField(unique_ptr<Field> field) {
             fields->addField(move(field));
@@ -598,9 +612,13 @@ class Class : public TreeNode {
         unique_ptr<ClassBody> classBody;
         Class(Position p) : TreeNode(p) {}
         Class(string* _name, string* _parent, ClassBody* _classBody, Position p) : TreeNode(p), name(_name), parent(_parent), classBody(_classBody) {}
-
+        
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
             return "Class(" + *name + ", " + *parent + ", " + classBody->fields->toString(c, classesByName) + ", " + classBody->methods->toString(c, classesByName) + ")";
+        }
+
+        void codegen(LLVM& ll){
+            classBody->codegen(ll);
         }
 
         void checkFieldsRedefinitions(map<string, unique_ptr<Class>*> classesByName) {
@@ -721,6 +739,13 @@ class Program : public TreeNode {
             classes.push_back(move(object_class));
             for(auto& c : classList) {
                 classes.push_back(move(c));
+            }
+        }
+
+        void codegen(LLVM& ll){
+            list<unique_ptr<Class>>::iterator a_class;
+            for (a_class = classes.begin(); a_class != classes.end(); a_class++) {
+                (*a_class)->codegen(ll);
             }
         }
 
@@ -954,7 +979,7 @@ class If : public Expression {
         If(Expression* _conditionExpr, Expression* _thenExpr, Expression* _elseExpr, Position p) : Expression(p), conditionExpr(_conditionExpr), thenExpr(_thenExpr), elseExpr(_elseExpr) {}
 
         If(Expression* _conditionExpr, Expression* _thenExpr, Position p) : Expression(p), conditionExpr(_conditionExpr), thenExpr(_thenExpr) {}
-
+        
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
             string content = "If(" + conditionExpr->toString(c, classesByName) + ", " + thenExpr->toString(c, classesByName);
             if (elseExpr != nullptr) {
@@ -1084,7 +1109,7 @@ class IntegerExpression : public Expression {
         int value;
         string class_name;
         IntegerExpression(int val, Position p) : Expression(p), value(val) {}
-
+        
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
             string content = to_string(value);
             if (c)
@@ -1112,7 +1137,7 @@ class StringLitExpression : public Expression {
         unique_ptr<string> value;
         string class_name;
         StringLitExpression(string* val, Position p) : Expression(p), value(val) {}
-
+        
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
             string content = *value;
             if (c)
@@ -1138,7 +1163,7 @@ class BooleanLitExpression : public Expression {
         unique_ptr<string> value;
         string class_name;
         BooleanLitExpression(string* val, Position p) : Expression(p), value(val) {}
-
+        
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
             string content = *value;
             if (c)
@@ -1167,7 +1192,7 @@ class While : public Expression {
 
         While(){}
         While(Expression* _conditionExpr, Expression* _bodyExpr, Position p) : Expression(p), conditionExpr(_conditionExpr), bodyExpr(_bodyExpr) {}
-
+        
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
             string content = "While(" + conditionExpr->toString(c, classesByName) + ", " + bodyExpr->toString(c, classesByName) + ")";
             if (c)
@@ -1219,7 +1244,7 @@ class Assign : public Expression{
 
         Assign(){}
         Assign(string* _name, Expression* _expr, Position p) : Expression(p), name(_name), expr(_expr) {}
-
+        
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
             string content = "Assign(" + *name + ", " + expr->toString(c, classesByName) + ")";
             if (c)
@@ -1266,16 +1291,16 @@ class Assign : public Expression{
         }      
 };
 
-class BinaryOperator : public Expression{
+class BinOp : public Expression{
     public:
         unique_ptr<string> op;
         unique_ptr<Expression> left;
         unique_ptr<Expression> right;
         string class_name;
         
-        BinaryOperator(){}
-        BinaryOperator(string* _op, Expression* _left, Expression* _right, Position p) : Expression(p), op(_op), left(_left), right(_right) {}
-
+        BinOp(){}
+        BinOp(string* _op, Expression* _left, Expression* _right, Position p) : Expression(p), op(_op), left(_left), right(_right) {}
+        
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
             string content = "BinOp(" + *op + ", " + left->toString(c, classesByName) + ", " + right->toString(c, classesByName) + ")";
             if (c)
@@ -1400,7 +1425,7 @@ class Call : public Expression {
         Call(){}
         Call(Expression* _objExpr, string* _methodName, Args* _args, Position p) : Expression(p), objExpr(_objExpr), methodName(_methodName), args(_args) {}
         Call(string* _methodName, Args* _args, Position p) : Expression(p), methodName(_methodName), args(_args) {}
-
+        
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
             string obj = "self";
             if (c)
@@ -1571,7 +1596,7 @@ class Let : public Expression {
         Let(){}
         Let(string* _name, string* _type, Expression* _init, Expression* _scope, Position p) : Expression(p), name(_name), type(_type), init(_init), scope(_scope) {}
         Let(string* _name, string* _type, Expression* _scope, Position p) : Expression(p), name(_name), type(_type), scope(_scope) {}
-
+        
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
             string firstPart = "Let(" + *name + ", " + *type + ", ";
             string lastPart = "";
@@ -1660,7 +1685,7 @@ class New : public Expression {
                 content += " : " + *type;
             return content;
         }
-
+        
         void checkTypes(map<string, unique_ptr<Class> *> & classesByName) {
             map<string, unique_ptr<Class> *>::iterator a_pair;
             a_pair = classesByName.find(*type);
@@ -1696,7 +1721,7 @@ class ObjectIdentifier : public Expression {
                 content += " : " + getType(classesByName);
             return content;
         }
-
+        
         void checkTypes(map<string, unique_ptr<Class> *> & classesByName) { 
         }
 
@@ -1737,7 +1762,7 @@ class UnitExpression : public Expression {
                 content += " : unit";
             return content;
         }
-
+        
         void checkTypes(map<string, unique_ptr<Class> *> & classesByName) { /* empty */ }
 
         void checkUndefinedIdentifiers() { /* empty */ }
