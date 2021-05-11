@@ -743,10 +743,22 @@ class Program : public TreeNode {
         }
 
         void codegen(LLVM& ll){
+            /*
             list<unique_ptr<Class>>::iterator a_class;
             for (a_class = classes.begin(); a_class != classes.end(); a_class++) {
                 (*a_class)->codegen(ll);
             }
+            */
+            map<string, unique_ptr<Class> *>::iterator class_pair = classesByName.find("Main");
+            if (class_pair != classesByName.end()) {
+                unique_ptr<Class> * mainClass = class_pair->second;
+                llvm::FunctionType* functionType = llvm::FunctionType::get(llvm::Type::getInt32Ty(*ll.TheContext), {}, false);
+                llvm::Function* function = llvm::Function::Create(functionType, llvm::Function::ExternalLinkage, "main", *ll.TheModule);
+                llvm::BasicBlock* entryBlock = llvm::BasicBlock::Create(*ll.TheContext, "", function);
+                ll.Builder->SetInsertPoint(entryBlock);
+                ll.Builder->CreateRetVoid();
+            }
+
         }
 
         Class* createObjectClass() {

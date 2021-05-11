@@ -23,13 +23,10 @@ class LLVM {
     public:
         LLVM(){
 			TheContext = std::make_unique<llvm::LLVMContext>();
-            TheModule = std::make_unique<llvm::Module>("TEST", *TheContext);
+            TheModule = std::make_unique<llvm::Module>("vsop", *TheContext);
             Builder = std::make_unique<llvm::IRBuilder<>>(*TheContext);
 		}
         unique_ptr<llvm::LLVMContext> TheContext;
         unique_ptr<llvm::IRBuilder<>> Builder;
         unique_ptr<llvm::Module> TheModule;
-
-        // On doit en premier lieu crééer un dictionnaire basé sur notre AST (alias Program).
-        // Ensuite, on peut se baser sur notre ast et le dico pour créer le code IR.
 };

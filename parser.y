@@ -7,7 +7,8 @@
 	#include <vector>
 	#include <algorithm> 
 	#include <cstring>
-	#include <stack> 
+	#include <stack>
+	#include <fstream>
 }
 
 // It is here you define the types referenced in the union
@@ -231,8 +232,6 @@ unary-op: NOT expr { Position pos = {@$.first_line, @$.first_column}; $$ = new U
 
 void semanticChecker(unique_ptr<Program>& p) {
 	p->checkSemantic();
-	LLVM ll;
-	p->codegen(ll);
 }
 
 unique_ptr<Program> parser(){
@@ -408,8 +407,21 @@ int main(int argc, char **argv) {
 		p = parser();
 		if (string(argv[1]) == "-c"){
 			semanticChecker(p);
-			if(errors == 0)
+			if(errors == 0){
 				cout << p->toString(true, p->classesByName);
+	
+				LLVM ll;
+				p->codegen(ll);
+				string basename = filename.substr(0, filename.find_last_of('.'));
+				string object = "object";
+
+				// Dump LLVM IR code
+				ofstream out(basename + ".ll");
+
+				// Compile basename.ll to assembly
+				//string cmd = "llc-11 " + basename + ".ll -O2";
+				//system(cmd.c_str());
+			}
 		}
 		else
 			if(errors == 0)
