@@ -47,7 +47,7 @@ class Expression : public TreeNode {
         virtual string getType(map<string, unique_ptr<Class> *> & classesByName) = 0;
         virtual void setExpressionClasses(string name) = 0;
         virtual void set_scope_context(map<string, string> &identifiers) = 0;
-        virtual void codegen(LLVM& ll) {};
+        virtual llvm::Value* codegen(LLVM& ll) {};
         bool isPrimitive(string type) {
             return type.compare("string") == 0 
                 || type.compare("bool") == 0 
@@ -519,7 +519,7 @@ class ClassBody : public TreeNode {
         }
         ClassBody(Fields* _fields, Methods* _methods) : fields(_fields), methods(_methods) {}
         
-        void codegen(LLVM& ll){
+        llvm::Value* codegen(LLVM& ll){
             llvm::Function *function = ll.TheModule->getFunction(class_name);
 
             llvm::BasicBlock* entry_block = llvm::BasicBlock::Create(*ll.TheContext, "", function);
@@ -527,6 +527,7 @@ class ClassBody : public TreeNode {
 
             // Methods code generation
             //methods->codegen();
+            return nullptr;
         }
 
         void addField(unique_ptr<Field> field) {
@@ -617,8 +618,8 @@ class Class : public TreeNode {
             return "Class(" + *name + ", " + *parent + ", " + classBody->fields->toString(c, classesByName) + ", " + classBody->methods->toString(c, classesByName) + ")";
         }
 
-        void codegen(LLVM& ll){
-            classBody->codegen(ll);
+        llvm::Value* codegen(LLVM& ll){
+            return nullptr;
         }
 
         void checkFieldsRedefinitions(map<string, unique_ptr<Class>*> classesByName) {
@@ -742,13 +743,13 @@ class Program : public TreeNode {
             }
         }
 
-        void codegen(LLVM& ll){
-            /*
+        llvm::Value* codegen(LLVM& ll){
+            
             list<unique_ptr<Class>>::iterator a_class;
             for (a_class = classes.begin(); a_class != classes.end(); a_class++) {
                 (*a_class)->codegen(ll);
             }
-            */
+            
             map<string, unique_ptr<Class> *>::iterator class_pair = classesByName.find("Main");
             if (class_pair != classesByName.end()) {
                 unique_ptr<Class> * mainClass = class_pair->second;
@@ -756,9 +757,9 @@ class Program : public TreeNode {
                 llvm::Function* function = llvm::Function::Create(functionType, llvm::Function::ExternalLinkage, "main", *ll.TheModule);
                 llvm::BasicBlock* entryBlock = llvm::BasicBlock::Create(*ll.TheContext, "", function);
                 ll.Builder->SetInsertPoint(entryBlock);
-                ll.Builder->CreateRetVoid();
+                ll.Builder->CreateRet(Call(new New("Main", {0, 0}), "main", new Args(), {0, 0}).codegen(ll));
             }
-
+            return nullptr;
         }
 
         Class* createObjectClass() {
@@ -1438,6 +1439,59 @@ class Call : public Expression {
         Call(Expression* _objExpr, string* _methodName, Args* _args, Position p) : Expression(p), objExpr(_objExpr), methodName(_methodName), args(_args) {}
         Call(string* _methodName, Args* _args, Position p) : Expression(p), methodName(_methodName), args(_args) {}
         
+        llvm::Value* codegen(LLVM& ll, unique_ptr<Class> *> classesByName){
+            string objType;
+            if (objExpr != nullptr) {
+                objExpr.codegen(ll, classesByName);
+                objType = objExpr.getType(classesByName);
+            } else {
+                objType = class_name;
+            }
+            args.codegen(ll, classesByName);
+            Class* c;
+            unique_ptr<Method>* method;
+            llvm:Function* func;
+            llvm:Value* object;
+            if (isUnit(objType)) { // If the object has type unit (or is null)
+                map<string, unique_ptr<Method> *>::iterator = functionsByName.find(methodName);
+                if (iterator != functionsByName.end()) {
+                    method = *iterator->second;
+                    func = method->getFunction(ll);
+                } else { // if we call a function of self
+                    object = Self().codegen();
+                }
+            } else if (isClass(objType)) { // If we call a function of another class
+                // Get its value
+                object = objExpr->getValue();
+                // Find the class Object
+                map<string, unique_ptr<Class> *>::classIterator = classesByName.find(objType);
+                if (classIterator != classesByName.end()) {
+                    unique_ptr<Class> * cl = *(classIterator->second);
+                    // Get all the methods of the class
+                    list<unique_ptr<Method>> cl_methods = cl->classBody->methods->methods;
+                    // Find the desired one
+                    list<unique_ptr<Method>>::methIterator;
+                    for (methIterator = cl_methods.begin(); methIterator != cl_methods.end(); methIterator++) {
+                        if (*((*methIterator)->name) == methodName) {
+                            method = methIterator;
+                            break;
+                        }
+                    }
+                    func = method->getFunction(ll);
+                }
+            }
+            if(func){
+                std::vector<Value *> ArgsValues;
+                list<unique_ptr<Expression>>::iterator argsIterator;
+                for (argsIterator = args->args.begin(); argsIterator != args->args.end(); argsIterator++) {
+                    ArgsValues.push_back((*argsIterator)->codegen());
+                    if (!ArgsValues.back())
+                        return nullptr;
+                }
+                return ll.Builder->CreateCall(func, ArgsValues, methodName);
+            }
+        }
+
         string toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
             string obj = "self";
             if (c)

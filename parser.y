@@ -415,12 +415,18 @@ int main(int argc, char **argv) {
 				string basename = filename.substr(0, filename.find_last_of('.'));
 				string object = "object";
 
+				std::string str;
+				llvm::raw_string_ostream rso(str);
+				rso << *ll.TheModule;
+
 				// Dump LLVM IR code
 				ofstream out(basename + ".ll");
+				out << rso.str();
+				out.close();
 
 				// Compile basename.ll to assembly
-				//string cmd = "llc-11 " + basename + ".ll -O2";
-				//system(cmd.c_str());
+				// string cmd = "llc-11 " + basename + ".ll -O2";
+				// system(cmd.c_str());
 			}
 		}
 		else
