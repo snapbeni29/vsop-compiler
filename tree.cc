@@ -8,6 +8,10 @@
 #include "tree.hh"
 
 using namespace std;
+using namespace llvm;
+
+extern string filename;
+extern int errors;
 
 bool Utils::inheritsFrom(string child_class, string parent_class, map<string, unique_ptr<Class> *> & classesByName) {
     map<string, unique_ptr<Class> *>::iterator it = classesByName.find(child_class);
@@ -72,17 +76,17 @@ void UnOp::set_scope_context(map<string, string> &identifiers) {
 }
 
 Value* UnOp::codegen(LLVM& ll) {
-    Value* val = expr->codegen();
+    Value* val = expr->getValue();
     if (!val)
         return nullptr;
 
     switch (op) {
         case NOT:
-            return ll.Builder->CreateNot(expr->getValue());
+            return ll.Builder->CreateNot(val);
         case MINUS: 
-            return ll.Builder->CreateNeg(expr->getValue());
+            return ll.Builder->CreateNeg(val);
         case ISNULL:
-            return ll.Builder->CreateIsNull(expr->getValue());
+            return ll.Builder->CreateIsNull(val);
         default:
             return nullptr;
     }
@@ -98,7 +102,6 @@ bool Expression::isPrimitive(string type) {
         || type.compare("int32") == 0 
         || type.compare("unit") == 0;
 }
-
 
 ///////////
 // BLOCK //
@@ -163,6 +166,13 @@ void Block::set_scope_context(map<string, string> &identifiers) {
     }
 }
 
+llvm::Value* Block::codegen(LLVM& ll) {
+    for(auto &expr: exprList) {
+        expr->codegen(ll);
+    }
+    return exprList.size() == 0 ? nullptr : exprlist.back()->getValue(ll);
+}
+
 ////////////
 // FORMAL //
 ////////////
@@ -224,34 +234,41 @@ void Formals::setExpressionClasses(string name){
 ////////////
 
 llvm::Value* Method::codegen(LLVM& ll) {
-    std::vector<Type*> types(args->args.size(),
-                             llvm::Type::getDoubleTy(ll.TheContext));
-    FunctionType *funcType = FunctionType::get(Type::getDoubleTy(ll.TheContext), types, false);
+
+    std::vector<Type*> types;
+    for (auto& formal: formals->formals) {
+        types.push_back(ll.toLLVMType(*(formal->type)));
+    }
+    FunctionType* funcType = FunctionType::get(ll.toLLVMType(*returnType), types, false);
 
     Function *func = Function::Create(funcType, Function::ExternalLinkage, *name + "_func_" + class_name, ll.TheModule.get());
     unsigned idx = 0;
 
     for (auto &arg : func->args())
-        arg.setName(formals->formals[idx++]);
+        arg.setName(*(formals->formals[idx++]->name));
 
     if (!func->empty()){
         // Handle function redefinition
     }
+    
+    BasicBlock* bb = BasicBlock::Create(*ll.TheContext, *name + "_func_block_" + class_name, func);
+    ll.Builder->SetInsertPoint(bb);
 
-    BasicBlock* bb = BasicBlock::Create(llvm::TheContext, *name + "_func_block_" + class_name, func);
-    Builder.SetInsertPoint(bb);
-
-    NamedValues.clear();
+    // Add formals
     for (auto &arg: func->args())
-        NamedValues[arg.getName()] = &arg;
+        ll.pushValue(arg.getName(), &arg);
 
-    Value* returnVal = body->codegen();
+
+    Value* returnVal = block->codegen();
+    
+    for (auto &arg: func->args())
+        ll.popValue(&arg);
+
     if (returnVal) {
-        Builder.CreateRet(returnVal);
+        ll.Builder->CreateRet(returnVal);
         verifyFunction(*func);
         return func;
     }
-    func->eraseFromParent();
     return nullptr;
 }
 
@@ -1265,6 +1282,7 @@ Value* BinOp::codegen(LLVM& ll) {
     return nullptr;
 
     switch (op) {
+        // TODO: AND
         case PLUS:
             return ll.Builder.CreateFAdd(leftVal, rightVal, "addtmp");
         case MINUS:
