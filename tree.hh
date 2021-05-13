@@ -289,6 +289,7 @@ class If : public Expression {
         If(Expression* _conditionExpr, Expression* _thenExpr, Expression* _elseExpr, Position p) : Expression(p), conditionExpr(_conditionExpr), thenExpr(_thenExpr), elseExpr(_elseExpr) {}
         If(Expression* _conditionExpr, Expression* _thenExpr, Position p) : Expression(p), conditionExpr(_conditionExpr), thenExpr(_thenExpr) {}
 
+        llvm::Value* codegen(LLVM& ll)
         std::string toString(bool c, std::map<std::string, std::unique_ptr<Class> *> classesByName);
         void checkTypes(std::map<std::string, std::unique_ptr<Class> *> & classesByName);
         void checkUndefinedIdentifiers();

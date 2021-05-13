@@ -29,6 +29,8 @@ class LLVM {
 
         llvm::Type* toLLVMType(std::string type) {
             switch (type){
+                case "unit":
+                    return llvm::Type::getVoidTy(*TheContext)
                 case "int32":
                     return llvm::Type::getInt32Ty(*TheContext);
                 case "bool":
