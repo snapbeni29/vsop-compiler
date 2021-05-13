@@ -20,6 +20,10 @@
         "system_error": "cpp",
         "*.y": "cpp",
         "functional": "cpp",
-        "iostream": "cpp"
+        "iostream": "cpp",
+        "filesystem": "cpp",
+        "iosfwd": "cpp",
+        "memory": "cpp",
+        "iterator": "cpp"
     }
 }
