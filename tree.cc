@@ -1717,6 +1717,15 @@ void Args::set_scope_context(map<string, string> &identifiers)
     }
 }
 
+Value *Args::codegen(LLVM &ll){
+    list<unique_ptr<Expression>>::iterator f_it;
+    for (f_it = args.begin(); f_it != args.end(); f_it++)
+    {
+        *(f_it)->codegen(ll);
+    }
+    return nullptr;
+}
+
 //////////
 // CALL //
 //////////
