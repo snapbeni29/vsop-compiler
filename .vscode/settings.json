@@ -24,6 +24,9 @@
         "filesystem": "cpp",
         "iosfwd": "cpp",
         "memory": "cpp",
-        "iterator": "cpp"
+        "iterator": "cpp",
+        "complex": "cpp",
+        "atomic": "cpp",
+        "memory_resource": "cpp"
     }
 }

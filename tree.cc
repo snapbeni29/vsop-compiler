@@ -13,6 +13,24 @@ using namespace llvm;
 extern string filename;
 extern int errors;
 
+static llvm::Value* Utils::cast(LLVM& ll, llvm::Value* value, llvm::Type* target) {
+	if (!value)
+		return nullptr;
+
+	llvm::Type* value_type = value->getType();
+
+	if (LLVM.compareTypes(value_type, target))
+		return value;
+	std::string vsop_src_type = LLVM.toVSOPType(value_type);
+    std::string vsop_target_type = LLVM.toVSOPType(target);
+    if (vsop_src_type == "" || vsop_target_type == "")
+        return nullptr;
+    
+    if (inheritsFrom(vsop_src_type, vsop_target_type))
+		return ll.Builder->CreatePointerCast(value, target);
+	return nullptr;
+}
+
 bool Utils::inheritsFrom(string child_class, string parent_class, map<string, unique_ptr<Class> *> & classesByName) {
     map<string, unique_ptr<Class> *>::iterator it = classesByName.find(child_class);
     if (it != classesByName.end()) {
@@ -194,6 +212,10 @@ void Formal::setClass(string name){
     class_name = name;
 }
 
+llvm::Value* Formal::codegen(LLVM& ll) {
+    // Not needed, job done in Method::codegen()
+}
+
 /////////////
 // FORMALS //
 /////////////
@@ -222,7 +244,7 @@ void Formals::checkTypes(map<string, unique_ptr<Class> *> & classesByName) {
     }
 }
 
-void Formals::setExpressionClasses(string name){
+void Formals::setExpressionClasses(string name, map<string, unique_ptr<Class> *> & classesByName){
     list<unique_ptr<Formal>>::iterator formal;
     for (formal = formals.begin(); formal != formals.end(); formal++) {
         (*formal)->setClass(name);
@@ -234,14 +256,13 @@ void Formals::setExpressionClasses(string name){
 ////////////
 
 llvm::Value* Method::codegen(LLVM& ll) {
-
-    std::vector<Type*> types;
+    std::vector<llvm::Type*> types;
     for (auto& formal: formals->formals) {
         types.push_back(ll.toLLVMType(*(formal->type)));
     }
-    FunctionType* funcType = FunctionType::get(ll.toLLVMType(*returnType), types, false);
+    llvm::FunctionType* funcType = llvm::FunctionType::get(ll.toLLVMType(*returnType), types, false);
 
-    Function *func = Function::Create(funcType, Function::ExternalLinkage, *name + "_func_" + class_name, ll.TheModule.get());
+    llvm::Function *func = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, class_name + "." + *name, ll.TheModule.get());
     unsigned idx = 0;
 
     for (auto &arg : func->args())
@@ -251,18 +272,26 @@ llvm::Value* Method::codegen(LLVM& ll) {
         // Handle function redefinition
     }
     
-    BasicBlock* bb = BasicBlock::Create(*ll.TheContext, *name + "_func_block_" + class_name, func);
+    BasicBlock* bb = llvm::BasicBlock::Create(*ll.TheContext, *name + "_func_block_" + class_name, func);
     ll.Builder->SetInsertPoint(bb);
 
     // Add formals
-    for (auto &arg: func->args())
-        ll.pushValue(arg.getName(), &arg);
+    idx = 0;
+    for (auto &arg: func->args()) {
+        string f_type = *(formals->formals[idx++]->type);
+        string f_name = *(formals->formals[idx++]->name);
+        if (f_type != "unit") {
+            llvm::Type* t = ll.toLLVMType(f_type);
+            llvm::Value* v = ll.Builder->CreateAlloca(t);
+            ll.pushValue(f_name, v);
+            ll.Builder->CreateStore(&arg, v);
+        }
+    }
 
-
-    Value* returnVal = block->codegen();
+    llvm::Value* returnVal = block->codegen(ll, classesByName);
     
     for (auto &arg: func->args())
-        ll.popValue(&arg);
+        ll.popValue(arg.getName());
 
     if (returnVal) {
         ll.Builder->CreateRet(returnVal);
@@ -460,6 +489,18 @@ void Field::set_scope_context(map<string, string> &identifiers) {
         initExpr->set_scope_context(scope_identifiers);
 }
 
+llvm::Value* Field::codegen(LLVM& ll, map<string, unique_ptr<Class> *> & classesByName) {
+    llvm::Type* llvm_type = ll.toLLVMType(*type);
+    if (initExpr) {
+
+        if (init->getType(classesByName) == "unit" && *type == "unit")
+			return nullptr;
+
+		return Utils.cast(ll, initExpr->codegen(ll), llvm_type);
+	}
+	return ll.getDefaultValue(llvm_type);
+}
+
 ////////////
 // FIELDS //
 ////////////
@@ -516,6 +557,13 @@ void Fields::set_scope_context(map<string, string> & identifiers) {
     }
 }
 
+llvm::Value* Fields::codegen(LLVM& ll, map<string, unique_ptr<Class> *> & classesByName) {
+    list<unique_ptr<Field>>::iterator a_field;
+    for (a_field = fields.begin(); a_field != fields.end(); a_field++) {
+        (*a_field)->codegen(ll, classesByName);
+    }
+}
+
 ///////////////
 // CLASSBODY //
 ///////////////
@@ -565,7 +613,7 @@ void ClassBody::set_scope_context(map<string, string> & identifiers) {
     fields->set_scope_context(no_fields_ids);
 }
 
-map<string, string> ClassBody::getFieldsAndTypes() {
+std::map<string, string> ClassBody::getFieldsAndTypes() {
     return field_types;
 }
 
@@ -613,7 +661,7 @@ string Class::toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
     return "Class(" + *name + ", " + *parent + ", " + classBody->fields->toString(c, classesByName) + ", " + classBody->methods->toString(c, classesByName) + ")";
 }
 
-llvm::Value* Class::codegen(LLVM& ll){
+llvm::Value* Class::codegen(LLVM& ll, map<string, unique_ptr<Class> *> classesByName){
     return nullptr;
 }
 
@@ -1177,6 +1225,32 @@ string While::getType(map<string, unique_ptr<Class> *> & classesByName) {
     return "unit";
 }
 
+llvm::Value* While::codegen(LLVM& ll, map<string, unique_ptr<Class> *> & classesByName) {
+	llvm::Function* func = ll->Builder->GetInsertBlock()->getParent();
+    // create blocks
+	llvm::BasicBlock* cond_block = llvm::BasicBlock::Create(*h.context, "condition", f);
+	llvm::BasicBlock* body_block = llvm::BasicBlock::Create(*h.context, "body", f);
+	llvm::BasicBlock* exit_block = llvm::BasicBlock::Create(*h.context, "exit", f);
+
+    ll.Builder->CreateBr(cond_block);
+
+	// Cond block
+	ll.Builder->SetInsertPoint(cond_block);
+
+    llvm::Value* cond_val = conditionExpr->codegen(ll, classesByName);
+    llvm::Type* cond_type = cond_val->getType();
+
+    if (LLVM.toVSOPType(cond_type) == "bool") {
+        ll.Builder->CreateCondBr(cond_val, body_block, exit_block);
+        // Body block
+	    ll.Builder->SetInsertPoint(body_block);
+        body->codegen(ll, classesByName); // don't care about the type
+	    ll.Builder->CreateBr(cond_block);
+        ll.Builder->SetInsertPoint(exit_block);
+    }
+    return nullptr;
+}
+
 ////////////
 // ASSIGN //
 ////////////
@@ -1224,6 +1298,38 @@ void Assign::setExpressionClasses(string name) {
 void Assign::set_scope_context(map<string, string> &identifiers) { 
     scope_identifiers = identifiers;
     expr->set_scope_context(identifiers);
+}
+
+llvm::Value* Assign::codegen(LLVM& ll, map<string, unique_ptr<Class> *> & classesByName) {
+    llvm::Value* val = expr->codegen(ll, classesByName);
+    // check if it is in the declared variables
+    llvm::Value* var = ll.find(*name);
+    std::unique_ptr<Class> * cl = classesByName[class_name];
+    llvm::Type* var_type;
+    int field_idx = 0;
+    // get the llvm type
+    if (var) {
+        var_type = var->getType();
+    } else if (c) {
+        // if not, check in the class' fields
+        for (auto &field: (*c)->fields->fields) {
+            if (*(field->name) == *name) {
+                var_type = *(field->type);
+                break;
+            }
+            field_idx++;
+        }
+    }
+    // cast type
+    llvm::Value* casted = Utils.cast(ll, val, var_type);
+    // if variable, store new value in the declared variable
+    if (var) {
+        ll.Builder->CreateStore(casted, var);
+    } else if (LLVM.toVSOPType(var_type) != "unit") {
+        // if field, create store & create struct GEP
+        ll.Builder->CreateStore(casted, ll.Builder->CreateStructGEP(*cl->getValue(), field_idx));
+    }
+
 }
 
 ///////////
@@ -1370,47 +1476,17 @@ void Args::set_scope_context(map<string, string> &identifiers) {
 //////////
 
 llvm::Value* Call::codegen(LLVM& ll, unique_ptr<Class> *> classesByName){
-    string objType;
+    std::string objType;
+    llvm::Value* obj_val;
     if (objExpr != nullptr) {
-        objExpr.codegen(ll, classesByName);
-        objType = objExpr.getType(classesByName);
+        obj_val = objExpr->codegen(ll, classesByName);
+        objType = objExpr->getType(classesByName);
     } else {
         objType = class_name;
     }
     args.codegen(ll, classesByName);
-    Class* c;
-    unique_ptr<Method>* method;
-    llvm:Function* func;
-    llvm:Value* object;
-    if (isUnit(objType)) { // If the object has type unit (or is null)
-        map<string, unique_ptr<Method> *>::iterator = functionsByName.find(methodName);
-        if (iterator != functionsByName.end()) {
-            method = *iterator->second;
-            func = method->getFunction(ll);
-        } else { // if we call a function of self
-            object = Self().codegen();
-        }
-    } else if (isClass(objType)) { // If we call a function of another class
-        // Get its value
-        object = objExpr->getValue();
-        // Find the class Object
-        map<string, unique_ptr<Class> *>::classIterator = classesByName.find(objType);
-        if (classIterator != classesByName.end()) {
-            unique_ptr<Class> * cl = *(classIterator->second);
-            // Get all the methods of the class
-            list<unique_ptr<Method>> cl_methods = cl->classBody->methods->methods;
-            // Find the desired one
-            list<unique_ptr<Method>>::methIterator;
-            for (methIterator = cl_methods.begin(); methIterator != cl_methods.end(); methIterator++) {
-                if (*((*methIterator)->name) == methodName) {
-                    method = methIterator;
-                    break;
-                }
-            }
-            func = method->getFunction(ll);
-        }
-    }
-    if(func){
+    llvm::Function* func_called = ll.TheModule->getFunction(objType + "." + *methodName);
+    if(func_called){
         std::vector<Value *> ArgsValues;
         list<unique_ptr<Expression>>::iterator argsIterator;
         for (argsIterator = args->args.begin(); argsIterator != args->args.end(); argsIterator++) {
@@ -1420,6 +1496,7 @@ llvm::Value* Call::codegen(LLVM& ll, unique_ptr<Class> *> classesByName){
         }
         return ll.Builder->CreateCall(func, ArgsValues, methodName);
     }
+    return nullptr;
 }
 
 string Call::toString(bool c, map<string, unique_ptr<Class> *> classesByName) {
@@ -1701,8 +1778,9 @@ string ObjectIdentifier::getType(map<string, unique_ptr<Class> *> & classesByNam
 }
 
 Value* ObjectIdentifier::codegen(LLVM& ll) {
-    if (scope_identifiers.find(*name) != scope_identifiers.end()) {
-        return nullptr; // TODO: change this to get the last assignment
+    llvm::Value* val = ll.find(*name);
+    if (val) {
+        return val;
     }
     return nullptr;
 }
@@ -1718,3 +1796,6 @@ string UnitExpression::toString(bool c, map<string, unique_ptr<Class> *> classes
     return content;
 }
 
+llvm::Value* UnitExpression::codegen(LLVM& ll, map<string, unique_ptr<Class> *> classesByName) {
+	return nullptr;
+}
